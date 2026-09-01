@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://travelwithsrilanka.github.io/travel-with-sri-lanka/sitemap.xml
