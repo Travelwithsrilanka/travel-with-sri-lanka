@@ -6,380 +6,513 @@
   <title>Ella Sri Lanka Tours | Travel With Sri Lanka</title>
 
   <meta name="description"
-        content="Discover Ella, Sri Lanka with Travel With Sri Lanka. Explore Ella Rock, Nine Arch Bridge, Little Adam's Peak, tea plantations and beautiful mountain scenery with private tours.">
+        content="Explore Ella, Sri Lanka with Travel With Sri Lanka. Discover Ella Rock, Nine Arch Bridge, Little Adam's Peak, tea plantations and breathtaking mountain scenery.">
 
   <meta name="keywords"
-        content="Ella Sri Lanka tours, Ella private tour, Ella travel, Ella Rock, Nine Arch Bridge, Little Adam's Peak, Sri Lanka tourism">
+        content="Ella Sri Lanka tours, Ella private tours, Ella Rock, Nine Arch Bridge, Little Adam's Peak, Sri Lanka travel">
 
   <meta name="author" content="Travel With Sri Lanka">
   <meta name="robots" content="index, follow">
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta property="og:title" content="Ella Sri Lanka Tours | Travel With Sri Lanka">
+  <meta property="og:description"
+        content="Discover the mountains, tea plantations and iconic attractions of Ella with Travel With Sri Lanka.">
+  <meta property="og:type" content="website">
+  <meta property="og:url"
+        content="https://travelwithsrilanka.github.io/travel-with-sri-lanka/ella.html">
+  <meta property="og:image"
+        content="https://travelwithsrilanka.github.io/travel-with-sri-lanka/images/ella.jpg">
+
   <link rel="canonical"
         href="https://travelwithsrilanka.github.io/travel-with-sri-lanka/ella.html">
 
-  <meta property="og:title"
-        content="Ella Sri Lanka Tours | Travel With Sri Lanka">
+  <link rel="icon" type="image/jpeg" href="images/hero.jpg">
 
-  <meta property="og:description"
-        content="Explore Ella's mountains, waterfalls, tea plantations and iconic landmarks with a personalized private tour.">
-
-  <meta property="og:type" content="website">
-
-  <meta property="og:url"
-        content="https://travelwithsrilanka.github.io/travel-with-sri-lanka/ella.html">
-
-  <meta property="og:image"
-        content="https://travelwithsrilanka.github.io/travel-with-sri-lanka/images/destinations/ella/ella.jpg">
-
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.7;
-      color: #222;
-      background: #fff;
-    }
-
-    header {
-      background: #111;
-      padding: 18px 7%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .logo {
-      color: #d4af37;
-      font-size: 22px;
-      font-weight: bold;
-      text-decoration: none;
-    }
-
-    nav a {
-      color: white;
-      text-decoration: none;
-      margin-left: 25px;
-    }
-
-    .hero {
-      min-height: 70vh;
+    .destinationHero {
+      min-height: 72vh;
       background:
         linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.55)),
-        url("images/destinations/ella/ella.jpg") center/cover;
+        url("images/ella.jpg") center/cover no-repeat;
       display: flex;
       align-items: center;
-      padding: 60px 7%;
-      color: white;
+      justify-content: center;
+      text-align: center;
+      color: #fff;
+      padding: 80px 20px;
     }
 
-    .hero-content {
-      max-width: 750px;
-    }
-
-    .hero h1 {
-      font-size: clamp(40px, 7vw, 72px);
-      line-height: 1.1;
-      margin-bottom: 20px;
-    }
-
-    .hero p {
-      font-size: 20px;
-      max-width: 650px;
-    }
-
-    .btn {
-      display: inline-block;
-      margin-top: 28px;
-      padding: 14px 25px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .primary {
-      background: #d4af37;
-      color: #111;
-    }
-
-    section {
-      padding: 70px 7%;
-    }
-
-    .container {
-      max-width: 1100px;
-      margin: auto;
-    }
-
-    h2 {
-      font-size: 36px;
-      margin-bottom: 20px;
-    }
-
-    .intro {
-      font-size: 18px;
-      color: #555;
+    .destinationHeroContent {
       max-width: 850px;
     }
 
-    .grid {
-      margin-top: 35px;
+    .destinationHero h1 {
+      font-size: clamp(42px, 7vw, 78px);
+      margin: 15px 0;
+      line-height: 1;
+    }
+
+    .destinationHero p {
+      font-size: 20px;
+      line-height: 1.7;
+      max-width: 700px;
+      margin: 20px auto 30px;
+    }
+
+    .destinationSection {
+      padding: 80px 20px;
+      max-width: 1150px;
+      margin: auto;
+    }
+
+    .destinationSection h2 {
+      font-size: 38px;
+      margin-bottom: 20px;
+    }
+
+    .destinationSection p {
+      line-height: 1.8;
+      color: #555;
+      font-size: 17px;
+    }
+
+    .attractionGrid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 25px;
+      margin-top: 40px;
     }
 
-    .card {
-      padding: 28px;
-      border-radius: 10px;
-      background: #f5f5f5;
+    .attractionCard {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0,0,0,.08);
     }
 
-    .card h3 {
-      margin-bottom: 10px;
+    .attractionCard img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .attractionContent {
+      padding: 22px;
+    }
+
+    .attractionContent h3 {
+      margin-top: 0;
       font-size: 23px;
     }
 
-    .cta {
-      text-align: center;
-      background: #111;
-      color: white;
+    .attractionContent p {
+      font-size: 15px;
     }
 
-    .cta p {
-      max-width: 700px;
-      margin: auto;
+    .infoBox {
+      background: #f7f5ef;
+      border-radius: 18px;
+      padding: 35px;
+      margin-top: 45px;
+    }
+
+    .infoGrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+    }
+
+    .infoItem strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .ctaBox {
+      background: #10221c;
+      color: #fff;
+      border-radius: 22px;
+      padding: 55px 30px;
+      text-align: center;
+      margin-top: 60px;
+    }
+
+    .ctaBox h2 {
+      margin-top: 0;
+      color: #fff;
+    }
+
+    .ctaBox p {
       color: #ddd;
+      max-width: 650px;
+      margin: 0 auto 25px;
     }
 
-    footer {
-      background: #000;
-      color: #aaa;
-      text-align: center;
-      padding: 30px 7%;
-    }
-
-    footer a {
-      color: #d4af37;
+    .backLink {
+      display: inline-block;
+      margin-bottom: 25px;
       text-decoration: none;
+      color: #555;
+      font-weight: 600;
     }
 
-    @media (max-width: 700px) {
-      header {
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      nav a {
-        margin: 0 7px;
-      }
-
-      .grid {
+    @media (max-width: 800px) {
+      .attractionGrid,
+      .infoGrid {
         grid-template-columns: 1fr;
       }
 
-      section {
-        padding: 50px 6%;
+      .destinationHero {
+        min-height: 65vh;
+      }
+
+      .destinationSection h2 {
+        font-size: 30px;
+      }
+
+      .destinationHero p {
+        font-size: 17px;
       }
     }
   </style>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "TouristDestination",
-    "name": "Ella, Sri Lanka",
-    "description": "Ella is a scenic mountain destination in Sri Lanka known for tea plantations, hiking trails, waterfalls and the Nine Arch Bridge.",
-    "url": "https://travelwithsrilanka.github.io/travel-with-sri-lanka/ella.html",
-    "image": "https://travelwithsrilanka.github.io/travel-with-sri-lanka/images/destinations/ella/ella.jpg",
-    "containedInPlace": {
-      "@type": "Country",
-      "name": "Sri Lanka"
-    }
-  }
-  </script>
 </head>
 
 <body>
 
-<header>
-  <a class="logo" href="index.html">TRAVEL WITH SRI LANKA</a>
+<header class="site-header">
+
+  <div class="logo">
+    <a href="index.html">TRAVEL WITH SRI LANKA</a>
+  </div>
 
   <nav>
     <a href="index.html">Home</a>
     <a href="index.html#destinations">Destinations</a>
     <a href="index.html#tours">Tours</a>
+    <a href="index.html#experiences">Experiences</a>
     <a href="index.html#contact">Contact</a>
   </nav>
+
 </header>
 
-<section class="hero">
-  <div class="hero-content">
-    <h1>Ella, Sri Lanka</h1>
 
-    <p>
-      Discover the breathtaking mountains, tea plantations,
-      waterfalls and unforgettable experiences of Ella with
-      Travel With Sri Lanka.
-    </p>
+<main>
 
-    <a class="btn primary"
-       href="https://wa.me/94758453391?text=Hello%20Travel%20With%20Sri%20Lanka%2C%20I%20am%20interested%20in%20an%20Ella%20tour.">
-      Plan My Ella Trip
-    </a>
-  </div>
-</section>
+  <!-- HERO -->
 
-<section>
-  <div class="container">
+  <section class="destinationHero">
 
-    <h2>Explore Ella</h2>
+    <div class="destinationHeroContent">
 
-    <p class="intro">
-      Ella is one of Sri Lanka's most spectacular mountain destinations.
-      Surrounded by green hills, tea plantations and dramatic valleys,
-      it is an ideal destination for travelers looking for nature,
-      adventure, culture and relaxation.
-    </p>
-
-    <div class="grid">
-
-      <div class="card">
-        <h3>Ella Rock</h3>
-        <p>
-          Enjoy a memorable hike to Ella Rock and experience
-          panoramic views across Sri Lanka's beautiful hill country.
-        </p>
+      <div class="eyebrow">
+        SRI LANKA • HILL COUNTRY
       </div>
 
-      <div class="card">
-        <h3>Nine Arch Bridge</h3>
-        <p>
-          Visit the famous Nine Arch Bridge and watch Sri Lanka's
-          iconic blue trains travel through the surrounding jungle.
-        </p>
-      </div>
+      <h1>Ella</h1>
 
-      <div class="card">
-        <h3>Little Adam's Peak</h3>
-        <p>
-          Take an easy scenic hike to Little Adam's Peak for
-          beautiful views of Ella's surrounding mountains.
-        </p>
-      </div>
+      <p>
+        Discover the breathtaking mountain landscapes, tea plantations,
+        waterfalls and iconic railway scenery of Ella, Sri Lanka.
+      </p>
 
-      <div class="card">
-        <h3>Tea Plantations</h3>
-        <p>
-          Explore Sri Lanka's tea country, discover local tea
-          production and enjoy the peaceful scenery of the highlands.
-        </p>
+      <div class="heroButtons">
+
+        <a
+          class="btn primary"
+          href="https://wa.me/94758453391?text=Hello%20Travel%20With%20Sri%20Lanka,%20I%20am%20interested%20in%20an%20Ella%20tour."
+          target="_blank">
+          Plan My Ella Trip
+        </a>
+
+        <a
+          class="btn secondary"
+          href="index.html">
+          Back to Home
+        </a>
+
       </div>
 
     </div>
 
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="container">
 
-    <h2>Things to Do in Ella</h2>
+  <!-- INTRO -->
 
-    <div class="grid">
+  <section class="destinationSection">
 
-      <div class="card">
-        <h3>🌿 Nature & Hiking</h3>
-        <p>
-          Explore mountain trails, waterfalls, forests and
-          breathtaking viewpoints.
-        </p>
-      </div>
+    <a class="backLink" href="index.html#destinations">
+      ← Back to Destinations
+    </a>
 
-      <div class="card">
-        <h3>🚂 Scenic Train Journey</h3>
-        <p>
-          Experience one of Sri Lanka's most beautiful train
-          journeys through the hill country.
-        </p>
-      </div>
+    <h2>Explore Ella, Sri Lanka</h2>
 
-      <div class="card">
-        <h3>☕ Tea Experience</h3>
-        <p>
-          Discover the history and culture of Sri Lanka's famous
-          Ceylon tea.
-        </p>
-      </div>
+    <p>
+      Ella is one of Sri Lanka's most scenic mountain destinations.
+      Surrounded by lush green hills, tea plantations and dramatic
+      valleys, Ella is perfect for travellers looking for nature,
+      adventure and unforgettable views.
+    </p>
 
-      <div class="card">
-        <h3>📸 Photography</h3>
-        <p>
-          Capture stunning mountain landscapes, railway scenery,
-          waterfalls and local life.
-        </p>
+    <p>
+      With Travel With Sri Lanka, you can explore Ella at your own pace,
+      visit its famous landmarks, experience local culture and discover
+      some of the most beautiful scenery in Sri Lanka.
+    </p>
+
+
+    <!-- ATTRACTIONS -->
+
+    <div class="attractionGrid">
+
+      <article class="attractionCard">
+
+        <img
+          src="images/ella-rock.jpg"
+          alt="Ella Rock Sri Lanka">
+
+        <div class="attractionContent">
+
+          <h3>Ella Rock</h3>
+
+          <p>
+            A spectacular hiking destination offering panoramic views
+            across Ella's mountain landscape.
+          </p>
+
+        </div>
+
+      </article>
+
+
+      <article class="attractionCard">
+
+        <img
+          src="images/nine-arch-bridge.jpg"
+          alt="Nine Arch Bridge Ella Sri Lanka">
+
+        <div class="attractionContent">
+
+          <h3>Nine Arch Bridge</h3>
+
+          <p>
+            One of Ella's most iconic landmarks, surrounded by lush
+            tropical forest and tea-covered hills.
+          </p>
+
+        </div>
+
+      </article>
+
+
+      <article class="attractionCard">
+
+        <img
+          src="images/little-adams-peak.jpg"
+          alt="Little Adam's Peak Ella Sri Lanka">
+
+        <div class="attractionContent">
+
+          <h3>Little Adam's Peak</h3>
+
+          <p>
+            A relatively accessible hike with beautiful views over
+            Ella's surrounding valleys and mountains.
+          </p>
+
+        </div>
+
+      </article>
+
+    </div>
+
+
+    <!-- MORE INFORMATION -->
+
+    <div class="infoBox">
+
+      <div class="infoGrid">
+
+        <div class="infoItem">
+          <strong>🌿 Nature</strong>
+          <span>
+            Mountains, forests, waterfalls and tea plantations.
+          </span>
+        </div>
+
+        <div class="infoItem">
+          <strong>🥾 Adventure</strong>
+          <span>
+            Hiking, sightseeing and scenic outdoor experiences.
+          </span>
+        </div>
+
+        <div class="infoItem">
+          <strong>🚆 Scenic Travel</strong>
+          <span>
+            Experience some of Sri Lanka's most beautiful railway scenery.
+          </span>
+        </div>
+
       </div>
 
     </div>
 
-  </div>
-</section>
 
-<section>
-  <div class="container">
+    <!-- WHY VISIT -->
 
-    <h2>Why Visit Ella With Us?</h2>
-
-    <p class="intro">
-      Travel With Sri Lanka helps travelers experience Ella through
-      personalized itineraries and local experiences. Tell us what
-      you want to see and we can help plan your Sri Lankan journey
-      around your interests.
-    </p>
-
-  </div>
-</section>
-
-<section class="cta">
-  <div class="container">
-
-    <h2>Ready to Explore Ella?</h2>
+    <h2 style="margin-top:70px;">
+      Why Visit Ella?
+    </h2>
 
     <p>
-      Contact Travel With Sri Lanka and start planning your
-      personalized Sri Lanka adventure.
+      Ella combines adventure and relaxation in one destination.
+      Visitors can spend the morning hiking through the hills,
+      explore tea plantations during the day and enjoy spectacular
+      sunset views in the evening.
     </p>
 
-    <a class="btn primary"
-       href="https://wa.me/94758453391?text=Hello%20Travel%20With%20Sri%20Lanka%2C%20I%20want%20to%20plan%20an%20Ella%20trip.">
-      Contact Us on WhatsApp
-    </a>
+    <p>
+      Ella is also an excellent destination for couples, families,
+      solo travellers and photographers looking to experience the
+      natural beauty of Sri Lanka.
+    </p>
 
-  </div>
-</section>
+
+    <!-- CTA -->
+
+    <div class="ctaBox" id="contact">
+
+      <h2>Ready to Explore Ella?</h2>
+
+      <p>
+        Tell us your travel dates and what you would like to experience.
+        We can help you plan a memorable private journey through Ella
+        and the surrounding hill country.
+      </p>
+
+      <a
+        class="btn primary"
+        href="https://wa.me/94758453391?text=Hello%20Travel%20With%20Sri%20Lanka,%20I%20would%20like%20to%20plan%20a%20trip%20to%20Ella."
+        target="_blank">
+        Contact Us on WhatsApp
+      </a>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<!-- FOOTER -->
 
 <footer>
-  <p>
-    © 2026 Travel With Sri Lanka
-  </p>
 
-  <p>
-    <a href="mailto:sandeepchiranthaka98@gmail.com">
-      sandeepchiranthaka98@gmail.com
-    </a>
-  </p>
+  <div class="footerGrid">
 
-  <p>
-    <a href="index.html">Back to Main Website</a>
-  </p>
+    <div>
+      <h3>TRAVEL WITH SRI LANKA</h3>
+
+      <p>
+        Discover Sri Lanka through authentic experiences,
+        beautiful destinations and memorable journeys.
+      </p>
+    </div>
+
+
+    <div>
+      <h3>Contact</h3>
+
+      <p>
+        Sandeep Chiranthaka
+      </p>
+
+      <p>
+        📞
+        <a href="tel:+94758453391">
+          +94 75 845 3391
+        </a>
+      </p>
+
+      <p>
+        ✉️
+        <a href="mailto:sandeepchiranthaka98@gmail.com">
+          sandeepchiranthaka98@gmail.com
+        </a>
+      </p>
+
+      <p>
+        📍 97/23 Godagama, Homagama, Sri Lanka
+      </p>
+
+    </div>
+
+
+    <div>
+
+      <h3>Follow Us</h3>
+
+      <p>
+        <a href="https://www.facebook.com/share/1JSHMXSywM/?mibextid=wwXIfr"
+           target="_blank">
+          Facebook
+        </a>
+      </p>
+
+      <p>
+        <a href="https://www.tiktok.com/@sandeepchiranthak?_r=1&_t=ZS-99LYUQAbJ8X"
+           target="_blank">
+          TikTok
+        </a>
+      </p>
+
+      <p>
+        <a href="https://xhslink.cn/m/703KkGadMYU"
+           target="_blank">
+          REDnote
+        </a>
+      </p>
+
+      <p>
+        <a href="https://wechat.com/dl/64TgikgaMo0%3D"
+           target="_blank">
+          WeChat
+        </a>
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="footerBottom">
+
+    © 2026 Travel With Sri Lanka.
+    All rights reserved.
+
+  </div>
+
 </footer>
+
+
+<!-- FLOATING WHATSAPP -->
+
+<a
+  class="whatsappFloat"
+  href="https://wa.me/94758453391?text=Hello%20Travel%20With%20Sri%20Lanka!"
+  target="_blank"
+  aria-label="Contact Travel With Sri Lanka on WhatsApp">
+
+  WhatsApp
+
+</a>
+
 
 </body>
 </html>
