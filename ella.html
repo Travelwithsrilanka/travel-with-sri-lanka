@@ -1,236 +1,928 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Ella Sri Lanka Tours | Travel With Sri Lanka</title>
 
-<meta name="description" content="Explore Ella, Sri Lanka with Travel With Sri Lanka. Discover Ella Rock, Nine Arch Bridge, Little Adam's Peak, Ravana Falls and other famous attractions.">
+<meta name="description"
+content="Explore Ella, Sri Lanka with Travel With Sri Lanka. Discover Ella Rock, Nine Arch Bridge, Little Adam's Peak, Ravana Falls, tea plantations and other famous attractions.">
 
-<meta name="keywords" content="Ella Sri Lanka, Ella tours, Ella Rock, Nine Arch Bridge, Little Adam's Peak, Ravana Falls">
+<meta name="keywords"
+content="Ella Sri Lanka, Ella tours, Ella Rock, Nine Arch Bridge, Little Adam's Peak, Ravana Falls, Sri Lanka tourism">
 
 <meta name="author" content="Travel With Sri Lanka">
+
 <meta name="robots" content="index, follow">
 
-<link rel="canonical" href="https://travelwithsrilanka.github.io/travel-with-sri-lanka/ella.html">
+<link rel="canonical"
+href="https://travelwithsrilanka.github.io/travel-with-sri-lanka/ella.html">
 
-<meta property="og:title" content="Ella Sri Lanka Tours | Travel With Sri Lanka">
-<meta property="og:description" content="Discover the most famous places in Ella, Sri Lanka with Travel With Sri Lanka.">
+<!-- Open Graph -->
+<meta property="og:title"
+content="Ella Sri Lanka Tours | Travel With Sri Lanka">
+
+<meta property="og:description"
+content="Discover the most famous places and attractions in Ella, Sri Lanka with Travel With Sri Lanka.">
+
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://travelwithsrilanka.github.io/travel-with-sri-lanka/ella.html">
-<meta property="og:image" content="https://travelwithsrilanka.github.io/travel-with-sri-lanka/images/destinations/ella/ella.jpg">
+
+<meta property="og:url"
+content="https://travelwithsrilanka.github.io/travel-with-sri-lanka/ella.html">
+
+<meta property="og:image"
+content="https://travelwithsrilanka.github.io/travel-with-sri-lanka/images/destinations/ella/ella.jpg">
 
 <link rel="icon" href="images/hero.jpg">
+
 <link rel="stylesheet" href="style.css">
 
+
 <style>
+
+/* =========================================================
+   DESTINATION PAGE
+   ========================================================= */
+
 .destinationHero {
-  min-height: 75vh;
-  background: linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.55)),
-  url("images/destinations/ella/ella.jpg") center/cover;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  color:white;
-  padding:40px 20px;
+  min-height: 78vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 120px 20px 60px;
+
+  text-align: center;
+
+  color: #fff;
+
+  background:
+    linear-gradient(
+      rgba(0,0,0,.48),
+      rgba(0,0,0,.58)
+    ),
+    url("images/destinations/ella/ella.jpg");
+
+  background-size: cover;
+  background-position: center;
+}
+
+.destinationHeroContent {
+  max-width: 850px;
 }
 
 .destinationHero h1 {
-  font-size:clamp(2.5rem,6vw,5rem);
-  margin-bottom:15px;
+  margin-bottom: 18px;
+
+  font-size: clamp(42px, 7vw, 78px);
+
+  line-height: 1.05;
 }
 
 .destinationHero p {
-  font-size:1.2rem;
-  max-width:750px;
-  margin:auto;
+  max-width: 720px;
+
+  margin: auto;
+
+  color: rgba(255,255,255,.88);
+
+  font-size: 18px;
 }
 
-.destinationSection {
-  max-width:1200px;
-  margin:auto;
-  padding:70px 20px;
+
+/* =========================================================
+   DESTINATION INTRO
+   ========================================================= */
+
+.destinationIntro {
+  padding: 90px 7%;
+
+  background: #f6f4ed;
 }
 
-.destinationSection h2 {
-  text-align:center;
-  margin-bottom:40px;
+.destinationIntroInner {
+  max-width: 950px;
+
+  margin: auto;
+
+  text-align: center;
 }
 
-.locationGrid {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:25px;
+.destinationIntro h2 {
+  margin-bottom: 20px;
+
+  font-size: clamp(32px, 5vw, 52px);
+
+  line-height: 1.1;
 }
 
-.locationCard {
-  background:#fff;
-  border-radius:15px;
-  overflow:hidden;
-  box-shadow:0 8px 25px rgba(0,0,0,.12);
+.destinationIntro p {
+  color: #65716b;
+
+  font-size: 16px;
 }
 
-.locationCard img {
-  width:100%;
-  height:230px;
-  object-fit:cover;
-  display:block;
+
+/* =========================================================
+   FAMOUS LOCATIONS
+   ========================================================= */
+
+.destinationLocationsSection {
+  padding: 100px 7%;
+
+  background: #fff;
 }
 
-.locationCardContent {
-  padding:22px;
+.destinationLocationsHead {
+  max-width: 800px;
+
+  margin: 0 auto 55px;
+
+  text-align: center;
 }
 
-.locationCard h3 {
-  margin-bottom:10px;
+.destinationLocationsHead h2 {
+  margin-bottom: 15px;
+
+  font-size: clamp(34px, 5vw, 56px);
+
+  line-height: 1.1;
 }
 
-.locationCard p {
-  line-height:1.7;
+.destinationLocationsHead p {
+  color: #65716b;
+
+  font-size: 16px;
 }
+
+.destinationLocations {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 28px;
+
+  max-width: 1200px;
+
+  margin: auto;
+}
+
+.destinationLocationCard {
+  overflow: hidden;
+
+  background: #fff;
+
+  border: 1px solid #e8e8e3;
+
+  border-radius: 8px;
+
+  box-shadow:
+    0 12px 35px rgba(0,0,0,.06);
+
+  transition: .3s ease;
+}
+
+.destinationLocationCard:hover {
+  transform: translateY(-7px);
+
+  box-shadow:
+    0 20px 45px rgba(0,0,0,.11);
+}
+
+.destinationLocationCard img {
+  width: 100%;
+
+  height: 280px;
+
+  object-fit: cover;
+
+  transition: .5s ease;
+}
+
+.destinationLocationCard:hover img {
+  transform: scale(1.04);
+}
+
+.destinationLocationContent {
+  padding: 28px;
+}
+
+.destinationLocationNumber {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #b28e3e;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 2px;
+}
+
+.destinationLocationContent h3 {
+  margin-bottom: 10px;
+
+  font-size: 26px;
+}
+
+.destinationLocationContent p {
+  color: #69746e;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   DESTINATION CTA
+   ========================================================= */
 
 .destinationCTA {
-  text-align:center;
-  padding:70px 20px;
+  padding: 100px 7%;
+
+  text-align: center;
+
+  color: #fff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #12251d,
+      #203d30
+    );
 }
 
-@media(max-width:700px) {
-  .locationGrid {
-    grid-template-columns:1fr;
+.destinationCTA h2 {
+  max-width: 800px;
+
+  margin: 0 auto 18px;
+
+  font-size: clamp(35px, 5vw, 58px);
+
+  line-height: 1.1;
+}
+
+.destinationCTA p {
+  max-width: 650px;
+
+  margin: 0 auto 28px;
+
+  color: rgba(255,255,255,.7);
+}
+
+
+/* =========================================================
+   DESTINATION MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .destinationHero {
+    min-height: 75vh;
+
+    padding-top: 120px;
+
+    background-position: center;
   }
 
-  .locationCard img {
-    height:220px;
+  .destinationHero h1 {
+    font-size: 45px;
   }
+
+  .destinationHero p {
+    font-size: 16px;
+  }
+
+  .destinationIntro,
+  .destinationLocationsSection,
+  .destinationCTA {
+    padding: 75px 5%;
+  }
+
+  .destinationLocations {
+    grid-template-columns: 1fr;
+
+    gap: 22px;
+  }
+
+  .destinationLocationCard img {
+    height: 245px;
+  }
+
+  .destinationLocationContent {
+    padding: 24px;
+  }
+
 }
+
 </style>
+
 </head>
+
 
 <body>
 
-<header>
-  <div class="logo">TRAVEL WITH SRI LANKA</div>
 
-  <nav>
+<!-- =========================================================
+     HEADER
+     ========================================================= -->
+
+<header class="site-header">
+
+  <div class="logo">
+
+    <small>TRAVEL WITH</small>
+
+    <b>SRI LANKA</b>
+
+  </div>
+
+
+  <button
+    class="menuBtn"
+    onclick="toggleMenu()"
+    aria-label="Open navigation menu">
+
+    ☰
+
+  </button>
+
+
+  <nav id="mainNav">
+
     <a href="index.html">Home</a>
-    <a href="index.html#destinations">Destinations</a>
-    <a href="index.html#tours">Tours</a>
-    <a href="index.html#experiences">Experiences</a>
-    <a href="index.html#reviews">Reviews</a>
-    <a href="index.html#faq">FAQ</a>
-    <a href="index.html#contact">Contact</a>
+
+    <a href="index.html#destinations">
+      Destinations
+    </a>
+
+    <a href="index.html#tours">
+      Tours
+    </a>
+
+    <a href="index.html#experiences">
+      Experiences
+    </a>
+
+    <a href="index.html#reviews">
+      Reviews
+    </a>
+
+    <a href="index.html#faq">
+      FAQ
+    </a>
+
+    <a href="index.html#contact">
+      Contact
+    </a>
+
   </nav>
+
 </header>
 
+
+<!-- =========================================================
+     HERO
+     ========================================================= -->
+
 <section class="destinationHero">
-  <div>
-    <h1>Ella, Sri Lanka</h1>
-    <p>Discover breathtaking mountains, waterfalls, tea plantations and unforgettable experiences in beautiful Ella.</p>
-  </div>
-</section>
 
-<section class="destinationSection">
-  <h2>10 Famous Places in Ella</h2>
+  <div class="destinationHeroContent">
 
-  <div class="locationGrid">
+    <h1>
+      Ella, Sri Lanka
+    </h1>
 
-    <div class="locationCard">
-      <img src="images/destinations/ella/ella-rock.jpg" alt="Ella Rock">
-      <div class="locationCardContent">
-        <h3>Ella Rock</h3>
-        <p>A spectacular hiking destination offering beautiful mountain and valley views.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/nine-arch-bridge.jpg" alt="Nine Arch Bridge Ella">
-      <div class="locationCardContent">
-        <h3>Nine Arch Bridge</h3>
-        <p>One of Sri Lanka's most photographed railway bridges surrounded by lush greenery.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/little-adams-peak.jpg" alt="Little Adam's Peak">
-      <div class="locationCardContent">
-        <h3>Little Adam's Peak</h3>
-        <p>A relatively easy hike with panoramic views over Ella's mountains.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/ravana-falls.jpg" alt="Ravana Falls">
-      <div class="locationCardContent">
-        <h3>Ravana Falls</h3>
-        <p>A dramatic waterfall located close to Ella and associated with the famous Ravana legend.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/ravana-cave.jpg" alt="Ravana Cave">
-      <div class="locationCardContent">
-        <h3>Ravana Cave</h3>
-        <p>An atmospheric cave associated with the legendary stories of King Ravana.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/liptons-seat.jpg" alt="Lipton's Seat">
-      <div class="locationCardContent">
-        <h3>Lipton's Seat</h3>
-        <p>A famous viewpoint surrounded by spectacular tea estates and mountain scenery.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/diyaluma-falls.jpg" alt="Diyaluma Falls">
-      <div class="locationCardContent">
-        <h3>Diyaluma Falls</h3>
-        <p>One of Sri Lanka's spectacular waterfalls, famous for its natural pools and views.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/demodara-loop.jpg" alt="Demodara Railway Loop">
-      <div class="locationCardContent">
-        <h3>Demodara Railway Loop</h3>
-        <p>A unique railway engineering attraction near Ella.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/ella-spice-garden.jpg" alt="Ella Spice Garden">
-      <div class="locationCardContent">
-        <h3>Ella Spice Garden</h3>
-        <p>Learn about Sri Lankan spices, herbs and local culinary traditions.</p>
-      </div>
-    </div>
-
-    <div class="locationCard">
-      <img src="images/destinations/ella/halpewatte-tea-factory.jpg" alt="Uva Halpewatte Tea Factory">
-      <div class="locationCardContent">
-        <h3>Uva Halpewatte Tea Factory</h3>
-        <p>Experience Sri Lanka's tea culture and learn how famous Ceylon Tea is produced.</p>
-      </div>
-    </div>
+    <p>
+      Discover breathtaking mountains, waterfalls,
+      tea plantations, scenic railway journeys and
+      unforgettable experiences in beautiful Ella.
+    </p>
 
   </div>
+
 </section>
+
+
+<!-- =========================================================
+     INTRO
+     ========================================================= -->
+
+<section class="destinationIntro">
+
+  <div class="destinationIntroInner">
+
+    <h2>
+      Discover the Beauty of Ella
+    </h2>
+
+    <p>
+      Ella is one of Sri Lanka's most beautiful mountain
+      destinations. From dramatic viewpoints and waterfalls
+      to historic railway landmarks and tea plantations,
+      Ella offers unforgettable experiences for every traveler.
+    </p>
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     10 FAMOUS LOCATIONS
+     ========================================================= -->
+
+<section class="destinationLocationsSection">
+
+  <div class="destinationLocationsHead">
+
+    <h2>
+      10 Famous Places in Ella
+    </h2>
+
+    <p>
+      Explore some of the most famous attractions and
+      experiences around Ella, Sri Lanka.
+    </p>
+
+  </div>
+
+
+  <div class="destinationLocations">
+
+
+    <!-- 01 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/ella-rock.jpg"
+        alt="Ella Rock"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          01 • ELLA
+        </span>
+
+        <h3>
+          Ella Rock
+        </h3>
+
+        <p>
+          A spectacular hiking destination offering
+          breathtaking views across Ella's mountains,
+          valleys and surrounding countryside.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 02 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/nine-arch-bridge.jpg"
+        alt="Nine Arch Bridge Ella"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          02 • ELLA
+        </span>
+
+        <h3>
+          Nine Arch Bridge
+        </h3>
+
+        <p>
+          One of Sri Lanka's most photographed railway
+          bridges, surrounded by lush green jungle and
+          beautiful mountain scenery.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 03 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/little-adams-peak.jpg"
+        alt="Little Adam's Peak"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          03 • ELLA
+        </span>
+
+        <h3>
+          Little Adam's Peak
+        </h3>
+
+        <p>
+          A popular and relatively easy hike offering
+          panoramic views over Ella's dramatic mountain
+          landscape.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 04 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/ravana-falls.jpg"
+        alt="Ravana Falls"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          04 • ELLA
+        </span>
+
+        <h3>
+          Ravana Falls
+        </h3>
+
+        <p>
+          A spectacular waterfall near Ella surrounded
+          by dramatic rock formations and tropical
+          mountain scenery.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 05 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/ravana-cave.jpg"
+        alt="Ravana Cave"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          05 • ELLA
+        </span>
+
+        <h3>
+          Ravana Cave
+        </h3>
+
+        <p>
+          An atmospheric cave associated with the
+          legendary stories surrounding King Ravana.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 06 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/liptons-seat.jpg"
+        alt="Lipton's Seat"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          06 • ELLA
+        </span>
+
+        <h3>
+          Lipton's Seat
+        </h3>
+
+        <p>
+          A famous viewpoint surrounded by spectacular
+          tea estates and panoramic mountain scenery.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 07 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/diyaluma-falls.jpg"
+        alt="Diyaluma Falls"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          07 • ELLA
+        </span>
+
+        <h3>
+          Diyaluma Falls
+        </h3>
+
+        <p>
+          One of Sri Lanka's spectacular waterfalls,
+          famous for its natural pools and impressive
+          mountain scenery.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 08 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/demodara-loop.jpg"
+        alt="Demodara Railway Loop"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          08 • ELLA
+        </span>
+
+        <h3>
+          Demodara Railway Loop
+        </h3>
+
+        <p>
+          A unique railway engineering landmark where
+          the railway line makes a remarkable loop through
+          the mountain landscape.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 09 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/ella-spice-garden.jpg"
+        alt="Ella Spice Garden"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          09 • ELLA
+        </span>
+
+        <h3>
+          Ella Spice Garden
+        </h3>
+
+        <p>
+          Discover Sri Lankan spices, herbs and local
+          culinary traditions in a relaxing garden setting.
+        </p>
+
+      </div>
+
+    </article>
+
+
+    <!-- 10 -->
+
+    <article class="destinationLocationCard">
+
+      <img
+        src="images/destinations/ella/halpewatte-tea-factory.jpg"
+        alt="Uva Halpewatte Tea Factory"
+        loading="lazy">
+
+      <div class="destinationLocationContent">
+
+        <span class="destinationLocationNumber">
+          10 • ELLA
+        </span>
+
+        <h3>
+          Uva Halpewatte Tea Factory
+        </h3>
+
+        <p>
+          Experience Sri Lanka's famous tea culture
+          and learn about the production of Ceylon Tea.
+        </p>
+
+      </div>
+
+    </article>
+
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     CTA
+     ========================================================= -->
 
 <section class="destinationCTA">
-  <h2>Explore Ella With Us</h2>
-  <p>Let us create an unforgettable private Sri Lankan experience for you.</p>
-  <br>
-  <a href="https://wa.me/94758453391" class="btn">Plan Your Ella Tour</a>
+
+  <h2>
+    Explore Ella With Us
+  </h2>
+
+  <p>
+    Let us create an unforgettable private Sri Lankan
+    experience for you.
+  </p>
+
+  <a
+    href="https://wa.me/94758453391"
+    class="btn gold">
+
+    Plan Your Ella Tour
+
+  </a>
+
   <br><br>
-  <a href="index.html" class="btn">Back to Home</a>
+
+  <a
+    href="index.html"
+    class="btn outline">
+
+    Back to Home
+
+  </a>
+
 </section>
 
+
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
+
 <footer>
-  <p>© 2026 Travel With Sri Lanka. All Rights Reserved.</p>
+
+  <div class="footerGrid">
+
+    <div>
+
+      <div class="logo footerLogo">
+
+        <small>TRAVEL WITH</small>
+
+        <b>SRI LANKA</b>
+
+      </div>
+
+      <p>
+        Discover Sri Lanka with a local guide
+        and experience the island beyond the ordinary.
+      </p>
+
+    </div>
+
+
+    <div>
+
+      <h3>
+        Contact
+      </h3>
+
+      <p>
+        Sandeep Chiranthaka
+      </p>
+
+      <p>
+        +94 75 845 3391
+      </p>
+
+      <p>
+        sandeepchiranthaka98@gmail.com
+      </p>
+
+    </div>
+
+
+    <div>
+
+      <h3>
+        Quick Links
+      </h3>
+
+      <p>
+        <a href="index.html">
+          Home
+        </a>
+      </p>
+
+      <p>
+        <a href="index.html#destinations">
+          Destinations
+        </a>
+      </p>
+
+      <p>
+        <a href="index.html#contact">
+          Contact
+        </a>
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="footerBottom">
+
+    <span class="copy">
+      © 2026 Travel With Sri Lanka.
+      All Rights Reserved.
+    </span>
+
+  </div>
+
 </footer>
+
+
+<!-- =========================================================
+     WHATSAPP
+     ========================================================= -->
+
+<a
+  href="https://wa.me/94758453391"
+  class="whatsappFloat"
+  aria-label="Contact Travel With Sri Lanka on WhatsApp">
+
+  WhatsApp
+
+</a>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+     ========================================================= -->
+
+<script>
+
+function toggleMenu() {
+
+  const nav = document.getElementById("mainNav");
+
+  nav.classList.toggle("open");
+
+}
+
+
+document.querySelectorAll("#mainNav a").forEach(function(link) {
+
+  link.addEventListener("click", function() {
+
+    document.getElementById("mainNav").classList.remove("open");
+
+  });
+
+});
+
+</script>
+
 
 </body>
 </html>
