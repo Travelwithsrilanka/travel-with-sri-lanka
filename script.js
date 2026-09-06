@@ -1,14 +1,8 @@
 /* =========================================================
    TRAVEL WITH SRI LANKA
-   Main JavaScript + Supabase Reviews
+   Main JavaScript + Supabase
+   Reviews + Dynamic Destinations + Dynamic Tours
    ========================================================= */
-
-
-/* =========================================================
-   TEST - CHECK JAVASCRIPT LOADING
-========================================================= */
-
-
 
 
 /* =========================================================
@@ -52,6 +46,10 @@ document.addEventListener(
     initializePhotoPreview();
 
     initializeReviewForm();
+
+    loadDestinations();
+
+    loadTours();
 
     loadReviews();
 
@@ -404,6 +402,429 @@ function initializePhotoPreview() {
 
 
 /* =========================================================
+   LOAD DESTINATIONS FROM SUPABASE
+========================================================= */
+
+async function loadDestinations() {
+
+  try {
+
+    const result =
+      await supabase
+        .from("destinations")
+        .select(
+          "id, name, slug, image_url"
+        )
+        .order(
+          "sort_order",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (result.error) {
+
+      console.error(
+        "Destination loading error:",
+        result.error
+      );
+
+      return;
+
+    }
+
+
+    const destinations =
+      result.data || [];
+
+
+    if (
+      destinations.length === 0
+    ) {
+
+      return;
+
+    }
+
+
+    destinations.forEach(
+      function (destination) {
+
+        updateDestinationImage(
+          destination
+        );
+
+      }
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Loading destinations failed:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   UPDATE DESTINATION IMAGE
+========================================================= */
+
+function updateDestinationImage(
+  destination
+) {
+
+  if (
+    !destination ||
+    !destination.image_url
+  ) {
+
+    return;
+
+  }
+
+
+  const slug =
+    String(
+      destination.slug ||
+      destination.name ||
+      ""
+    )
+    .toLowerCase()
+    .trim();
+
+
+  if (!slug) {
+
+    return;
+
+  }
+
+
+  const image =
+    findDestinationImage(
+      slug
+    );
+
+
+  if (!image) {
+
+    return;
+
+  }
+
+
+  image.src =
+    destination.image_url;
+
+
+  image.dataset.supabaseImage =
+    "true";
+
+
+  image.removeAttribute(
+    "srcset"
+  );
+
+
+  image.onerror =
+    function () {
+
+      console.warn(
+        "Could not load Supabase image:",
+        destination.image_url
+      );
+
+    };
+
+}
+
+
+/* =========================================================
+   FIND DESTINATION IMAGE
+========================================================= */
+
+function findDestinationImage(
+  slug
+) {
+
+  const images =
+    document.querySelectorAll(
+      "#destinations img"
+    );
+
+
+  for (
+    const image of images
+  ) {
+
+    const src =
+      image.getAttribute(
+        "src"
+      ) || "";
+
+
+    const alt =
+      image.getAttribute(
+        "alt"
+      ) || "";
+
+
+    const combined =
+      (
+        src +
+        " " +
+        alt
+      ).toLowerCase();
+
+
+    if (
+      combined.includes(
+        "/" + slug + "/"
+      ) ||
+      combined.includes(
+        slug + ".jpg"
+      ) ||
+      combined.includes(
+        slug + ".jpeg"
+      ) ||
+      combined.includes(
+        slug + ".png"
+      ) ||
+      combined.includes(
+        slug + ".webp"
+      ) ||
+      alt.toLowerCase().includes(
+        slug
+      )
+    ) {
+
+      return image;
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+/* =========================================================
+   LOAD TOURS FROM SUPABASE
+========================================================= */
+
+async function loadTours() {
+
+  try {
+
+    const result =
+      await supabase
+        .from("tours")
+        .select(
+          "id, name, slug, image_url"
+        )
+        .order(
+          "sort_order",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (result.error) {
+
+      console.error(
+        "Tour loading error:",
+        result.error
+      );
+
+      return;
+
+    }
+
+
+    const tours =
+      result.data || [];
+
+
+    if (
+      tours.length === 0
+    ) {
+
+      return;
+
+    }
+
+
+    tours.forEach(
+      function (tour) {
+
+        updateTourImage(
+          tour
+        );
+
+      }
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Loading tours failed:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   UPDATE TOUR IMAGE
+========================================================= */
+
+function updateTourImage(
+  tour
+) {
+
+  if (
+    !tour ||
+    !tour.image_url
+  ) {
+
+    return;
+
+  }
+
+
+  const slug =
+    String(
+      tour.slug ||
+      tour.name ||
+      ""
+    )
+    .toLowerCase()
+    .trim();
+
+
+  if (!slug) {
+
+    return;
+
+  }
+
+
+  const image =
+    findTourImage(
+      slug
+    );
+
+
+  if (!image) {
+
+    return;
+
+  }
+
+
+  image.src =
+    tour.image_url;
+
+
+  image.dataset.supabaseImage =
+    "true";
+
+
+  image.removeAttribute(
+    "srcset"
+  );
+
+
+  image.onerror =
+    function () {
+
+      console.warn(
+        "Could not load Supabase tour image:",
+        tour.image_url
+      );
+
+    };
+
+}
+
+
+/* =========================================================
+   FIND TOUR IMAGE
+========================================================= */
+
+function findTourImage(
+  slug
+) {
+
+  const images =
+    document.querySelectorAll(
+      "#tours img"
+    );
+
+
+  for (
+    const image of images
+  ) {
+
+    const src =
+      image.getAttribute(
+        "src"
+      ) || "";
+
+
+    const alt =
+      image.getAttribute(
+        "alt"
+      ) || "";
+
+
+    const combined =
+      (
+        src +
+        " " +
+        alt
+      ).toLowerCase();
+
+
+    if (
+      combined.includes(
+        "/" + slug + "."
+      ) ||
+      combined.includes(
+        "/" + slug + "/"
+      ) ||
+      alt.toLowerCase().includes(
+        slug
+      )
+    ) {
+
+      return image;
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+/* =========================================================
    REVIEW FORM
 ========================================================= */
 
@@ -426,13 +847,7 @@ function initializeReviewForm() {
     "submit",
     async function (event) {
 
-      /* IMPORTANT:
-         Prevent normal form submission
-         so page does NOT jump to top.
-      */
-
       event.preventDefault();
-
 
       event.stopPropagation();
 
@@ -499,7 +914,9 @@ function initializeReviewForm() {
 
       const rating =
         ratingInput
-          ? Number(ratingInput.value)
+          ? Number(
+              ratingInput.value
+            )
           : 0;
 
 
@@ -607,10 +1024,6 @@ function initializeReviewForm() {
       }
 
 
-      /* =================================================
-         BUTTON LOADING
-      ================================================= */
-
       if (submitButton) {
 
         submitButton.disabled =
@@ -635,13 +1048,15 @@ function initializeReviewForm() {
 
       try {
 
-        let photoURL = null;
+        let photoURL =
+          null;
 
-        let photoPath = null;
+        let photoPath =
+          null;
 
 
         /* =================================================
-           UPLOAD PHOTO
+           UPLOAD REVIEW PHOTO
         ================================================= */
 
         if (file) {
@@ -729,10 +1144,6 @@ function initializeReviewForm() {
           insertResult.error
         ) {
 
-          /* Remove uploaded photo if
-             database insert fails.
-          */
-
           if (photoPath) {
 
             await supabase
@@ -765,12 +1176,8 @@ function initializeReviewForm() {
         }
 
 
-        /* Reset form */
-
         reviewForm.reset();
 
-
-        /* Reset rating */
 
         if (ratingInput) {
 
@@ -793,8 +1200,6 @@ function initializeReviewForm() {
           });
 
 
-        /* Remove photo preview */
-
         const photoPreview =
           document.getElementById(
             "photoPreview"
@@ -808,8 +1213,6 @@ function initializeReviewForm() {
 
         }
 
-
-        /* Reload reviews */
 
         await loadReviews();
 
