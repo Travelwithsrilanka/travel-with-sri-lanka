@@ -1,1 +1,1 @@
-
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"; const SUPABASE_URL = "https://vbbmnzqrvoceqbwwwsrc.supabase.co"; const SUPABASE_ANON_KEY = "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3"; const supabase = createClient( SUPABASE_URL, SUPABASE_ANON_KEY ); console.log("Admin JS loaded");
