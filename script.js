@@ -274,10 +274,8 @@ async function loadDestinations() {
 
   if (!data) return;
 
-  // Clear old hardcoded destination cards
   container.innerHTML = "";
 
-  // Create cards from Supabase
   data.forEach(destination => {
 
     container.appendChild(
@@ -304,11 +302,13 @@ function createDestinationCard(destination) {
   card.dataset.slug =
     destination.slug || "";
 
+
   const photo =
     document.createElement("div");
 
   photo.className =
     "photo";
+
 
   const image =
     document.createElement("img");
@@ -434,10 +434,8 @@ async function loadTours() {
 
   if (!data) return;
 
-  // Clear old hardcoded tour cards
   container.innerHTML = "";
 
-  // Create cards from Supabase
   data.forEach(tour => {
 
     container.appendChild(
@@ -703,6 +701,20 @@ async function submitReview(event) {
   }
 
 
+  if (rating < 1 || rating > 5) {
+
+    if (status) {
+
+      status.textContent =
+        "Please select a rating between 1 and 5.";
+
+    }
+
+    return;
+
+  }
+
+
   if (submitButton) {
 
     submitButton.disabled =
@@ -806,11 +818,11 @@ async function submitReview(event) {
       .from("reviews")
       .insert({
 
-        name,
+        name: name,
 
-        country,
+        country: country,
 
-        rating,
+        rating: rating,
 
         review_text: reviewText,
 
@@ -825,6 +837,10 @@ async function submitReview(event) {
 
     }
 
+
+    // =====================================================
+    // SUCCESS
+    // =====================================================
 
     if (status) {
 
@@ -867,6 +883,8 @@ async function submitReview(event) {
 
     initStarRating();
 
+
+    // Reload reviews immediately
     await loadReviews();
 
   }
@@ -882,7 +900,7 @@ async function submitReview(event) {
     if (status) {
 
       status.textContent =
-        "Something went wrong. Please try again.";
+        `Error: ${error.message || "Something went wrong."}`;
 
     }
 
@@ -923,6 +941,11 @@ async function loadReviews() {
     `<p class="reviewsLoading">Loading reviews...</p>`;
 
 
+  console.log(
+    "Loading reviews from Supabase..."
+  );
+
+
   const {
     data,
     error
@@ -937,21 +960,36 @@ async function loadReviews() {
     );
 
 
+  // =======================================================
+  // ERROR
+  // =======================================================
+
   if (error) {
 
     console.error(
-      "Reviews load error:",
+      "REVIEWS LOAD ERROR:",
       error
     );
 
 
-    container.innerHTML =
-      `<p class="noReviews">Unable to load reviews.</p>`;
+    container.innerHTML = `
+      <div class="noReviews">
+        <strong>Unable to load reviews.</strong>
+        <p>${escapeHTML(
+          error.message ||
+          "Unknown Supabase error"
+        )}</p>
+      </div>
+    `;
 
     return;
 
   }
 
+
+  // =======================================================
+  // NO DATA
+  // =======================================================
 
   if (!data || data.length === 0) {
 
@@ -961,6 +999,16 @@ async function loadReviews() {
     return;
 
   }
+
+
+  // =======================================================
+  // REVIEWS FOUND
+  // =======================================================
+
+  console.log(
+    "Reviews found:",
+    data
+  );
 
 
   container.innerHTML =
@@ -991,16 +1039,22 @@ function createReviewCard(review) {
     "reviewCard";
 
 
-  const stars =
-    "★".repeat(
-      Math.max(
-        0,
-        Math.min(
-          5,
-          Number(review.rating) || 0
-        )
+  const rating =
+    Math.max(
+      0,
+      Math.min(
+        5,
+        Number(review.rating) || 0
       )
     );
+
+
+  const stars =
+    "★".repeat(rating);
+
+
+  const emptyStars =
+    "☆".repeat(5 - rating);
 
 
   const safeName =
@@ -1021,38 +1075,57 @@ function createReviewCard(review) {
     );
 
 
+  let photoHTML =
+    "";
+
+
+  if (review.photo_url) {
+
+    photoHTML = `
+      <img
+        class="reviewPhoto"
+        src="${escapeAttribute(
+          review.photo_url
+        )}"
+        alt="Traveler review photo"
+        loading="lazy"
+        onerror="this.style.display='none'"
+      >
+    `;
+
+  }
+
+
   card.innerHTML = `
 
-    ${
-      review.photo_url
-        ? `
-          <img
-            class="reviewPhoto"
-            src="${escapeAttribute(review.photo_url)}"
-            alt="Traveler review photo"
-            loading="lazy"
-          >
-        `
-        : ""
-    }
+    ${photoHTML}
 
-    <div>
+    <div class="reviewContent">
 
-      <div class="starRating">
-        ${stars}
+      <div class="starRating reviewStars">
+        <span class="activeStars">
+          ${stars}
+        </span>
+        <span class="emptyStars">
+          ${emptyStars}
+        </span>
       </div>
 
-      <p>
+      <p class="reviewText">
         ${safeText}
       </p>
 
-      <strong>
-        ${safeName}
-      </strong>
+      <div class="reviewAuthor">
 
-      <span>
-        ${safeCountry}
-      </span>
+        <strong>
+          ${safeName}
+        </strong>
+
+        <span>
+          ${safeCountry}
+        </span>
+
+      </div>
 
     </div>
 
