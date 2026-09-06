@@ -1,147 +1,122 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-// =========================================================
-// SUPABASE
-// =========================================================
 
-const SUPABASE_URL = "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+const SUPABASE_URL =
+  "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
 
-const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
+const supabase =
+  createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
     }
-  }
+  );
+
+
+/* =========================================================
+   START
+========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  startAdmin
 );
 
 
-// =========================================================
-// HELPERS
-// =========================================================
-
-function escapeHTML(value) {
-  if (value === null || value === undefined) {
-    return "";
-  }
-
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-
-function showError(message) {
-
-  document.body.innerHTML = `
-    <div style="
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      background:#f4f7f5;
-      font-family:Arial,Helvetica,sans-serif;
-    ">
-
-      <div style="
-        width:100%;
-        max-width:600px;
-        background:white;
-        padding:30px;
-        border-radius:16px;
-        box-shadow:0 5px 25px rgba(0,0,0,.08);
-      ">
-
-        <h2 style="color:#c0392b;">
-          Admin Panel Error
-        </h2>
-
-        <p style="
-          line-height:1.7;
-          color:#555;
-          word-break:break-word;
-        ">
-          ${escapeHTML(message)}
-        </p>
-
-        <button
-          onclick="window.location.href='admin.html'"
-          style="
-            border:0;
-            background:#176b4d;
-            color:white;
-            padding:12px 20px;
-            border-radius:8px;
-            cursor:pointer;
-            font-size:16px;
-          "
-        >
-          Back to Login
-        </button>
-
-      </div>
-    </div>
-  `;
-}
-
-
-// =========================================================
-// SESSION CHECK
-// =========================================================
+/* =========================================================
+   SESSION
+========================================================= */
 
 async function checkSession() {
 
-  try {
+  const {
+    data,
+    error
+  } = await supabase.auth.getSession();
 
-    console.log("Checking admin session...");
 
-    const { data, error } =
-      await supabase.auth.getSession();
+  if (error) {
+    throw error;
+  }
 
-    if (error) {
-      throw error;
-    }
 
-    if (!data || !data.session) {
+  if (!data?.session) {
 
-      console.log("No active session.");
-
-      window.location.replace("admin.html");
-
-      return false;
-    }
-
-    console.log("Admin session found.");
-
-    return true;
-
-  } catch (error) {
-
-    console.error("Session error:", error);
-
-    showError(
-      "Unable to check login session.\n\n" +
-      error.message
+    window.location.replace(
+      "admin.html"
     );
 
     return false;
+
   }
+
+
+  return true;
+
 }
 
 
-// =========================================================
-// DASHBOARD HTML
-// =========================================================
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+async function startAdmin() {
+
+  try {
+
+    const loggedIn =
+      await checkSession();
+
+
+    if (!loggedIn) {
+      return;
+    }
+
+
+    createDashboard();
+
+    setupEvents();
+
+    await Promise.all([
+      loadDestinations(),
+      loadTours()
+    ]);
+
+
+  } catch (error) {
+
+    console.error(
+      "Admin start error:",
+      error
+    );
+
+    showError(
+      error?.message ||
+      "Unable to load administrator dashboard."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   DASHBOARD HTML
+========================================================= */
 
 function createDashboard() {
 
@@ -151,19 +126,41 @@ function createDashboard() {
 
       <header class="adminHeader">
 
-        <div>
-          <h1>Travel With Sri Lanka</h1>
-          <p>Website Content Management</p>
+        <div class="brand">
+          <div class="brandMark">TWS</div>
+
+          <div>
+            <h1>Travel With Sri Lanka</h1>
+            <p>Website Content Management</p>
+          </div>
         </div>
 
-        <button id="logoutBtn" class="logoutBtn">
-          Logout
-        </button>
+        <div class="headerActions">
+
+          <a
+            href="index.html"
+            target="_blank"
+            class="viewBtn"
+          >
+            View Website ↗
+          </a>
+
+          <button
+            id="logoutBtn"
+            class="logoutBtn"
+          >
+            Logout
+          </button>
+
+        </div>
 
       </header>
 
 
-      <div id="message" class="message"></div>
+      <div
+        id="message"
+        class="message"
+      ></div>
 
 
       <!-- DESTINATIONS -->
@@ -173,10 +170,14 @@ function createDashboard() {
         <div class="sectionHeader">
 
           <div>
+            <span class="sectionTag">
+              WEBSITE CONTENT
+            </span>
+
             <h2>Destinations</h2>
 
             <p>
-              Manage destination information and photos.
+              Add, edit, delete and update destination photos.
             </p>
           </div>
 
@@ -206,10 +207,14 @@ function createDashboard() {
         <div class="sectionHeader">
 
           <div>
+            <span class="sectionTag">
+              WEBSITE CONTENT
+            </span>
+
             <h2>Tours</h2>
 
             <p>
-              Manage tour information and photos.
+              Add, edit, delete and update tour information.
             </p>
           </div>
 
@@ -232,18 +237,63 @@ function createDashboard() {
       </section>
 
 
+      <!-- REVIEWS -->
+
+      <section class="adminSection">
+
+        <div class="sectionHeader">
+
+          <div>
+            <span class="sectionTag">
+              CUSTOMER CONTENT
+            </span>
+
+            <h2>Traveler Reviews</h2>
+
+            <p>
+              Customer reviews submitted from the website.
+            </p>
+          </div>
+
+          <button
+            id="refreshReviewsBtn"
+            class="secondaryBtn"
+          >
+            ↻ Refresh
+          </button>
+
+        </div>
+
+        <div
+          id="reviewsList"
+          class="reviewAdminGrid"
+        >
+          <p>Loading reviews...</p>
+        </div>
+
+      </section>
+
+
       <!-- MODAL -->
 
-      <div id="contentModal" class="modal">
+      <div
+        id="contentModal"
+        class="modal"
+      >
 
         <div class="modalBox">
 
           <button
             id="closeModal"
             class="closeBtn"
+            type="button"
           >
             ×
           </button>
+
+          <span class="sectionTag">
+            CONTENT EDITOR
+          </span>
 
           <h2 id="modalTitle">
             Add Content
@@ -262,35 +312,45 @@ function createDashboard() {
               id="contentType"
             >
 
-
-            <label>Name / Title</label>
+            <label for="contentName">
+              Name / Title
+            </label>
 
             <input
               type="text"
               id="contentName"
               required
+              maxlength="150"
             >
 
 
-            <label>Slug</label>
+            <label for="contentSlug">
+              Slug
+            </label>
 
             <input
               type="text"
               id="contentSlug"
               required
+              maxlength="100"
               placeholder="ella"
             >
 
 
-            <label>Description</label>
+            <label for="contentDescription">
+              Description
+            </label>
 
             <textarea
               id="contentDescription"
               rows="5"
+              maxlength="1000"
             ></textarea>
 
 
-            <label>Page URL</label>
+            <label for="contentPageUrl">
+              Page URL
+            </label>
 
             <input
               type="text"
@@ -299,7 +359,9 @@ function createDashboard() {
             >
 
 
-            <label>Current Image</label>
+            <label>
+              Current Image
+            </label>
 
             <div
               id="currentImage"
@@ -309,22 +371,31 @@ function createDashboard() {
             </div>
 
 
-            <label>Upload New Image</label>
+            <label for="contentImage">
+              Upload New Image
+            </label>
 
             <input
               type="file"
               id="contentImage"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif"
             >
 
+            <small class="uploadHelp">
+              Maximum recommended size: 5 MB
+            </small>
 
-            <label>Sort Order</label>
+
+            <label for="contentSortOrder">
+              Sort Order
+            </label>
 
             <input
               type="number"
               id="contentSortOrder"
               value="1"
               min="0"
+              max="999"
             >
 
 
@@ -352,57 +423,109 @@ function createDashboard() {
 
       body {
         margin:0;
-        font-family:Arial,Helvetica,sans-serif;
+        font-family:
+          Arial,
+          Helvetica,
+          sans-serif;
         background:#f4f7f5;
         color:#17221d;
       }
 
+      button,
+      input,
+      textarea {
+        font:inherit;
+      }
+
+      button {
+        cursor:pointer;
+      }
+
       .adminWrapper {
-        max-width:1200px;
+        max-width:1250px;
         margin:auto;
-        padding:30px 20px 80px;
+        padding:25px 20px 80px;
       }
 
       .adminHeader {
         display:flex;
-        justify-content:space-between;
         align-items:center;
+        justify-content:space-between;
         gap:20px;
-        background:white;
-        padding:25px;
-        border-radius:16px;
-        box-shadow:0 5px 25px rgba(0,0,0,.07);
+        padding:22px 25px;
         margin-bottom:25px;
+        background:#10251d;
+        color:white;
+        border-radius:16px;
+        box-shadow:
+          0 15px 45px rgba(16,37,29,.15);
+      }
+
+      .brand {
+        display:flex;
+        align-items:center;
+        gap:14px;
+      }
+
+      .brandMark {
+        width:52px;
+        height:52px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:50%;
+        background:#c9a85b;
+        color:#10251d;
+        font-weight:900;
+        font-size:13px;
       }
 
       .adminHeader h1 {
-        margin:0 0 5px;
+        margin:0 0 4px;
+        font-family:Georgia,serif;
+        font-size:22px;
       }
 
       .adminHeader p {
         margin:0;
-        color:#68736d;
+        color:#b8c5bd;
+        font-size:12px;
       }
 
-      button {
-        border:0;
-        cursor:pointer;
-        font:inherit;
+      .headerActions {
+        display:flex;
+        gap:9px;
+        align-items:center;
+      }
+
+      .viewBtn,
+      .logoutBtn {
+        padding:10px 15px;
+        border-radius:7px;
+        font-size:12px;
+        font-weight:bold;
+      }
+
+      .viewBtn {
+        background:#c9a85b;
+        color:#10251d;
+        text-decoration:none;
       }
 
       .logoutBtn {
-        background:#222;
+        border:1px solid rgba(255,255,255,.15);
+        background:#1c3027;
         color:white;
-        padding:11px 20px;
-        border-radius:8px;
       }
 
       .adminSection {
+        margin-bottom:28px;
+        padding:28px;
         background:white;
-        padding:25px;
-        border-radius:16px;
-        margin-bottom:30px;
-        box-shadow:0 5px 25px rgba(0,0,0,.06);
+        border:1px solid #e0e7e3;
+        border-radius:15px;
+        box-shadow:
+          0 8px 30px rgba(16,37,29,.05);
       }
 
       .sectionHeader {
@@ -413,21 +536,46 @@ function createDashboard() {
         margin-bottom:25px;
       }
 
+      .sectionTag {
+        display:block;
+        margin-bottom:6px;
+        color:#b08c3b;
+        font-size:9px;
+        font-weight:900;
+        letter-spacing:2px;
+      }
+
       .sectionHeader h2 {
         margin:0 0 5px;
+        font-family:Georgia,serif;
+        font-size:27px;
       }
 
       .sectionHeader p {
         margin:0;
-        color:#68736d;
+        color:#718078;
+        font-size:12px;
+      }
+
+      .primaryBtn,
+      .secondaryBtn {
+        padding:12px 17px;
+        border-radius:7px;
+        font-size:12px;
+        font-weight:800;
+        white-space:nowrap;
       }
 
       .primaryBtn {
+        border:0;
         background:#176b4d;
         color:white;
-        padding:12px 18px;
-        border-radius:8px;
-        white-space:nowrap;
+      }
+
+      .secondaryBtn {
+        border:1px solid #d7dfda;
+        background:white;
+        color:#176b4d;
       }
 
       .contentGrid {
@@ -438,18 +586,18 @@ function createDashboard() {
       }
 
       .contentCard {
-        border:1px solid #e1e7e3;
-        border-radius:12px;
         overflow:hidden;
+        border:1px solid #e1e7e3;
+        border-radius:11px;
         background:white;
       }
 
       .contentImage {
         width:100%;
         height:190px;
-        object-fit:cover;
-        background:#e8ecea;
         display:block;
+        object-fit:cover;
+        background:#e9eeeb;
       }
 
       .contentBody {
@@ -457,27 +605,39 @@ function createDashboard() {
       }
 
       .contentBody h3 {
-        margin:0 0 8px;
+        margin:0 0 7px;
+        font-family:Georgia,serif;
+        font-size:20px;
+      }
+
+      .slug {
+        color:#9a7740;
+        font-size:10px;
+        font-weight:bold;
       }
 
       .contentBody p {
+        min-height:60px;
+        margin:12px 0;
         color:#68736d;
-        font-size:14px;
-        line-height:1.6;
+        font-size:12px;
+        line-height:1.7;
       }
 
       .cardActions {
         display:flex;
-        gap:10px;
-        margin-top:15px;
+        gap:8px;
       }
 
       .editBtn,
       .deleteBtn {
         flex:1;
-        color:white;
         padding:10px;
-        border-radius:7px;
+        border:0;
+        border-radius:6px;
+        color:white;
+        font-size:11px;
+        font-weight:bold;
       }
 
       .editBtn {
@@ -485,56 +645,117 @@ function createDashboard() {
       }
 
       .deleteBtn {
-        background:#c0392b;
+        background:#b73b31;
       }
 
       .message {
         display:none;
-        padding:13px 16px;
         margin-bottom:20px;
+        padding:13px 16px;
         border-radius:8px;
-        background:#e8f5ee;
+        background:#e7f5ed;
         color:#176b4d;
+        font-size:13px;
+        font-weight:bold;
+      }
+
+      .reviewAdminGrid {
+        display:grid;
+        grid-template-columns:
+          repeat(auto-fit,minmax(280px,1fr));
+        gap:18px;
+      }
+
+      .reviewAdminCard {
+        overflow:hidden;
+        border:1px solid #e1e7e3;
+        border-radius:10px;
+        background:#fafbf9;
+      }
+
+      .reviewAdminPhoto {
+        width:100%;
+        height:180px;
+        object-fit:cover;
+      }
+
+      .reviewAdminBody {
+        padding:18px;
+      }
+
+      .reviewAdminStars {
+        margin-bottom:8px;
+        color:#c9a85b;
+        letter-spacing:2px;
+      }
+
+      .reviewAdminText {
+        margin:0 0 15px;
+        color:#59645e;
+        font-size:12px;
+        line-height:1.7;
+      }
+
+      .reviewAdminAuthor {
+        padding-top:12px;
+        border-top:1px solid #e2e5e2;
+      }
+
+      .reviewAdminAuthor strong {
+        display:block;
+        font-size:12px;
+      }
+
+      .reviewAdminAuthor span {
+        color:#89928d;
+        font-size:10px;
       }
 
       .modal {
         display:none;
         position:fixed;
         inset:0;
-        background:rgba(0,0,0,.55);
         z-index:9999;
         padding:20px;
         overflow-y:auto;
+        background:rgba(0,0,0,.62);
       }
 
       .modalBox {
         position:relative;
-        max-width:600px;
-        margin:40px auto;
-        background:white;
+        width:100%;
+        max-width:620px;
+        margin:30px auto;
         padding:30px;
         border-radius:15px;
+        background:white;
+        box-shadow:
+          0 30px 80px rgba(0,0,0,.2);
       }
 
       .closeBtn {
         position:absolute;
-        right:15px;
-        top:10px;
+        top:12px;
+        right:12px;
         width:35px;
         height:35px;
+        border:0;
         border-radius:50%;
-        background:#eee;
-        font-size:25px;
+        background:#eef1ef;
+        color:#333;
+        font-size:24px;
       }
 
       .modalBox h2 {
-        margin-top:0;
+        margin:0 0 25px;
+        font-family:Georgia,serif;
       }
 
       .modalBox label {
         display:block;
-        margin:18px 0 7px;
-        font-weight:bold;
+        margin:17px 0 7px;
+        font-size:12px;
+        font-weight:800;
       }
 
       .modalBox input,
@@ -543,115 +764,128 @@ function createDashboard() {
         padding:12px;
         border:1px solid #d8dfdb;
         border-radius:7px;
-        font:inherit;
+        outline:none;
       }
 
-      .modalBox textarea {
-        resize:vertical;
+      .modalBox input:focus,
+      .modalBox textarea:focus {
+        border-color:#176b4d;
       }
 
       .currentImage img {
         width:100%;
-        max-height:220px;
+        max-height:230px;
         object-fit:cover;
         border-radius:8px;
+      }
+
+      .uploadHelp {
+        display:block;
+        margin-top:5px;
+        color:#89928d;
+        font-size:10px;
       }
 
       .saveBtn {
         width:100%;
         margin-top:25px;
         padding:14px;
+        border:0;
+        border-radius:7px;
         background:#176b4d;
         color:white;
-        border-radius:8px;
         font-weight:bold;
       }
 
       .saveBtn:disabled {
         opacity:.6;
-        cursor:not-allowed;
       }
 
-      @media(max-width:600px) {
+      @media(max-width:700px) {
 
         .adminWrapper {
-          padding:15px 10px 50px;
+          padding:12px 10px 50px;
         }
 
         .adminHeader {
-          flex-direction:column;
           align-items:stretch;
+          flex-direction:column;
+        }
+
+        .headerActions {
+          width:100%;
+        }
+
+        .viewBtn,
+        .logoutBtn {
+          flex:1;
+          text-align:center;
         }
 
         .sectionHeader {
-          flex-direction:column;
           align-items:stretch;
+          flex-direction:column;
         }
 
-        .primaryBtn {
+        .primaryBtn,
+        .secondaryBtn {
           width:100%;
         }
 
         .adminSection {
-          padding:18px;
+          padding:20px 16px;
         }
 
       }
 
     </style>
   `;
+
 }
 
 
-// =========================================================
-// MESSAGE
-// =========================================================
-
-function showMessage(text) {
-
-  const message =
-    document.getElementById("message");
-
-  if (!message) return;
-
-  message.textContent = text;
-  message.style.display = "block";
-
-  setTimeout(() => {
-    message.style.display = "none";
-  }, 3500);
-}
-
-
-// =========================================================
-// LOAD DESTINATIONS
-// =========================================================
+/* =========================================================
+   DESTINATIONS
+========================================================= */
 
 async function loadDestinations() {
 
   const container =
-    document.getElementById("destinationsList");
+    document.getElementById(
+      "destinationsList"
+    );
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
+
 
   container.innerHTML =
     "<p>Loading destinations...</p>";
 
+
   try {
 
-    const { data, error } =
-      await supabase
-        .from("destinations")
-        .select("*")
-        .order("sort_order", {
+    const {
+      data,
+      error
+    } = await supabase
+      .from("destinations")
+      .select("*")
+      .order(
+        "sort_order",
+        {
           ascending:true
-        });
+        }
+      );
+
 
     if (error) {
       throw error;
     }
 
-    if (!data || data.length === 0) {
+
+    if (!data?.length) {
 
       container.innerHTML =
         "<p>No destinations found.</p>";
@@ -659,78 +893,28 @@ async function loadDestinations() {
       return;
     }
 
+
     container.innerHTML = "";
 
-    data.forEach(destination => {
 
-      const card =
-        document.createElement("div");
+    data.forEach(
+      destination => {
 
-      card.className = "contentCard";
+        const card =
+          createContentCard(
+            destination,
+            "destination"
+          );
 
-      const image = destination.image_url
-        ? `
-          <img
-            src="${escapeHTML(destination.image_url)}"
-            class="contentImage"
-            alt="${escapeHTML(destination.name)}"
-          >
-        `
-        : `
-          <div class="contentImage"></div>
-        `;
+        container.appendChild(card);
 
-      card.innerHTML = `
+      }
+    );
 
-        ${image}
-
-        <div class="contentBody">
-
-          <h3>
-            ${escapeHTML(destination.name)}
-          </h3>
-
-          <p>
-            ${escapeHTML(
-              destination.description || ""
-            )}
-          </p>
-
-          <div class="cardActions">
-
-            <button
-              class="editBtn"
-              data-id="${destination.id}"
-              data-type="destination"
-            >
-              Edit
-            </button>
-
-            <button
-              class="deleteBtn"
-              data-id="${destination.id}"
-              data-type="destination"
-            >
-              Delete
-            </button>
-
-          </div>
-
-        </div>
-      `;
-
-      container.appendChild(card);
-
-    });
-
-    attachCardButtons();
 
   } catch (error) {
 
-    console.error(
-      "Destination loading error:",
-      error
-    );
+    console.error(error);
 
     container.innerHTML = `
       <p>
@@ -739,39 +923,54 @@ async function loadDestinations() {
         ${escapeHTML(error.message)}
       </p>
     `;
+
   }
+
 }
 
 
-// =========================================================
-// LOAD TOURS
-// =========================================================
+/* =========================================================
+   TOURS
+========================================================= */
 
 async function loadTours() {
 
   const container =
-    document.getElementById("toursList");
+    document.getElementById(
+      "toursList"
+    );
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
+
 
   container.innerHTML =
     "<p>Loading tours...</p>";
 
+
   try {
 
-    const { data, error } =
-      await supabase
-        .from("tours")
-        .select("*")
-        .order("sort_order", {
+    const {
+      data,
+      error
+    } = await supabase
+      .from("tours")
+      .select("*")
+      .order(
+        "sort_order",
+        {
           ascending:true
-        });
+        }
+      );
+
 
     if (error) {
       throw error;
     }
 
-    if (!data || data.length === 0) {
+
+    if (!data?.length) {
 
       container.innerHTML =
         "<p>No tours found.</p>";
@@ -779,78 +978,28 @@ async function loadTours() {
       return;
     }
 
+
     container.innerHTML = "";
 
-    data.forEach(tour => {
 
-      const card =
-        document.createElement("div");
+    data.forEach(
+      tour => {
 
-      card.className = "contentCard";
+        const card =
+          createContentCard(
+            tour,
+            "tour"
+          );
 
-      const image = tour.image_url
-        ? `
-          <img
-            src="${escapeHTML(tour.image_url)}"
-            class="contentImage"
-            alt="${escapeHTML(tour.title)}"
-          >
-        `
-        : `
-          <div class="contentImage"></div>
-        `;
+        container.appendChild(card);
 
-      card.innerHTML = `
+      }
+    );
 
-        ${image}
-
-        <div class="contentBody">
-
-          <h3>
-            ${escapeHTML(tour.title)}
-          </h3>
-
-          <p>
-            ${escapeHTML(
-              tour.description || ""
-            )}
-          </p>
-
-          <div class="cardActions">
-
-            <button
-              class="editBtn"
-              data-id="${tour.id}"
-              data-type="tour"
-            >
-              Edit
-            </button>
-
-            <button
-              class="deleteBtn"
-              data-id="${tour.id}"
-              data-type="tour"
-            >
-              Delete
-            </button>
-
-          </div>
-
-        </div>
-      `;
-
-      container.appendChild(card);
-
-    });
-
-    attachCardButtons();
 
   } catch (error) {
 
-    console.error(
-      "Tour loading error:",
-      error
-    );
+    console.error(error);
 
     container.innerHTML = `
       <p>
@@ -859,60 +1008,425 @@ async function loadTours() {
         ${escapeHTML(error.message)}
       </p>
     `;
+
   }
+
 }
 
 
-// =========================================================
-// CARD BUTTONS
-// =========================================================
+/* =========================================================
+   CONTENT CARD
+========================================================= */
 
-function attachCardButtons() {
+function createContentCard(
+  item,
+  type
+) {
 
-  document
-    .querySelectorAll(".editBtn")
-    .forEach(button => {
+  const card =
+    document.createElement(
+      "div"
+    );
 
-      button.addEventListener(
-        "click",
-        () => {
-          openEditModal(
-            button.dataset.id,
-            button.dataset.type
-          );
-        }
-      );
-
-    });
+  card.className =
+    "contentCard";
 
 
-  document
-    .querySelectorAll(".deleteBtn")
-    .forEach(button => {
+  const image =
+    item.image_url
+      ? `<img
+          src="${escapeAttribute(item.image_url)}"
+          class="contentImage"
+          alt="${escapeAttribute(
+            type === "tour"
+              ? item.title || "Tour"
+              : item.name || "Destination"
+          )}"
+        >`
+      : `<div class="contentImage"></div>`;
 
-      button.addEventListener(
-        "click",
-        () => {
-          deleteContent(
-            button.dataset.id,
-            button.dataset.type
-          );
-        }
-      );
 
-    });
+  const title =
+    type === "tour"
+      ? item.title
+      : item.name;
+
+
+  card.innerHTML = `
+
+    ${image}
+
+    <div class="contentBody">
+
+      <h3>
+        ${escapeHTML(title || "")}
+      </h3>
+
+      <span class="slug">
+        /${escapeHTML(item.slug || "")}
+      </span>
+
+      <p>
+        ${escapeHTML(
+          item.description || ""
+        )}
+      </p>
+
+      <div class="cardActions">
+
+        <button
+          class="editBtn"
+          data-id="${escapeAttribute(item.id)}"
+          data-type="${type}"
+        >
+          Edit
+        </button>
+
+        <button
+          class="deleteBtn"
+          data-id="${escapeAttribute(item.id)}"
+          data-type="${type}"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+
+  return card;
+
 }
 
 
-// =========================================================
-// ADD MODAL
-// =========================================================
+/* =========================================================
+   REVIEWS
+========================================================= */
 
-function openAddModal(type) {
+async function loadReviews() {
 
-  document.getElementById(
-    "contentModal"
-  ).style.display = "block";
+  const container =
+    document.getElementById(
+      "reviewsList"
+    );
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    "<p>Loading reviews...</p>";
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("reviews")
+      .select(
+        "id,name,country,rating,review,photo_path"
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (!data?.length) {
+
+      container.innerHTML =
+        "<p>No reviews found.</p>";
+
+      return;
+    }
+
+
+    container.innerHTML = "";
+
+
+    data.forEach(
+      review => {
+
+        container.appendChild(
+          createAdminReviewCard(
+            review
+          )
+        );
+
+      }
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Review admin error:",
+      error
+    );
+
+
+    container.innerHTML = `
+      <p>
+        Failed to load reviews.
+        <br><br>
+        ${escapeHTML(error.message)}
+      </p>
+    `;
+
+  }
+
+}
+
+
+/* =========================================================
+   REVIEW ADMIN CARD
+========================================================= */
+
+function createAdminReviewCard(
+  review
+) {
+
+  const card =
+    document.createElement(
+      "article"
+    );
+
+  card.className =
+    "reviewAdminCard";
+
+
+  let photoHTML = "";
+
+
+  if (review.photo_path) {
+
+    const {
+      data
+    } = supabase
+      .storage
+      .from("review-photos")
+      .getPublicUrl(
+        review.photo_path
+      );
+
+
+    if (data?.publicUrl) {
+
+      photoHTML = `
+        <img
+          class="reviewAdminPhoto"
+          src="${escapeAttribute(data.publicUrl)}"
+          alt="Traveler photo"
+        >
+      `;
+
+    }
+
+  }
+
+
+  const rating =
+    Math.max(
+      1,
+      Math.min(
+        5,
+        Number(review.rating) || 5
+      )
+    );
+
+
+  card.innerHTML = `
+
+    ${photoHTML}
+
+    <div class="reviewAdminBody">
+
+      <div class="reviewAdminStars">
+        ${"★".repeat(rating)}
+        ${"☆".repeat(5 - rating)}
+      </div>
+
+      <p class="reviewAdminText">
+        ${escapeHTML(review.review || "")}
+      </p>
+
+      <div class="reviewAdminAuthor">
+
+        <strong>
+          ${escapeHTML(review.name || "Traveler")}
+        </strong>
+
+        <span>
+          ${escapeHTML(review.country || "")}
+        </span>
+
+      </div>
+
+    </div>
+  `;
+
+
+  return card;
+
+}
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+function setupEvents() {
+
+  document
+    .getElementById(
+      "closeModal"
+    )
+    ?.addEventListener(
+      "click",
+      closeModal
+    );
+
+
+  document
+    .getElementById(
+      "contentForm"
+    )
+    ?.addEventListener(
+      "submit",
+      saveContent
+    );
+
+
+  document
+    .getElementById(
+      "addDestinationBtn"
+    )
+    ?.addEventListener(
+      "click",
+      () =>
+        openAddModal(
+          "destination"
+        )
+    );
+
+
+  document
+    .getElementById(
+      "addTourBtn"
+    )
+    ?.addEventListener(
+      "click",
+      () =>
+        openAddModal(
+          "tour"
+        )
+    );
+
+
+  document
+    .getElementById(
+      "refreshReviewsBtn"
+    )
+    ?.addEventListener(
+      "click",
+      loadReviews
+    );
+
+
+  document
+    .getElementById(
+      "logoutBtn"
+    )
+    ?.addEventListener(
+      "click",
+      logout
+    );
+
+
+  document.addEventListener(
+    "click",
+    event => {
+
+      const edit =
+        event.target.closest(
+          ".editBtn"
+        );
+
+      const del =
+        event.target.closest(
+          ".deleteBtn"
+        );
+
+
+      if (edit) {
+
+        openEditModal(
+          edit.dataset.id,
+          edit.dataset.type
+        );
+
+      }
+
+
+      if (del) {
+
+        deleteContent(
+          del.dataset.id,
+          del.dataset.type
+        );
+
+      }
+
+    }
+  );
+
+
+  window.addEventListener(
+    "click",
+    event => {
+
+      const modal =
+        document.getElementById(
+          "contentModal"
+        );
+
+
+      if (
+        event.target === modal
+      ) {
+
+        closeModal();
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   ADD MODAL
+========================================================= */
+
+function openAddModal(
+  type
+) {
+
+  const modal =
+    document.getElementById(
+      "contentModal"
+    );
+
+  modal.style.display =
+    "block";
+
 
   document.getElementById(
     "modalTitle"
@@ -921,50 +1435,64 @@ function openAddModal(type) {
       ? "Add Destination"
       : "Add Tour";
 
+
   document.getElementById(
     "contentId"
   ).value = "";
 
+
   document.getElementById(
     "contentType"
-  ).value = type;
+  ).value =
+    type;
+
 
   document.getElementById(
     "contentName"
   ).value = "";
 
+
   document.getElementById(
     "contentSlug"
   ).value = "";
+
 
   document.getElementById(
     "contentDescription"
   ).value = "";
 
+
   document.getElementById(
     "contentPageUrl"
   ).value = "";
+
 
   document.getElementById(
     "contentSortOrder"
   ).value = "1";
 
+
   document.getElementById(
     "contentImage"
   ).value = "";
+
 
   document.getElementById(
     "currentImage"
   ).innerHTML =
     "<p>No image selected.</p>";
+
 }
 
 
-// =========================================================
-// EDIT MODAL
-// =========================================================
+/* =========================================================
+   EDIT MODAL
+========================================================= */
 
-async function openEditModal(id, type) {
+async function openEditModal(
+  id,
+  type
+) {
 
   try {
 
@@ -973,20 +1501,27 @@ async function openEditModal(id, type) {
         ? "destinations"
         : "tours";
 
-    const { data, error } =
-      await supabase
-        .from(table)
-        .select("*")
-        .eq("id", id)
-        .single();
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from(table)
+      .select("*")
+      .eq("id", id)
+      .single();
+
 
     if (error) {
       throw error;
     }
 
+
     document.getElementById(
       "contentModal"
-    ).style.display = "block";
+    ).style.display =
+      "block";
+
 
     document.getElementById(
       "modalTitle"
@@ -995,54 +1530,67 @@ async function openEditModal(id, type) {
         ? "Edit Destination"
         : "Edit Tour";
 
+
     document.getElementById(
       "contentId"
-    ).value = data.id;
+    ).value =
+      data.id;
+
 
     document.getElementById(
       "contentType"
-    ).value = type;
+    ).value =
+      type;
+
 
     document.getElementById(
       "contentName"
     ).value =
       type === "destination"
-        ? data.name
-        : data.title;
+        ? data.name || ""
+        : data.title || "";
+
 
     document.getElementById(
       "contentSlug"
-    ).value = data.slug || "";
+    ).value =
+      data.slug || "";
+
 
     document.getElementById(
       "contentDescription"
     ).value =
       data.description || "";
 
+
     document.getElementById(
       "contentPageUrl"
     ).value =
       data.page_url || "";
 
+
     document.getElementById(
       "contentSortOrder"
     ).value =
-      data.sort_order || 0;
+      data.sort_order ?? 0;
+
 
     document.getElementById(
       "contentImage"
     ).value = "";
+
 
     const currentImage =
       document.getElementById(
         "currentImage"
       );
 
+
     if (data.image_url) {
 
       currentImage.innerHTML = `
         <img
-          src="${escapeHTML(data.image_url)}"
+          src="${escapeAttribute(data.image_url)}"
           alt="Current image"
         >
       `;
@@ -1054,6 +1602,7 @@ async function openEditModal(id, type) {
 
     }
 
+
   } catch (error) {
 
     console.error(error);
@@ -1062,13 +1611,15 @@ async function openEditModal(id, type) {
       "Failed to load content:\n\n" +
       error.message
     );
+
   }
+
 }
 
 
-// =========================================================
-// CLOSE MODAL
-// =========================================================
+/* =========================================================
+   CLOSE MODAL
+========================================================= */
 
 function closeModal() {
 
@@ -1078,14 +1629,16 @@ function closeModal() {
     );
 
   if (modal) {
-    modal.style.display = "none";
+    modal.style.display =
+      "none";
   }
+
 }
 
 
-// =========================================================
-// UPLOAD IMAGE
-// =========================================================
+/* =========================================================
+   UPLOAD IMAGE
+========================================================= */
 
 async function uploadImage(
   file,
@@ -1097,45 +1650,85 @@ async function uploadImage(
     return null;
   }
 
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif"
+  ];
+
+
+  if (
+    !allowedTypes.includes(
+      file.type
+    )
+  ) {
+
+    throw new Error(
+      "Please upload JPG, PNG, WEBP or GIF images only."
+    );
+
+  }
+
+
+  if (
+    file.size >
+    5 * 1024 * 1024
+  ) {
+
+    throw new Error(
+      "Image must be smaller than 5 MB."
+    );
+
+  }
+
+
   const extension =
-    file.name
-      .split(".")
-      .pop()
-      .toLowerCase();
+    getSafeExtension(
+      file.name
+    );
+
 
   const safeSlug =
-    slug
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-");
+    createSafeSlug(
+      slug
+    );
+
 
   const fileName =
-    `${safeSlug}-${Date.now()}.${extension}`;
+    `${safeSlug || type}-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2,8)}.${extension}`;
+
 
   const folder =
     type === "destination"
       ? `destinations/${safeSlug}`
       : `tours/${safeSlug}`;
 
+
   const filePath =
     `${folder}/${fileName}`;
 
 
-  const { error } =
-    await supabase
-      .storage
-      .from("site-images")
-      .upload(
-        filePath,
-        file,
-        {
-          cacheControl:"3600",
-          upsert:false,
-          contentType:file.type
-        }
-      );
+  const {
+    error
+  } = await supabase
+    .storage
+    .from("site-images")
+    .upload(
+      filePath,
+      file,
+      {
+        cacheControl:"3600",
+        upsert:false,
+        contentType:file.type
+      }
+    );
+
 
   if (error) {
-
     throw new Error(
       "Image upload failed: " +
       error.message
@@ -1143,65 +1736,81 @@ async function uploadImage(
   }
 
 
-  const { data } =
-    supabase
-      .storage
-      .from("site-images")
-      .getPublicUrl(filePath);
+  const {
+    data
+  } = supabase
+    .storage
+    .from("site-images")
+    .getPublicUrl(
+      filePath
+    );
 
-  return data.publicUrl;
+
+  return data?.publicUrl || null;
+
 }
 
 
-// =========================================================
-// SAVE CONTENT
-// =========================================================
+/* =========================================================
+   SAVE CONTENT
+========================================================= */
 
-async function saveContent(event) {
+async function saveContent(
+  event
+) {
 
   event.preventDefault();
+
 
   const id =
     document.getElementById(
       "contentId"
-    ).value;
+    ).value.trim();
+
 
   const type =
     document.getElementById(
       "contentType"
     ).value;
 
+
   const name =
     document.getElementById(
       "contentName"
     ).value.trim();
+
 
   const slug =
     document.getElementById(
       "contentSlug"
     ).value.trim();
 
+
   const description =
     document.getElementById(
       "contentDescription"
     ).value.trim();
+
 
   const pageUrl =
     document.getElementById(
       "contentPageUrl"
     ).value.trim();
 
+
   const sortOrder =
     Number(
       document.getElementById(
         "contentSortOrder"
       ).value
-    );
+    ) || 0;
+
 
   const file =
     document.getElementById(
       "contentImage"
-    ).files[0];
+    ).files?.[0] || null;
+
 
   const saveBtn =
     document.querySelector(
@@ -1209,13 +1818,26 @@ async function saveContent(event) {
     );
 
 
+  if (!name || !slug) {
+
+    alert(
+      "Name and slug are required."
+    );
+
+    return;
+
+  }
+
+
   saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
+  saveBtn.textContent =
+    "Saving...";
 
 
   try {
 
     let imageUrl = null;
+
 
     if (file) {
 
@@ -1225,6 +1847,7 @@ async function saveContent(event) {
           type,
           slug
         );
+
     }
 
 
@@ -1234,89 +1857,88 @@ async function saveContent(event) {
         : "tours";
 
 
-    let dataToSave;
+    const dataToSave =
+      type === "destination"
+        ? {
+            name,
+            slug,
+            description,
+            image_url:
+              imageUrl || undefined,
+            page_url:
+              pageUrl || null,
+            sort_order:
+              sortOrder
+          }
+        : {
+            title: name,
+            slug,
+            description,
+            image_url:
+              imageUrl || undefined,
+            page_url:
+              pageUrl || null,
+            sort_order:
+              sortOrder
+          };
 
 
-    if (type === "destination") {
+    if (!imageUrl) {
 
-      dataToSave = {
+      delete dataToSave.image_url;
 
-        name:name,
-
-        slug:slug,
-
-        description:description,
-
-        page_url:pageUrl,
-
-        sort_order:sortOrder
-      };
-
-    } else {
-
-      dataToSave = {
-
-        title:name,
-
-        slug:slug,
-
-        description:description,
-
-        sort_order:sortOrder
-      };
-    }
-
-
-    if (imageUrl) {
-
-      dataToSave.image_url =
-        imageUrl;
     }
 
 
     if (id) {
 
-      const { error } =
-        await supabase
-          .from(table)
-          .update({
-            ...dataToSave,
-            updated_at:
-              new Date().toISOString()
-          })
-          .eq("id", id);
+      const {
+        error
+      } = await supabase
+        .from(table)
+        .update(dataToSave)
+        .eq("id", id);
+
 
       if (error) {
         throw error;
       }
+
 
       showMessage(
         "Content updated successfully."
       );
 
+
     } else {
 
-      const { error } =
-        await supabase
-          .from(table)
-          .insert(dataToSave);
+      const {
+        error
+      } = await supabase
+        .from(table)
+        .insert(dataToSave);
+
 
       if (error) {
         throw error;
       }
 
+
       showMessage(
         "Content added successfully."
       );
+
     }
 
 
     closeModal();
 
+
     await Promise.all([
       loadDestinations(),
       loadTours()
     ]);
+
 
   } catch (error) {
 
@@ -1325,23 +1947,27 @@ async function saveContent(event) {
       error
     );
 
+
     alert(
       "Save failed:\n\n" +
       error.message
     );
+
 
   } finally {
 
     saveBtn.disabled = false;
     saveBtn.textContent =
       "Save Changes";
+
   }
+
 }
 
 
-// =========================================================
-// DELETE
-// =========================================================
+/* =========================================================
+   DELETE
+========================================================= */
 
 async function deleteContent(
   id,
@@ -1352,6 +1978,7 @@ async function deleteContent(
     confirm(
       "Are you sure you want to delete this content?"
     );
+
 
   if (!confirmed) {
     return;
@@ -1366,11 +1993,12 @@ async function deleteContent(
         : "tours";
 
 
-    const { error } =
-      await supabase
-        .from(table)
-        .delete()
-        .eq("id", id);
+    const {
+      error
+    } = await supabase
+      .from(table)
+      .delete()
+      .eq("id", id);
 
 
     if (error) {
@@ -1388,6 +2016,7 @@ async function deleteContent(
       loadTours()
     ]);
 
+
   } catch (error) {
 
     console.error(
@@ -1395,146 +2024,220 @@ async function deleteContent(
       error
     );
 
+
     alert(
       "Delete failed:\n\n" +
       error.message
     );
+
   }
+
 }
 
 
-// =========================================================
-// EVENTS
-// =========================================================
+/* =========================================================
+   LOGOUT
+========================================================= */
 
-function setupEvents() {
-
-  document
-    .getElementById("closeModal")
-    .addEventListener(
-      "click",
-      closeModal
-    );
-
-
-  document
-    .getElementById("contentForm")
-    .addEventListener(
-      "submit",
-      saveContent
-    );
-
-
-  document
-    .getElementById("addDestinationBtn")
-    .addEventListener(
-      "click",
-      () => {
-        openAddModal(
-          "destination"
-        );
-      }
-    );
-
-
-  document
-    .getElementById("addTourBtn")
-    .addEventListener(
-      "click",
-      () => {
-        openAddModal("tour");
-      }
-    );
-
-
-  document
-    .getElementById("logoutBtn")
-    .addEventListener(
-      "click",
-      async () => {
-
-        await supabase.auth.signOut();
-
-        window.location.replace(
-          "admin.html"
-        );
-      }
-    );
-
-
-  window.addEventListener(
-    "click",
-    event => {
-
-      const modal =
-        document.getElementById(
-          "contentModal"
-        );
-
-      if (
-        event.target === modal
-      ) {
-        closeModal();
-      }
-    }
-  );
-}
-
-
-// =========================================================
-// START
-// =========================================================
-
-async function startAdmin() {
+async function logout() {
 
   try {
 
-    console.log(
-      "Starting admin dashboard..."
+    await supabase.auth.signOut();
+
+  } finally {
+
+    window.location.replace(
+      "admin.html"
     );
 
-
-    const loggedIn =
-      await checkSession();
-
-
-    if (!loggedIn) {
-      return;
-    }
-
-
-    createDashboard();
-
-    setupEvents();
-
-
-    await Promise.all([
-      loadDestinations(),
-      loadTours()
-    ]);
-
-
-    console.log(
-      "Admin dashboard loaded successfully."
-    );
-
-  } catch (error) {
-
-    console.error(
-      "ADMIN START ERROR:",
-      error
-    );
-
-    showError(
-      error.message ||
-      "Unable to start admin dashboard."
-    );
   }
+
 }
 
 
-// =========================================================
-// RUN
-// =========================================================
+/* =========================================================
+   MESSAGE
+========================================================= */
 
-startAdmin();
+function showMessage(
+  text
+) {
+
+  const message =
+    document.getElementById(
+      "message"
+    );
+
+
+  if (!message) {
+    return;
+  }
+
+
+  message.textContent =
+    text;
+
+  message.style.display =
+    "block";
+
+
+  setTimeout(
+    () => {
+
+      message.style.display =
+        "none";
+
+    },
+    3500
+  );
+
+}
+
+
+/* =========================================================
+   ERROR SCREEN
+========================================================= */
+
+function showError(
+  message
+) {
+
+  document.body.innerHTML = `
+
+    <div style="
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:#f4f7f5;
+      font-family:Arial,Helvetica,sans-serif;
+    ">
+
+      <div style="
+        width:100%;
+        max-width:600px;
+        padding:30px;
+        background:white;
+        border-radius:16px;
+        box-shadow:0 15px 50px rgba(0,0,0,.1);
+      ">
+
+        <h2 style="
+          margin-top:0;
+          color:#b73b31;
+        ">
+          Admin Panel Error
+        </h2>
+
+        <p style="
+          line-height:1.7;
+          color:#555;
+          word-break:break-word;
+        ">
+          ${escapeHTML(message)}
+        </p>
+
+        <button
+          onclick="window.location.href='admin.html'"
+          style="
+            border:0;
+            background:#176b4d;
+            color:white;
+            padding:12px 20px;
+            border-radius:7px;
+            cursor:pointer;
+          "
+        >
+          Back to Login
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+}
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function createSafeSlug(
+  value
+) {
+
+  return String(value)
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+}
+
+
+function getSafeExtension(
+  filename
+) {
+
+  const ext =
+    String(filename)
+      .split(".")
+      .pop()
+      .toLowerCase();
+
+
+  return [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "gif"
+  ].includes(ext)
+    ? ext
+    : "jpg";
+
+}
+
+
+function escapeHTML(
+  value
+) {
+
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+function escapeAttribute(
+  value
+) {
+
+  return escapeHTML(value);
+
+}
