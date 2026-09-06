@@ -10,6 +10,11 @@
     content="width=device-width, initial-scale=1.0"
   >
 
+  <meta
+    name="robots"
+    content="noindex,nofollow"
+  >
+
   <title>
     Admin Dashboard | Travel With Sri Lanka
   </title>
@@ -24,23 +29,47 @@
     style="
       min-height:100vh;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
+      gap:15px;
+      padding:20px;
       font-family:Arial,Helvetica,sans-serif;
       background:#f4f7f5;
       color:#176b4d;
-      font-size:20px;
+      text-align:center;
     "
   >
-    Admin panel loading...
+
+    <div style="
+      width:38px;
+      height:38px;
+      border:4px solid #dbe9e1;
+      border-top-color:#176b4d;
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+    "></div>
+
+    <strong>
+      Admin panel loading...
+    </strong>
+
   </div>
+
+
+  <style>
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 
 
   <script
     type="module"
-    src="./admin-dashboard.js?v=20260906"
+    src="./admin-dashboard.js?v=20260906-final"
   ></script>
 
 </body>
-
 </html>
