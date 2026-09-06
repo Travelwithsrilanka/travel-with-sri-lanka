@@ -1,241 +1,273 @@
-<!DOCTYPE html>
-<html lang="en">
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-<head>
 
-  <meta charset="UTF-8">
+/* =========================================================
+   SUPABASE
+========================================================= */
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+const SUPABASE_URL =
+  "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
 
-  <meta
-    name="description"
-    content="Travel With Sri Lanka Administration"
-  >
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
 
-  <title>Admin Login | Travel With Sri Lanka</title>
+const supabase =
+  createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    }
+  );
 
-  <style>
 
-    * {
-      box-sizing: border-box;
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const loginForm =
+  document.getElementById(
+    "adminLoginForm"
+  );
+
+const loginButton =
+  document.getElementById(
+    "loginBtn"
+  );
+
+const loginMessage =
+  document.getElementById(
+    "loginMessage"
+  );
+
+
+/* =========================================================
+   SESSION CHECK
+========================================================= */
+
+async function checkExistingSession() {
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase.auth.getSession();
+
+
+    if (error) {
+      console.error(error);
+      return;
     }
 
-    body {
-      min-height: 100vh;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      font-family: Arial, Helvetica, sans-serif;
-      background:
-        linear-gradient(
-          135deg,
-          #e9f1ed,
-          #f7f6ef
+
+    if (data?.session) {
+
+      window.location.replace(
+        "admin-dashboard.html"
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Session check error:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+if (loginForm) {
+
+  loginForm.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      const email =
+        document.getElementById(
+          "adminEmail"
+        )?.value.trim() || "";
+
+
+      const password =
+        document.getElementById(
+          "adminPassword"
+        )?.value || "";
+
+
+      if (!email || !password) {
+        return;
+      }
+
+
+      loginButton.disabled = true;
+      loginButton.textContent =
+        "Logging in...";
+
+
+      setMessage(
+        "",
+        ""
+      );
+
+
+      try {
+
+        const {
+          data,
+          error
+        } = await supabase.auth
+          .signInWithPassword({
+            email,
+            password
+          });
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        if (!data?.session) {
+
+          throw new Error(
+            "Login session could not be created."
+          );
+
+        }
+
+
+        setMessage(
+          "Login successful. Opening dashboard...",
+          "success"
         );
-      color: #17221d;
-    }
 
-    .loginBox {
-      width: 100%;
-      max-width: 430px;
-      padding: 38px;
-      background: white;
-      border: 1px solid #e1e6e2;
-      border-radius: 20px;
-      box-shadow:
-        0 25px 70px rgba(16,37,29,.12);
-    }
 
-    .logo {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      background: #10251d;
-      color: #c9a85b;
-      font-size: 21px;
-      font-weight: 900;
-      letter-spacing: 1px;
-    }
+        setTimeout(
+          () => {
 
-    h1 {
-      margin: 0 0 8px;
-      text-align: center;
-      font-family: Georgia, serif;
-      font-size: 27px;
-    }
+            window.location.replace(
+              "admin-dashboard.html"
+            );
 
-    .subtitle {
-      margin: 0 0 30px;
-      text-align: center;
-      color: #718078;
-      font-size: 13px;
-    }
+          },
+          300
+        );
 
-    label {
-      display: block;
-      margin-bottom: 7px;
-      font-size: 13px;
-      font-weight: 700;
-    }
 
-    input {
-      width: 100%;
-      margin-bottom: 19px;
-      padding: 14px;
-      border: 1px solid #d7dfda;
-      border-radius: 8px;
-      outline: none;
-      font-size: 14px;
-    }
+      } catch (error) {
 
-    input:focus {
-      border-color: #176b4d;
-      box-shadow:
-        0 0 0 4px
-        rgba(23,107,77,.1);
-    }
+        console.error(
+          "Login error:",
+          error
+        );
 
-    #loginBtn {
-      width: 100%;
-      padding: 14px;
-      border: 0;
-      border-radius: 8px;
-      background: #10251d;
-      color: white;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: .2s ease;
-    }
 
-    #loginBtn:hover {
-      background: #1d4938;
-    }
+        setMessage(
+          getLoginError(error),
+          "error"
+        );
 
-    #loginBtn:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
 
-    #loginStatus {
-      min-height: 22px;
-      margin-top: 16px;
-      text-align: center;
-      font-size: 13px;
-      font-weight: 700;
-    }
+        loginButton.disabled = false;
+        loginButton.textContent =
+          "Login";
 
-    .backLink {
-      display: block;
-      margin-top: 22px;
-      text-align: center;
-      color: #176b4d;
-      text-decoration: none;
-      font-size: 13px;
-    }
-
-    .backLink:hover {
-      text-decoration: underline;
-    }
-
-    @media (max-width: 480px) {
-
-      .loginBox {
-        padding: 28px 20px;
-      }
-
-      h1 {
-        font-size: 23px;
       }
 
     }
+  );
 
-  </style>
-
-</head>
-
-
-<body>
-
-  <div class="loginBox">
-
-    <div class="logo">
-      TWS
-    </div>
-
-    <h1>
-      Travel With Sri Lanka
-    </h1>
-
-    <p class="subtitle">
-      Secure Administrator Login
-    </p>
+}
 
 
-    <form id="adminLoginForm">
+/* =========================================================
+   MESSAGE
+========================================================= */
 
-      <label for="adminEmail">
-        Email
-      </label>
+function setMessage(
+  message,
+  type
+) {
 
-      <input
-        type="email"
-        id="adminEmail"
-        placeholder="Admin email"
-        autocomplete="username"
-        required
-      >
+  if (!loginMessage) {
+    return;
+  }
 
+  loginMessage.textContent =
+    message;
 
-      <label for="adminPassword">
-        Password
-      </label>
+  loginMessage.style.color =
+    type === "success"
+      ? "#176b4d"
+      : type === "error"
+        ? "#c0392b"
+        : "#555";
 
-      <input
-        type="password"
-        id="adminPassword"
-        placeholder="Password"
-        autocomplete="current-password"
-        required
-      >
+}
 
 
-      <button
-        type="submit"
-        id="loginBtn"
-      >
-        Login
-      </button>
+/* =========================================================
+   ERROR
+========================================================= */
+
+function getLoginError(error) {
+
+  const message =
+    String(
+      error?.message || ""
+    ).toLowerCase();
 
 
-      <div id="loginMessage"></div>
+  if (
+    message.includes(
+      "invalid login credentials"
+    )
+  ) {
 
-    </form>
+    return "Invalid email or password.";
 
-
-    <a
-      href="index.html"
-      class="backLink"
-    >
-      ← Back to Website
-    </a>
-
-  </div>
+  }
 
 
-  <script
-    type="module"
-    src="admin.js?v=20260906-final"
-  ></script>
+  if (
+    message.includes(
+      "email not confirmed"
+    )
+  ) {
 
-</body>
-</html>
+    return "Please confirm the administrator email in Supabase.";
+
+  }
+
+
+  return (
+    error?.message ||
+    "Login failed. Please try again."
+  );
+
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+checkExistingSession();
