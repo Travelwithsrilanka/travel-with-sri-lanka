@@ -1,18 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <meta
     name="description"
-    content="Travel With Sri Lanka - Discover Sri Lanka through private journeys, authentic experiences and unforgettable adventures."
+    content="Travel With Sri Lanka - Private journeys, authentic experiences and unforgettable adventures across Sri Lanka."
   >
 
   <meta
@@ -20,30 +14,26 @@
     content="Sri Lanka travel, Sri Lanka tours, Ella, Kandy, Galle, Sigiriya, Yala, Udawalawe"
   >
 
+  <meta name="theme-color" content="#10251d">
+
   <title>Travel With Sri Lanka | Discover Sri Lanka</title>
 
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="style.css">
 
 </head>
 
-
 <body>
 
-
-<!-- =========================================================
-     HEADER
-     ========================================================= -->
-
-<header class="site-header">
-
+<header class="site-header" id="siteHeader">
   <div class="header-inner">
 
     <a href="index.html" class="logo">
-      Travel With Sri Lanka
+      <span class="logoMain">Travel With</span>
+      <span class="logoAccent">Sri Lanka</span>
     </a>
 
-    <nav class="mainNav">
-
+    <nav class="mainNav" id="mainNav">
       <a href="#about">About</a>
       <a href="#destinations">Destinations</a>
       <a href="#tours">Tours</a>
@@ -51,54 +41,58 @@
       <a href="#planner">Plan Your Trip</a>
       <a href="#reviews">Reviews</a>
       <a href="#faq">FAQ</a>
-
     </nav>
 
     <button
       class="menuBtn"
       id="menuBtn"
       type="button"
-      aria-label="Open menu"
+      aria-label="Open navigation menu"
+      aria-expanded="false"
     >
-      ☰
+      <span></span>
+      <span></span>
+      <span></span>
     </button>
 
   </div>
-
 </header>
 
 
-<!-- =========================================================
-     HERO
-     ========================================================= -->
+<main>
+
+<!-- HERO -->
 
 <section class="hero">
 
   <div class="heroShade"></div>
 
+  <div class="heroDecor heroDecorOne"></div>
+  <div class="heroDecor heroDecorTwo"></div>
+
   <div class="heroText">
 
-    <p class="eyebrow">
+    <p class="eyebrow heroEyebrow">
       DISCOVER SRI LANKA
     </p>
 
     <h1>
       Your Journey.<br>
-      Our Island.
+      <em>Our Island.</em>
     </h1>
 
-    <p>
+    <p class="heroDescription">
       Discover Sri Lanka through private journeys,
       authentic experiences and unforgettable adventures.
     </p>
 
     <div class="heroButtons">
 
-      <a href="#destinations" class="btn">
+      <a href="#destinations" class="btn primaryBtn">
         Explore Destinations
       </a>
 
-      <a href="#planner" class="btn">
+      <a href="#planner" class="btn lightBtn">
         Plan Your Trip
       </a>
 
@@ -106,17 +100,17 @@
 
     <div class="stats">
 
-      <div>
+      <div class="stat">
         <strong>6+</strong>
         <span>Destinations</span>
       </div>
 
-      <div>
+      <div class="stat">
         <strong>3</strong>
         <span>Signature Tours</span>
       </div>
 
-      <div>
+      <div class="stat">
         <strong>100%</strong>
         <span>Local Experience</span>
       </div>
@@ -125,31 +119,41 @@
 
   </div>
 
+  <a href="#about" class="heroScroll" aria-label="Scroll down">
+    <span></span>
+  </a>
+
 </section>
 
 
-<!-- =========================================================
-     ABOUT
-     ========================================================= -->
+<!-- ABOUT -->
 
 <section class="section" id="about">
 
-  <div class="sectionHead">
+  <div class="sectionHead reveal">
 
-    <p class="eyebrow">
-      ABOUT US
-    </p>
+    <p class="eyebrow">ABOUT US</p>
 
     <h2>
-      Experience Sri Lanka Differently
+      Experience Sri Lanka
+      <span>Differently.</span>
     </h2>
+
+    <p>
+      More than a destination. More than a tour.
+      Experience the island through journeys created around you.
+    </p>
 
   </div>
 
-
   <div class="aboutGrid">
 
-    <div class="aboutText">
+    <div class="aboutText reveal">
+
+      <div class="aboutBadge">
+        <span>✦</span>
+        Authentic Sri Lankan Experiences
+      </div>
 
       <p>
         Travel With Sri Lanka is a private travel experience
@@ -163,29 +167,36 @@
         we create journeys around what you truly want to experience.
       </p>
 
+      <a href="#planner" class="textLink">
+        Start Planning Your Journey →
+      </a>
+
     </div>
 
+    <div class="aboutHighlights reveal">
 
-    <div class="aboutHighlights">
-
-      <div>
+      <div class="highlightCard">
         <strong>01</strong>
-        <span>Private Journeys</span>
+        <h3>Private Journeys</h3>
+        <p>Travel at your own pace.</p>
       </div>
 
-      <div>
+      <div class="highlightCard">
         <strong>02</strong>
-        <span>Authentic Experiences</span>
+        <h3>Authentic Experiences</h3>
+        <p>See Sri Lanka beyond the ordinary.</p>
       </div>
 
-      <div>
+      <div class="highlightCard">
         <strong>03</strong>
-        <span>Local Knowledge</span>
+        <h3>Local Knowledge</h3>
+        <p>Discover places only locals know.</p>
       </div>
 
-      <div>
+      <div class="highlightCard">
         <strong>04</strong>
-        <span>Flexible Travel</span>
+        <h3>Flexible Travel</h3>
+        <p>Your trip, your way.</p>
       </div>
 
     </div>
@@ -195,284 +206,48 @@
 </section>
 
 
-<!-- =========================================================
-     DESTINATIONS
-     ========================================================= -->
+<!-- DESTINATIONS -->
 
-<section class="section" id="destinations">
+<section class="section destinationsSection" id="destinations">
 
-  <div class="sectionHead">
+  <div class="sectionHead reveal">
 
-    <p class="eyebrow">
-      DESTINATIONS
-    </p>
+    <p class="eyebrow">DESTINATIONS</p>
 
     <h2>
-      Places Worth Discovering
+      Places Worth
+      <span>Discovering.</span>
     </h2>
 
     <p>
-      Explore some of Sri Lanka's most beautiful destinations.
+      Explore some of Sri Lanka's most unforgettable destinations.
     </p>
 
   </div>
 
-
   <div class="cardGrid" id="destinationsGrid">
 
-
-    <!-- ELLA -->
-
-    <article class="card" data-slug="ella">
-
-      <div class="photo">
-
-        <img
-          src="images/destinations/ella/ella.jpg"
-          alt="Ella Sri Lanka"
-          loading="lazy"
-          data-dynamic-image="ella"
-        >
-
-      </div>
-
-      <div class="cardContent">
-
-        <h3 data-dynamic-name="ella">
-          Ella
-        </h3>
-
-        <p data-dynamic-description="ella">
-          Discover misty mountains, tea plantations,
-          waterfalls and breathtaking train journeys.
-        </p>
-
-        <a
-          href="ella.html"
-          class="textLink"
-          data-dynamic-link="ella"
-        >
-          Discover Ella →
-        </a>
-
-      </div>
-
-    </article>
-
-
-    <!-- KANDY -->
-
-    <article class="card" data-slug="kandy">
-
-      <div class="photo">
-
-        <img
-          src="images/destinations/kandy/kandy.jpg"
-          alt="Kandy Sri Lanka"
-          loading="lazy"
-          data-dynamic-image="kandy"
-        >
-
-      </div>
-
-      <div class="cardContent">
-
-        <h3 data-dynamic-name="kandy">
-          Kandy
-        </h3>
-
-        <p data-dynamic-description="kandy">
-          Explore Sri Lanka's cultural capital,
-          surrounded by mountains and rich history.
-        </p>
-
-        <a
-          href="kandy.html"
-          class="textLink"
-          data-dynamic-link="kandy"
-        >
-          Discover Kandy →
-        </a>
-
-      </div>
-
-    </article>
-
-
-    <!-- GALLE -->
-
-    <article class="card" data-slug="galle">
-
-      <div class="photo">
-
-        <img
-          src="images/destinations/galle/galle.jpg"
-          alt="Galle Sri Lanka"
-          loading="lazy"
-          data-dynamic-image="galle"
-        >
-
-      </div>
-
-      <div class="cardContent">
-
-        <h3 data-dynamic-name="galle">
-          Galle
-        </h3>
-
-        <p data-dynamic-description="galle">
-          Walk through colonial streets,
-          historic forts and beautiful coastal scenery.
-        </p>
-
-        <a
-          href="galle.html"
-          class="textLink"
-          data-dynamic-link="galle"
-        >
-          Discover Galle →
-        </a>
-
-      </div>
-
-    </article>
-
-
-    <!-- SIGIRIYA -->
-
-    <article class="card" data-slug="sigiriya">
-
-      <div class="photo">
-
-        <img
-          src="images/destinations/sigiriya/sigiriya.jpg"
-          alt="Sigiriya Sri Lanka"
-          loading="lazy"
-          data-dynamic-image="sigiriya"
-        >
-
-      </div>
-
-      <div class="cardContent">
-
-        <h3 data-dynamic-name="sigiriya">
-          Sigiriya
-        </h3>
-
-        <p data-dynamic-description="sigiriya">
-          Discover the legendary Lion Rock,
-          ancient history and spectacular views.
-        </p>
-
-        <a
-          href="sigiriya.html"
-          class="textLink"
-          data-dynamic-link="sigiriya"
-        >
-          Discover Sigiriya →
-        </a>
-
-      </div>
-
-    </article>
-
-
-    <!-- YALA -->
-
-    <article class="card" data-slug="yala">
-
-      <div class="photo">
-
-        <img
-          src="images/destinations/yala/yala.jpg"
-          alt="Yala Sri Lanka"
-          loading="lazy"
-          data-dynamic-image="yala"
-        >
-
-      </div>
-
-      <div class="cardContent">
-
-        <h3 data-dynamic-name="yala">
-          Yala
-        </h3>
-
-        <p data-dynamic-description="yala">
-          Experience thrilling safaris,
-          wildlife and the wild beauty of Sri Lanka.
-        </p>
-
-        <a
-          href="yala.html"
-          class="textLink"
-          data-dynamic-link="yala"
-        >
-          Discover Yala →
-        </a>
-
-      </div>
-
-    </article>
-
-
-    <!-- UDAWALAWE -->
-
-    <article class="card" data-slug="udawalawe">
-
-      <div class="photo">
-
-        <img
-          src="images/destinations/udawalawe/udawalawe.jpg"
-          alt="Udawalawe Sri Lanka"
-          loading="lazy"
-          data-dynamic-image="udawalawe"
-        >
-
-      </div>
-
-      <div class="cardContent">
-
-        <h3 data-dynamic-name="udawalawe">
-          Udawalawe
-        </h3>
-
-        <p data-dynamic-description="udawalawe">
-          Meet Sri Lanka's elephants and discover
-          the incredible wildlife of the national park.
-        </p>
-
-        <a
-          href="udawalawe.html"
-          class="textLink"
-          data-dynamic-link="udawalawe"
-        >
-          Discover Udawalawe →
-        </a>
-
-      </div>
-
-    </article>
+    <div class="loadingCard">
+      <div class="loadingSpinner"></div>
+      <p>Discovering destinations...</p>
+    </div>
 
   </div>
 
 </section>
 
 
-<!-- =========================================================
-     TOURS
-     ========================================================= -->
+<!-- TOURS -->
 
 <section class="section dark" id="tours">
 
-  <div class="sectionHead">
+  <div class="sectionHead darkHead reveal">
 
-    <p class="eyebrow">
-      TOURS
-    </p>
+    <p class="eyebrow">SIGNATURE JOURNEYS</p>
 
     <h2>
-      Journeys Made For You
+      Journeys Made
+      <span>For You.</span>
     </h2>
 
     <p>
@@ -481,205 +256,69 @@
 
   </div>
 
-
   <div class="tourGrid" id="toursGrid">
 
-
-    <!-- CLASSIC -->
-
-    <article class="tourCard" data-slug="classic">
-
-      <div class="tourPic">
-
-        <img
-          src="images/tours/classic.jpg"
-          alt="Classic Sri Lanka Tour"
-          loading="lazy"
-          data-dynamic-image="classic"
-        >
-
-      </div>
-
-      <div class="tourBody">
-
-        <h3 data-dynamic-name="classic">
-          Classic Sri Lanka
-        </h3>
-
-        <p data-dynamic-description="classic">
-          Discover Sri Lanka's highlights,
-          from cultural cities to mountain escapes and beaches.
-        </p>
-
-        <a
-          href="#planner"
-          class="textLink"
-          data-dynamic-link="classic"
-        >
-          Plan This Tour →
-        </a>
-
-      </div>
-
-    </article>
-
-
-    <!-- WILD -->
-
-    <article class="tourCard" data-slug="wild">
-
-      <div class="tourPic">
-
-        <img
-          src="images/tours/wild.jpg"
-          alt="Wild Sri Lanka Tour"
-          loading="lazy"
-          data-dynamic-image="wild"
-        >
-
-      </div>
-
-      <div class="tourBody">
-
-        <h3 data-dynamic-name="wild">
-          Wild Sri Lanka
-        </h3>
-
-        <p data-dynamic-description="wild">
-          Explore national parks,
-          wildlife, safaris and the natural side of Sri Lanka.
-        </p>
-
-        <a
-          href="#planner"
-          class="textLink"
-          data-dynamic-link="wild"
-        >
-          Plan This Tour →
-        </a>
-
-      </div>
-
-    </article>
-
-
-    <!-- COAST -->
-
-    <article class="tourCard" data-slug="coast">
-
-      <div class="tourPic">
-
-        <img
-          src="images/tours/coast.jpg"
-          alt="Island Coast Tour"
-          loading="lazy"
-          data-dynamic-image="coast"
-        >
-
-      </div>
-
-      <div class="tourBody">
-
-        <h3 data-dynamic-name="coast">
-          Island Coast
-        </h3>
-
-        <p data-dynamic-description="coast">
-          Enjoy tropical beaches,
-          coastal towns, sunsets and relaxed island life.
-        </p>
-
-        <a
-          href="#planner"
-          class="textLink"
-          data-dynamic-link="coast"
-        >
-          Plan This Tour →
-        </a>
-
-      </div>
-
-    </article>
+    <div class="loadingCard darkLoading">
+      <div class="loadingSpinner"></div>
+      <p>Loading journeys...</p>
+    </div>
 
   </div>
 
 </section>
 
 
-<!-- =========================================================
-     EXPERIENCES
-     ========================================================= -->
+<!-- EXPERIENCES -->
 
 <section class="section" id="experiences">
 
-  <div class="sectionHead">
+  <div class="sectionHead reveal">
 
-    <p class="eyebrow">
-      EXPERIENCES
-    </p>
+    <p class="eyebrow">EXPERIENCES</p>
 
     <h2>
-      More Than Just A Tour
+      More Than
+      <span>Just A Tour.</span>
     </h2>
 
   </div>
 
-
   <div class="experienceGrid">
 
-    <div class="experienceItem">
-
+    <div class="experienceItem reveal">
       <div class="experienceIcon">🌿</div>
-
       <h3>Nature</h3>
-
       <p>
         Explore forests, mountains,
         waterfalls and national parks.
       </p>
-
     </div>
 
-
-    <div class="experienceItem">
-
+    <div class="experienceItem reveal">
       <div class="experienceIcon">🏛️</div>
-
       <h3>Culture</h3>
-
       <p>
         Discover temples, traditions,
         history and local life.
       </p>
-
     </div>
 
-
-    <div class="experienceItem">
-
+    <div class="experienceItem reveal">
       <div class="experienceIcon">🐘</div>
-
       <h3>Wildlife</h3>
-
       <p>
         Experience unforgettable wildlife
         encounters across Sri Lanka.
       </p>
-
     </div>
 
-
-    <div class="experienceItem">
-
+    <div class="experienceItem reveal">
       <div class="experienceIcon">🌊</div>
-
       <h3>Beaches</h3>
-
       <p>
         Relax beside the Indian Ocean
         on beautiful tropical beaches.
       </p>
-
     </div>
 
   </div>
@@ -687,20 +326,17 @@
 </section>
 
 
-<!-- =========================================================
-     PLANNER
-     ========================================================= -->
+<!-- PLANNER -->
 
 <section class="section planner" id="planner">
 
-  <div class="sectionHead">
+  <div class="sectionHead reveal">
 
-    <p class="eyebrow">
-      PLAN YOUR TRIP
-    </p>
+    <p class="eyebrow">PLAN YOUR TRIP</p>
 
     <h2>
-      Tell Us About Your Journey
+      Tell Us About
+      <span>Your Journey.</span>
     </h2>
 
     <p>
@@ -710,100 +346,71 @@
 
   </div>
 
-
-  <form class="plannerForm" id="tripForm">
+  <form class="plannerForm reveal" id="tripForm">
 
     <div class="formGrid">
 
       <div>
-
-        <label for="name">
-          Name
-        </label>
-
+        <label for="name">Name</label>
         <input
           type="text"
           id="name"
           name="name"
           placeholder="Your name"
+          autocomplete="name"
           required
         >
-
       </div>
 
-
       <div>
-
-        <label for="country">
-          Country
-        </label>
-
+        <label for="country">Country</label>
         <input
           type="text"
           id="country"
           name="country"
           placeholder="Your country"
+          autocomplete="country-name"
           required
         >
-
       </div>
 
-
       <div>
-
-        <label for="date">
-          Travel Date
-        </label>
-
+        <label for="date">Travel Date</label>
         <input
           type="date"
           id="date"
           name="date"
         >
-
       </div>
 
-
       <div>
-
-        <label for="guests">
-          Number of Guests
-        </label>
-
+        <label for="guests">Number of Guests</label>
         <input
           type="number"
           id="guests"
           name="guests"
           min="1"
+          max="100"
           placeholder="2"
         >
-
       </div>
 
     </div>
 
-
-    <div>
-
-      <label for="message">
-        Tell us about your trip
-      </label>
+    <div class="fullField">
+      <label for="message">Tell us about your trip</label>
 
       <textarea
         id="message"
         name="message"
         rows="6"
-        placeholder="Where would you like to go?"
+        placeholder="Where would you like to go? What would you like to experience?"
       ></textarea>
-
     </div>
 
-
-    <button
-      type="submit"
-      class="btn"
-    >
+    <button type="submit" class="btn primaryBtn">
       Send Trip Request
+      <span class="btnArrow">→</span>
     </button>
 
   </form>
@@ -811,127 +418,158 @@
 </section>
 
 
-<!-- =========================================================
-     REVIEWS
-     ========================================================= -->
+<!-- REVIEWS -->
 
-<section class="section" id="reviews">
+<section class="section reviewsSection" id="reviews">
 
-  <div class="sectionHead">
+  <div class="sectionHead reveal">
 
-    <p class="eyebrow">
-      REVIEWS
-    </p>
+    <p class="eyebrow">TRAVELER REVIEWS</p>
 
     <h2>
-      What Our Travelers Say
+      What Our Travelers
+      <span>Say.</span>
     </h2>
+
+    <p>
+      Real experiences from travelers who discovered Sri Lanka with us.
+    </p>
 
   </div>
 
 
-  <div class="reviewFormBox">
+  <div class="reviewFormBox reveal">
+
+    <div class="reviewFormHeader">
+
+      <div>
+        <span class="reviewFormIcon">✦</span>
+
+        <div>
+          <h3>Share Your Experience</h3>
+          <p>
+            Tell future travelers about your journey.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
 
     <form id="reviewForm">
 
       <div class="formGrid">
 
         <div>
-
-          <label for="reviewName">
-            Name
-          </label>
+          <label for="reviewName">Your Name</label>
 
           <input
             type="text"
             id="reviewName"
+            maxlength="80"
+            autocomplete="name"
+            placeholder="Your name"
             required
           >
-
         </div>
 
-
         <div>
-
-          <label for="reviewCountry">
-            Country
-          </label>
+          <label for="reviewCountry">Country</label>
 
           <input
             type="text"
             id="reviewCountry"
+            maxlength="80"
+            autocomplete="country-name"
+            placeholder="Your country"
             required
           >
-
         </div>
 
       </div>
 
 
-      <label>
-        Rating
-      </label>
+      <div class="ratingField">
 
-      <div
-        class="starRating"
-        id="starRating"
-      >
+        <label>Your Rating</label>
 
-        <button type="button" data-rating="1">★</button>
-        <button type="button" data-rating="2">★</button>
-        <button type="button" data-rating="3">★</button>
-        <button type="button" data-rating="4">★</button>
-        <button type="button" data-rating="5">★</button>
+        <div
+          class="starRating"
+          id="starRating"
+          aria-label="Select rating"
+        >
+          <button type="button" data-rating="1" aria-label="1 star">★</button>
+          <button type="button" data-rating="2" aria-label="2 stars">★</button>
+          <button type="button" data-rating="3" aria-label="3 stars">★</button>
+          <button type="button" data-rating="4" aria-label="4 stars">★</button>
+          <button type="button" data-rating="5" aria-label="5 stars">★</button>
+        </div>
+
+        <input
+          type="hidden"
+          id="reviewRating"
+          value="5"
+        >
+
+        <span id="ratingLabel" class="ratingLabel">
+          Excellent
+        </span>
 
       </div>
 
-      <input
-        type="hidden"
-        id="reviewRating"
-        value="5"
-      >
+
+      <div class="fullField">
+
+        <label for="reviewText">Your Review</label>
+
+        <textarea
+          id="reviewText"
+          rows="5"
+          maxlength="1000"
+          placeholder="Tell us about your experience..."
+          required
+        ></textarea>
+
+      </div>
 
 
-      <label for="reviewText">
-        Your Review
-      </label>
+      <div class="photoUploadField">
 
-      <textarea
-        id="reviewText"
-        rows="5"
-        required
-      ></textarea>
+        <label for="reviewPhoto">
+          Travel Photo
+          <span class="optional">(optional)</span>
+        </label>
 
+        <input
+          type="file"
+          id="reviewPhoto"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+        >
 
-      <label for="reviewPhoto">
-        Photo
-      </label>
+        <span class="uploadNote">
+          JPG, PNG, WEBP or GIF • Maximum 5 MB
+        </span>
 
-      <input
-        type="file"
-        id="reviewPhoto"
-        accept="image/*"
-      >
+        <div
+          class="reviewPreview"
+          id="photoPreview"
+        ></div>
 
-
-      <div
-        class="reviewPreview"
-        id="photoPreview"
-      ></div>
+      </div>
 
 
       <button
         type="submit"
-        class="btn"
+        class="btn primaryBtn"
         id="reviewSubmit"
       >
         Submit Review
       </button>
 
-
       <p
         class="reviewStatus"
         id="reviewStatus"
+        aria-live="polite"
       ></p>
 
     </form>
@@ -944,89 +582,62 @@
     id="reviewsContainer"
   >
 
-    <p class="reviewsLoading">
-      Loading reviews...
-    </p>
+    <div class="loadingCard">
+      <div class="loadingSpinner"></div>
+      <p>Loading traveler reviews...</p>
+    </div>
 
   </div>
 
 </section>
 
 
-<!-- =========================================================
-     FAQ
-     ========================================================= -->
+<!-- FAQ -->
 
 <section class="section" id="faq">
 
-  <div class="sectionHead">
+  <div class="sectionHead reveal">
 
-    <p class="eyebrow">
-      FAQ
-    </p>
+    <p class="eyebrow">FAQ</p>
 
     <h2>
-      Frequently Asked Questions
+      Frequently Asked
+      <span>Questions.</span>
     </h2>
 
   </div>
 
-
-  <div class="faqList">
+  <div class="faqList reveal">
 
     <details class="faq">
-
-      <summary>
-        Can I create a custom tour?
-      </summary>
-
+      <summary>Can I create a custom tour?</summary>
       <p>
-        Yes. Every journey can be customized
-        according to your interests, dates and budget.
+        Yes. Every journey can be customized according to
+        your interests, dates and budget.
       </p>
-
     </details>
 
-
     <details class="faq">
-
-      <summary>
-        Can you arrange airport pickup?
-      </summary>
-
+      <summary>Can you arrange airport pickup?</summary>
       <p>
-        Yes. Airport transfers can be arranged
-        as part of your journey.
+        Yes. Airport transfers can be arranged as part of your journey.
       </p>
-
     </details>
 
-
     <details class="faq">
-
-      <summary>
-        Can I choose my own destinations?
-      </summary>
-
+      <summary>Can I choose my own destinations?</summary>
       <p>
-        Absolutely. Tell us what you want to see
-        and we can create a personalized itinerary.
+        Absolutely. Tell us what you want to see and we can
+        create a personalized itinerary.
       </p>
-
     </details>
 
-
     <details class="faq">
-
-      <summary>
-        How do I contact you?
-      </summary>
-
+      <summary>How do I contact you?</summary>
       <p>
-        You can contact Travel With Sri Lanka
-        through WhatsApp or the trip planner.
+        You can contact Travel With Sri Lanka through WhatsApp
+        or the trip planner.
       </p>
-
     </details>
 
   </div>
@@ -1034,32 +645,28 @@
 </section>
 
 
-<!-- =========================================================
-     LOCATION
-     ========================================================= -->
+<!-- LOCATION -->
 
-<section class="section" id="location">
+<section class="section locationSection" id="location">
 
-  <div class="sectionHead">
+  <div class="sectionHead reveal">
 
-    <p class="eyebrow">
-      LOCATION
-    </p>
+    <p class="eyebrow">LOCATION</p>
 
     <h2>
-      Find Us
+      Find
+      <span>Us.</span>
     </h2>
 
   </div>
 
+  <div class="locationCard reveal">
 
-  <div class="locationCard">
+    <div class="locationInfo">
 
-    <div>
+      <span class="locationIcon">📍</span>
 
-      <h3>
-        Travel With Sri Lanka
-      </h3>
+      <h3>Travel With Sri Lanka</h3>
 
       <p>
         97/23 Godagama,<br>
@@ -1067,27 +674,32 @@
         Sri Lanka.
       </p>
 
-      <p>
+      <a href="tel:+94758453391">
         📞 +94 75 845 3391
-      </p>
+      </a>
 
-      <p>
+      <a href="mailto:sandeepchiranthaka98@gmail.com">
         ✉️ sandeepchiranthaka98@gmail.com
-      </p>
+      </a>
 
     </div>
 
-
     <div class="mapBox">
 
-      <a
-        href="https://maps.app.goo.gl/gH2AiTVKEZDFS1gA7?g_st=iw"
-        target="_blank"
-        rel="noopener"
-        class="btn"
-      >
-        Open Google Maps
-      </a>
+      <div class="mapOverlay">
+        <span>🇱🇰</span>
+        <strong>Sri Lanka</strong>
+        <small>Homagama</small>
+
+        <a
+          href="https://maps.app.goo.gl/gH2AiTVKEZDFS1gA7?g_st=iw"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn darkBtn"
+        >
+          Open Google Maps →
+        </a>
+      </div>
 
     </div>
 
@@ -1096,53 +708,55 @@
 </section>
 
 
-<!-- =========================================================
-     CTA
-     ========================================================= -->
+<!-- CTA -->
 
 <section class="cta">
 
-  <div>
+  <div class="ctaInner">
 
-    <p class="eyebrow">
-      READY TO EXPLORE?
-    </p>
+    <div>
 
-    <h2>
-      Your Sri Lankan Adventure Starts Here.
-    </h2>
+      <p class="eyebrow">READY TO EXPLORE?</p>
 
-    <p>
-      Let's create a journey you'll never forget.
-    </p>
+      <h2>
+        Your Sri Lankan Adventure
+        <span>Starts Here.</span>
+      </h2>
+
+      <p>
+        Let's create a journey you'll never forget.
+      </p>
+
+    </div>
 
     <a
       href="https://wa.me/94758453391"
       target="_blank"
-      rel="noopener"
-      class="btn"
+      rel="noopener noreferrer"
+      class="btn ctaBtn"
     >
-      Chat on WhatsApp
+      Chat on WhatsApp →
     </a>
 
   </div>
 
 </section>
 
+</main>
 
-<!-- =========================================================
-     FOOTER
-     ========================================================= -->
+
+<!-- FOOTER -->
 
 <footer class="footer">
 
   <div class="footerGrid">
 
-    <div>
+    <div class="footerBrand">
 
-      <h3>
-        Travel With Sri Lanka
-      </h3>
+      <a href="index.html" class="logo">
+        <span class="logoMain">Travel With</span>
+        <span class="logoAccent">Sri Lanka</span>
+      </a>
 
       <p>
         Private journeys. Authentic experiences.
@@ -1151,82 +765,57 @@
 
     </div>
 
-
     <div>
-
-      <h4>
-        Explore
-      </h4>
-
+      <h4>Explore</h4>
       <a href="#destinations">Destinations</a>
       <a href="#tours">Tours</a>
       <a href="#experiences">Experiences</a>
-
+      <a href="#reviews">Reviews</a>
     </div>
 
+    <div>
+      <h4>Plan</h4>
+      <a href="#planner">Plan Your Trip</a>
+      <a href="#faq">FAQ</a>
+      <a href="#location">Location</a>
+    </div>
 
     <div>
-
-      <h4>
-        Contact
-      </h4>
-
-      <a href="tel:+94758453391">
-        +94 75 845 3391
-      </a>
-
-      <a href="mailto:sandeepchiranthaka98@gmail.com">
-        Email Us
-      </a>
-
-      <a
-        href="https://wa.me/94758453391"
-        target="_blank"
-        rel="noopener"
-      >
+      <h4>Contact</h4>
+      <a href="tel:+94758453391">+94 75 845 3391</a>
+      <a href="mailto:sandeepchiranthaka98@gmail.com">Email Us</a>
+      <a href="https://wa.me/94758453391" target="_blank" rel="noopener noreferrer">
         WhatsApp
       </a>
-
     </div>
 
   </div>
 
-
   <div class="footerBottom">
-
     <p>
       © 2026 Travel With Sri Lanka. All rights reserved.
     </p>
-
   </div>
 
 </footer>
 
 
-<!-- =========================================================
-     WHATSAPP
-     ========================================================= -->
-
 <a
   href="https://wa.me/94758453391"
   target="_blank"
-  rel="noopener"
+  rel="noopener noreferrer"
   class="whatsappFloat"
-  aria-label="Chat on WhatsApp"
+  aria-label="Chat with Travel With Sri Lanka on WhatsApp"
 >
+  <span>☏</span>
   WhatsApp
 </a>
 
 
-<!-- =========================================================
-     JAVASCRIPT
-     ========================================================= -->
-
 <script
   type="module"
-  src="script.js?v=20260906"
+  src="script.js?v=20260906-final"
 ></script>
-
 
 </body>
 </html>
