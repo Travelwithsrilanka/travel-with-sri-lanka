@@ -1,714 +1,671 @@
-/* =========================================================
-   TRAVEL WITH SRI LANKA
-   Main Website JavaScript + Supabase
-   ---------------------------------------------------------
-   Features:
-   - Mobile Menu
-   - WhatsApp Trip Planner
-   - Dynamic Destinations
-   - Dynamic Tours
-   - Traveller Reviews
-   - Review Photo Upload
-   ========================================================= */
+// =========================================================
+// TRAVEL WITH SRI LANKA
+// MAIN WEBSITE SCRIPT
+// Supabase Dynamic Content + Reviews
+// =========================================================
+
+import { createClient } from
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 
-/* =========================================================
-   SUPABASE
-========================================================= */
-
-import {
-  createClient
-} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
+// =========================================================
+// SUPABASE
+// =========================================================
 
 const SUPABASE_URL =
   "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
 
-
-const SUPABASE_PUBLISHABLE_KEY =
+const SUPABASE_KEY =
   "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
 
-
-const supabase =
-  createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
-  );
-
-
-/* =========================================================
-   START
-========================================================= */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  function () {
-
-    initializeMobileMenu();
-
-    initializeTripForm();
-
-    initializeStarRating();
-
-    initializePhotoPreview();
-
-    initializeReviewForm();
-
-    loadDestinations();
-
-    loadTours();
-
-    loadReviews();
-
-  }
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
 
 
-/* =========================================================
-   MOBILE MENU
-========================================================= */
+// =========================================================
+// DOM READY
+// =========================================================
 
-function initializeMobileMenu() {
+document.addEventListener("DOMContentLoaded", () => {
 
-  const menuButton =
-    document.getElementById("menuBtn");
+  initMobileMenu();
+  initTripForm();
+  initStarRating();
+  initReviewPhotoPreview();
+  initReviewForm();
 
+  loadDestinations();
+  loadTours();
+  loadReviews();
+
+});
+
+
+// =========================================================
+// MOBILE MENU
+// =========================================================
+
+function initMobileMenu() {
+
+  const menuBtn =
+    document.querySelector(".menuBtn") ||
+    document.querySelector("#menuBtn") ||
+    document.querySelector(".hamburger");
 
   const nav =
-    document.getElementById("mainNav");
+    document.querySelector("nav") ||
+    document.querySelector(".nav");
 
+  if (!menuBtn || !nav) return;
 
-  if (menuButton && nav) {
+  menuBtn.addEventListener("click", () => {
+    nav.classList.toggle("active");
+  });
 
-    menuButton.addEventListener(
-      "click",
-      function () {
+  nav.querySelectorAll("a").forEach(link => {
 
-        nav.classList.toggle("open");
-
-      }
-    );
-
-  }
-
-
-  document
-    .querySelectorAll("#mainNav a")
-    .forEach(function (link) {
-
-      link.addEventListener(
-        "click",
-        function () {
-
-          if (nav) {
-
-            nav.classList.remove("open");
-
-          }
-
-        }
-      );
-
+    link.addEventListener("click", () => {
+      nav.classList.remove("active");
     });
-
-}
-
-
-/* =========================================================
-   WHATSAPP TRIP FORM
-========================================================= */
-
-function initializeTripForm() {
-
-  const tripForm =
-    document.getElementById("tripForm");
-
-
-  if (!tripForm) {
-
-    return;
-
-  }
-
-
-  tripForm.addEventListener(
-    "submit",
-    function (event) {
-
-      event.preventDefault();
-
-
-      const name =
-        document
-          .getElementById("name")
-          .value
-          .trim();
-
-
-      const country =
-        document
-          .getElementById("country")
-          .value
-          .trim();
-
-
-      const date =
-        document
-          .getElementById("date")
-          .value;
-
-
-      const guests =
-        document
-          .getElementById("guests")
-          .value;
-
-
-      const message =
-        document
-          .getElementById("message")
-          .value
-          .trim();
-
-
-      const text =
-
-        "Hello Travel With Sri Lanka!" +
-        "\n\n" +
-
-        "I would like to plan a Sri Lanka trip." +
-        "\n\n" +
-
-        "Name: " +
-        name +
-        "\n" +
-
-        "Country: " +
-        country +
-        "\n" +
-
-        "Travel Date: " +
-        (
-          date ||
-          "Not specified"
-        ) +
-        "\n" +
-
-        "Guests: " +
-        guests +
-        "\n\n" +
-
-        "Travel Preferences:" +
-        "\n" +
-
-        (
-          message ||
-          "Not specified"
-        );
-
-
-      const whatsappURL =
-
-        "https://wa.me/94758453391?text=" +
-        encodeURIComponent(text);
-
-
-      window.open(
-        whatsappURL,
-        "_blank"
-      );
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   STAR RATING
-========================================================= */
-
-function initializeStarRating() {
-
-  const stars =
-    document.querySelectorAll(
-      "#starRating button"
-    );
-
-
-  const ratingInput =
-    document.getElementById(
-      "reviewRating"
-    );
-
-
-  let selectedRating = 0;
-
-
-  stars.forEach(function (star) {
-
-    star.addEventListener(
-      "click",
-      function () {
-
-        selectedRating =
-          Number(
-            this.dataset.rating
-          );
-
-
-        if (ratingInput) {
-
-          ratingInput.value =
-            selectedRating;
-
-        }
-
-
-        stars.forEach(function (item) {
-
-          const value =
-            Number(
-              item.dataset.rating
-            );
-
-
-          item.classList.toggle(
-            "selected",
-            value <= selectedRating
-          );
-
-        });
-
-      }
-    );
 
   });
 
 }
 
 
-/* =========================================================
-   REVIEW PHOTO PREVIEW
-========================================================= */
+// =========================================================
+// TRIP PLANNER
+// =========================================================
 
-function initializePhotoPreview() {
+function initTripForm() {
 
-  const photoInput =
-    document.getElementById(
-      "reviewPhoto"
-    );
+  const form = document.getElementById("tripForm");
 
+  if (!form) return;
 
-  const photoPreview =
-    document.getElementById(
-      "photoPreview"
-    );
+  form.addEventListener("submit", async (e) => {
 
+    e.preventDefault();
 
-  if (!photoInput) {
+    const name =
+      document.getElementById("name")?.value.trim() || "";
 
-    return;
+    const country =
+      document.getElementById("country")?.value.trim() || "";
 
-  }
+    const date =
+      document.getElementById("date")?.value || "";
 
+    const guests =
+      document.getElementById("guests")?.value || "";
 
-  photoInput.addEventListener(
-    "change",
-    function () {
+    const message =
+      document.getElementById("message")?.value.trim() || "";
 
-      if (photoPreview) {
+    const text = `
+Hello Travel With Sri Lanka,
 
-        photoPreview.innerHTML =
-          "";
+Name: ${name}
+Country: ${country}
+Travel Date: ${date}
+Guests: ${guests}
 
-      }
+Message:
+${message}
+    `.trim();
 
+    const whatsappURL =
+      `https://wa.me/94758453391?text=${encodeURIComponent(text)}`;
 
-      const file =
-        this.files[0];
+    window.open(whatsappURL, "_blank");
 
-
-      if (!file) {
-
-        return;
-
-      }
-
-
-      const allowedTypes = [
-
-        "image/jpeg",
-        "image/png",
-        "image/webp"
-
-      ];
-
-
-      if (
-        !allowedTypes.includes(
-          file.type
-        )
-      ) {
-
-        this.value = "";
-
-        alert(
-          "Please select a JPG, PNG or WebP image."
-        );
-
-        return;
-
-      }
-
-
-      if (
-        file.size >
-        5 * 1024 * 1024
-      ) {
-
-        this.value = "";
-
-        alert(
-          "Image must be smaller than 5MB."
-        );
-
-        return;
-
-      }
-
-
-      const image =
-        document.createElement(
-          "img"
-        );
-
-
-      image.src =
-        URL.createObjectURL(
-          file
-        );
-
-
-      image.className =
-        "reviewPreview";
-
-
-      if (photoPreview) {
-
-        photoPreview.appendChild(
-          image
-        );
-
-      }
-
-    }
-  );
+  });
 
 }
 
 
-/* =========================================================
-   LOAD DESTINATIONS
-========================================================= */
+// =========================================================
+// STAR RATING
+// =========================================================
 
-async function loadDestinations() {
+let selectedRating = 5;
 
-  try {
+function initStarRating() {
 
-    const {
-      data,
-      error
-    } =
-      await supabase
-        .from("destinations")
-        .select(
-          "id, name, slug, description, image_url, page_url, sort_order"
-        )
-        .order(
-          "sort_order",
-          {
-            ascending: true
-          }
-        );
+  const stars =
+    document.querySelectorAll(".star");
+
+  const ratingInput =
+    document.getElementById("reviewRating");
+
+  const ratingContainer =
+    document.getElementById("starRating");
+
+  if (!stars.length) return;
+
+  stars.forEach((star, index) => {
+
+    const rating = index + 1;
+
+    star.addEventListener("click", () => {
+
+      selectedRating = rating;
+
+      if (ratingInput) {
+        ratingInput.value = rating;
+      }
+
+      updateStars(rating);
+
+    });
+
+    star.addEventListener("mouseenter", () => {
+      updateStars(rating);
+    });
+
+  });
+
+  if (ratingContainer) {
+
+    ratingContainer.addEventListener("mouseleave", () => {
+      updateStars(selectedRating);
+    });
+
+  }
+
+  updateStars(selectedRating);
+
+}
 
 
-    if (error) {
+function updateStars(rating) {
+
+  const stars =
+    document.querySelectorAll(".star");
+
+  stars.forEach((star, index) => {
+
+    if (index < rating) {
+      star.classList.add("active");
+      star.textContent = "★";
+    } else {
+      star.classList.remove("active");
+      star.textContent = "☆";
+    }
+
+  });
+
+}
+
+
+// =========================================================
+// REVIEW PHOTO PREVIEW
+// =========================================================
+
+function initReviewPhotoPreview() {
+
+  const input =
+    document.getElementById("reviewPhoto");
+
+  const preview =
+    document.getElementById("photoPreview");
+
+  if (!input || !preview) return;
+
+  input.addEventListener("change", () => {
+
+    const file = input.files?.[0];
+
+    if (!file) {
+
+      preview.innerHTML = "";
+      preview.style.display = "none";
+
+      return;
+    }
+
+    const url =
+      URL.createObjectURL(file);
+
+    preview.innerHTML = `
+      <img
+        src="${url}"
+        alt="Review photo preview"
+        style="
+          width:120px;
+          height:120px;
+          object-fit:cover;
+          border-radius:12px;
+          margin-top:10px;
+        "
+      >
+    `;
+
+    preview.style.display = "block";
+
+  });
+
+}
+
+
+// =========================================================
+// REVIEW FORM
+// =========================================================
+
+function initReviewForm() {
+
+  const form =
+    document.getElementById("reviewForm");
+
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const submitBtn =
+      document.getElementById("reviewSubmit");
+
+    const status =
+      document.getElementById("reviewStatus");
+
+    const name =
+      document.getElementById("reviewName")?.value.trim() || "";
+
+    const country =
+      document.getElementById("reviewCountry")?.value.trim() || "";
+
+    const text =
+      document.getElementById("reviewText")?.value.trim() || "";
+
+    const rating =
+      Number(
+        document.getElementById("reviewRating")?.value ||
+        selectedRating ||
+        5
+      );
+
+    const photoInput =
+      document.getElementById("reviewPhoto");
+
+    const photoFile =
+      photoInput?.files?.[0] || null;
+
+    if (!name || !text) {
+
+      if (status) {
+        status.textContent =
+          "Please enter your name and review.";
+      }
+
+      return;
+    }
+
+    try {
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+      }
+
+      if (status) {
+        status.textContent = "";
+      }
+
+      let photoUrl = null;
+
+
+      // ===================================================
+      // UPLOAD REVIEW PHOTO
+      // ===================================================
+
+      if (photoFile) {
+
+        const extension =
+          photoFile.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+        const safeName =
+          name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+
+        const filePath =
+          `reviews/${safeName}-${Date.now()}.${extension}`;
+
+        const { error: uploadError } =
+          await supabase
+            .storage
+            .from("review-photos")
+            .upload(
+              filePath,
+              photoFile,
+              {
+                cacheControl: "3600",
+                upsert: false
+              }
+            );
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: publicData } =
+          supabase
+            .storage
+            .from("review-photos")
+            .getPublicUrl(filePath);
+
+        photoUrl =
+          publicData?.publicUrl || null;
+
+      }
+
+
+      // ===================================================
+      // INSERT REVIEW
+      // ===================================================
+
+      const { error } =
+        await supabase
+          .from("reviews")
+          .insert({
+            name,
+            country,
+            rating,
+            review: text,
+            photo_url: photoUrl
+          });
+
+      if (error) {
+        throw error;
+      }
+
+
+      // ===================================================
+      // SUCCESS
+      // ===================================================
+
+      form.reset();
+
+      selectedRating = 5;
+
+      updateStars(5);
+
+      const preview =
+        document.getElementById("photoPreview");
+
+      if (preview) {
+        preview.innerHTML = "";
+        preview.style.display = "none";
+      }
+
+      if (status) {
+        status.textContent =
+          "Thank you! Your review has been submitted.";
+      }
+
+      await loadReviews();
+
+    } catch (error) {
 
       console.error(
-        "Destination loading error:",
+        "Review submission error:",
         error
       );
 
-      return;
+      if (status) {
 
-    }
-
-
-    const destinations =
-      data || [];
-
-
-    if (
-      destinations.length === 0
-    ) {
-
-      console.warn(
-        "No destinations found."
-      );
-
-      return;
-
-    }
-
-
-    destinations.forEach(
-      function (destination) {
-
-        updateDestination(
-          destination
-        );
+        status.textContent =
+          error?.message ||
+          "Failed to submit review.";
 
       }
-    );
 
-  }
+    } finally {
 
-  catch (error) {
+      if (submitBtn) {
 
-    console.error(
-      "Loading destinations failed:",
-      error
-    );
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Review";
 
-  }
+      }
+
+    }
+
+  });
 
 }
 
 
-/* =========================================================
-   FIND DESTINATION IMAGE
-========================================================= */
+// =========================================================
+// LOAD DESTINATIONS
+// =========================================================
 
-function findDestinationImage(
-  slug
-) {
+async function loadDestinations() {
 
-  const images =
-    document.querySelectorAll(
-      "#destinations img"
+  const {
+    data,
+    error
+  } = await supabase
+    .from("destinations")
+    .select(`
+      id,
+      name,
+      slug,
+      description,
+      image_url,
+      page_url,
+      sort_order
+    `)
+    .order(
+      "sort_order",
+      {
+        ascending: true
+      }
     );
 
 
+  if (error) {
+
+    console.error(
+      "Destinations loading error:",
+      error
+    );
+
+    return;
+  }
+
+
+  if (!data || !data.length) {
+
+    console.log(
+      "No destinations found."
+    );
+
+    return;
+  }
+
+
+  console.log(
+    "Destinations loaded:",
+    data
+  );
+
+
+  data.forEach(destination => {
+
+    updateDestination(destination);
+
+  });
+
+}
+
+
+// =========================================================
+// FIND DESTINATION IMAGE
+// =========================================================
+
+function findDestinationImage(slug) {
+
   const cleanSlug =
-    String(slug)
+    String(slug || "")
       .toLowerCase()
       .trim();
 
+  if (!cleanSlug) return null;
 
-  for (
-    const image of images
-  ) {
+
+  const images =
+    document.querySelectorAll("img");
+
+
+  for (const img of images) {
 
     const src =
-      image.getAttribute(
-        "src"
-      ) || "";
-
+      String(
+        img.getAttribute("src") || ""
+      ).toLowerCase();
 
     const alt =
-      image.getAttribute(
-        "alt"
-      ) || "";
-
-
-    const combined =
-      (
-        src +
-        " " +
-        alt
-      )
-      .toLowerCase();
+      String(
+        img.getAttribute("alt") || ""
+      ).toLowerCase();
 
 
     if (
-
-      combined.includes(
-        "/" +
-        cleanSlug +
-        "/"
+      src.includes(
+        `/destinations/${cleanSlug}/`
       )
-
-      ||
-
-      combined.includes(
-        "/" +
-        cleanSlug +
-        "."
-      )
-
-      ||
-
-      combined.includes(
-        cleanSlug +
-        ".jpg"
-      )
-
-      ||
-
-      combined.includes(
-        cleanSlug +
-        ".jpeg"
-      )
-
-      ||
-
-      combined.includes(
-        cleanSlug +
-        ".png"
-      )
-
-      ||
-
-      combined.includes(
-        cleanSlug +
-        ".webp"
-      )
-
-      ||
-
-      alt
-        .toLowerCase()
-        .includes(
-          cleanSlug
-        )
-
     ) {
+      return img;
+    }
 
-      return image;
 
+    if (
+      src.includes(
+        `/destinations/${cleanSlug}.`
+      )
+    ) {
+      return img;
+    }
+
+
+    if (
+      src.includes(
+        `/${cleanSlug}.jpg`
+      ) ||
+      src.includes(
+        `/${cleanSlug}.jpeg`
+      ) ||
+      src.includes(
+        `/${cleanSlug}.png`
+      ) ||
+      src.includes(
+        `/${cleanSlug}.webp`
+      )
+    ) {
+      return img;
+    }
+
+
+    if (
+      alt.includes(cleanSlug)
+    ) {
+      return img;
     }
 
   }
 
 
   return null;
-
 }
 
 
-/* =========================================================
-   UPDATE DESTINATION
-========================================================= */
+// =========================================================
+// UPDATE DESTINATION
+// =========================================================
 
-function updateDestination(
-  destination
-) {
-
-  if (!destination) {
-
-    return;
-
-  }
-
+function updateDestination(destination) {
 
   const slug =
-    String(
-      destination.slug ||
-      destination.name ||
-      ""
-    )
+    String(destination.slug || "")
       .toLowerCase()
       .trim();
 
 
-  if (!slug) {
-
-    return;
-
-  }
-
-
   const image =
-    findDestinationImage(
-      slug
-    );
+    findDestinationImage(slug);
 
 
   if (!image) {
 
     console.warn(
-      "Destination not found on website:",
-      slug
+      "Destination image not found:",
+      destination
     );
 
     return;
-
   }
 
 
-  /* -------------------------------------------------------
-     IMAGE
-  ------------------------------------------------------- */
+  // =======================================================
+  // PHOTO
+  // =======================================================
 
-  if (
-    destination.image_url
-  ) {
+  if (destination.image_url) {
 
     image.src =
       destination.image_url;
 
-    image.removeAttribute(
-      "srcset"
-    );
-
-    image.dataset.supabaseImage =
-      "true";
+    image.removeAttribute("srcset");
 
   }
 
 
-  /* -------------------------------------------------------
-     CARD
-  ------------------------------------------------------- */
+  // =======================================================
+  // FIND CARD
+  // =======================================================
 
   const card =
-    image.closest(
-      ".card"
-    );
+    image.closest(".card");
 
 
   if (!card) {
 
-    return;
-
-  }
-
-
-  /* -------------------------------------------------------
-     NAME
-  ------------------------------------------------------- */
-
-  const title =
-    card.querySelector(
-      "h3"
+    console.warn(
+      "Destination card not found:",
+      destination
     );
 
+    return;
+  }
 
-  if (
-    title &&
-    destination.name
-  ) {
+
+  // =======================================================
+  // NAME
+  // =======================================================
+
+  const title =
+    card.querySelector("h3");
+
+
+  if (title) {
 
     title.textContent =
-      destination.name;
+      destination.name || "";
 
   }
 
 
-  /* -------------------------------------------------------
-     DESCRIPTION
-  ------------------------------------------------------- */
+  // =======================================================
+  // DESCRIPTION
+  // =======================================================
 
   const description =
     card.querySelector(
@@ -716,341 +673,262 @@ function updateDestination(
     );
 
 
-  if (
-    description &&
-    destination.description
-  ) {
+  if (description) {
 
     description.textContent =
-      destination.description;
+      destination.description || "";
 
   }
 
 
-  /* -------------------------------------------------------
-     PAGE URL
-  ------------------------------------------------------- */
+  // =======================================================
+  // LINK
+  // =======================================================
 
   const link =
-    card.querySelector(
-      ".textLink"
-    );
+    card.querySelector(".textLink");
 
 
-  if (
-    link &&
-    destination.page_url
-  ) {
+  if (link && destination.page_url) {
 
     link.href =
       destination.page_url;
 
   }
 
+
+  console.log(
+    "Destination updated:",
+    destination.name
+  );
+
 }
 
 
-/* =========================================================
-   LOAD TOURS
-========================================================= */
+// =========================================================
+// LOAD TOURS
+// =========================================================
 
 async function loadTours() {
 
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabase
-        .from("tours")
-        .select(
-          "id, title, slug, description, image_url, page_url, sort_order"
-        )
-        .order(
-          "sort_order",
-          {
-            ascending: true
-          }
-        );
-
-
-    if (error) {
-
-      console.error(
-        "Tour loading error:",
-        error
-      );
-
-      return;
-
-    }
-
-
-    const tours =
-      data || [];
-
-
-    if (
-      tours.length === 0
-    ) {
-
-      console.warn(
-        "No tours found."
-      );
-
-      return;
-
-    }
-
-
-    tours.forEach(
-      function (tour) {
-
-        updateTour(
-          tour
-        );
-
+  const {
+    data,
+    error
+  } = await supabase
+    .from("tours")
+    .select(`
+      id,
+      title,
+      slug,
+      description,
+      image_url,
+      page_url,
+      sort_order
+    `)
+    .order(
+      "sort_order",
+      {
+        ascending: true
       }
     );
 
-  }
 
-  catch (error) {
+  if (error) {
 
     console.error(
-      "Loading tours failed:",
+      "Tours loading error:",
       error
     );
 
+    return;
   }
+
+
+  if (!data || !data.length) {
+
+    console.log(
+      "No tours found."
+    );
+
+    return;
+  }
+
+
+  console.log(
+    "Tours loaded:",
+    data
+  );
+
+
+  data.forEach(tour => {
+
+    updateTour(tour);
+
+  });
 
 }
 
 
-/* =========================================================
-   FIND TOUR IMAGE
-========================================================= */
+// =========================================================
+// FIND TOUR IMAGE
+// =========================================================
 
-function findTourImage(
-  slug
-) {
-
-  const images =
-    document.querySelectorAll(
-      "#tours img"
-    );
-
+function findTourImage(slug) {
 
   const cleanSlug =
-    String(slug)
+    String(slug || "")
       .toLowerCase()
       .trim();
 
 
-  for (
-    const image of images
-  ) {
+  if (!cleanSlug) return null;
+
+
+  const images =
+    document.querySelectorAll("img");
+
+
+  for (const img of images) {
 
     const src =
-      image.getAttribute(
-        "src"
-      ) || "";
-
+      String(
+        img.getAttribute("src") || ""
+      ).toLowerCase();
 
     const alt =
-      image.getAttribute(
-        "alt"
-      ) || "";
-
-
-    const combined =
-      (
-        src +
-        " " +
-        alt
-      )
-      .toLowerCase();
+      String(
+        img.getAttribute("alt") || ""
+      ).toLowerCase();
 
 
     if (
-
-      combined.includes(
-        "/" +
-        cleanSlug +
-        "/"
+      src.includes(
+        `/tours/${cleanSlug}/`
       )
-
-      ||
-
-      combined.includes(
-        "/" +
-        cleanSlug +
-        "."
-      )
-
-      ||
-
-      combined.includes(
-        cleanSlug +
-        ".jpg"
-      )
-
-      ||
-
-      combined.includes(
-        cleanSlug +
-        ".jpeg"
-      )
-
-      ||
-
-      combined.includes(
-        cleanSlug +
-        ".png"
-      )
-
-      ||
-
-      combined.includes(
-        cleanSlug +
-        ".webp"
-      )
-
-      ||
-
-      alt
-        .toLowerCase()
-        .includes(
-          cleanSlug
-        )
-
     ) {
+      return img;
+    }
 
-      return image;
 
+    if (
+      src.includes(
+        `/tours/${cleanSlug}.`
+      )
+    ) {
+      return img;
+    }
+
+
+    if (
+      src.includes(
+        `/${cleanSlug}.jpg`
+      ) ||
+      src.includes(
+        `/${cleanSlug}.jpeg`
+      ) ||
+      src.includes(
+        `/${cleanSlug}.png`
+      ) ||
+      src.includes(
+        `/${cleanSlug}.webp`
+      )
+    ) {
+      return img;
+    }
+
+
+    if (
+      alt.includes(cleanSlug)
+    ) {
+      return img;
     }
 
   }
 
 
   return null;
-
 }
 
 
-/* =========================================================
-   UPDATE TOUR
-========================================================= */
+// =========================================================
+// UPDATE TOUR
+// =========================================================
 
-function updateTour(
-  tour
-) {
-
-  if (!tour) {
-
-    return;
-
-  }
-
+function updateTour(tour) {
 
   const slug =
-    String(
-      tour.slug ||
-      tour.title ||
-      ""
-    )
+    String(tour.slug || "")
       .toLowerCase()
       .trim();
 
 
-  if (!slug) {
-
-    return;
-
-  }
-
-
   const image =
-    findTourImage(
-      slug
-    );
+    findTourImage(slug);
 
 
   if (!image) {
 
     console.warn(
-      "Tour not found on website:",
-      slug
+      "Tour image not found:",
+      tour
     );
 
     return;
-
   }
 
 
-  /* -------------------------------------------------------
-     IMAGE
-  ------------------------------------------------------- */
+  // =======================================================
+  // PHOTO
+  // =======================================================
 
-  if (
-    tour.image_url
-  ) {
+  if (tour.image_url) {
 
     image.src =
       tour.image_url;
 
-    image.removeAttribute(
-      "srcset"
-    );
-
-    image.dataset.supabaseImage =
-      "true";
+    image.removeAttribute("srcset");
 
   }
 
 
-  /* -------------------------------------------------------
-     TOUR CARD
-  ------------------------------------------------------- */
+  // =======================================================
+  // FIND TOUR CARD
+  // =======================================================
 
   const card =
-    image.closest(
-      ".tourCard"
-    );
+    image.closest(".tourCard");
 
 
   if (!card) {
 
-    return;
-
-  }
-
-
-  /* -------------------------------------------------------
-     TITLE
-  ------------------------------------------------------- */
-
-  const title =
-    card.querySelector(
-      "h3"
+    console.warn(
+      "Tour card not found:",
+      tour
     );
 
+    return;
+  }
 
-  if (
-    title &&
-    tour.title
-  ) {
+
+  // =======================================================
+  // TITLE
+  // =======================================================
+
+  const title =
+    card.querySelector("h3");
+
+
+  if (title) {
 
     title.textContent =
-      tour.title;
+      tour.title || "";
 
   }
 
 
-  /* -------------------------------------------------------
-     DESCRIPTION
-  ------------------------------------------------------- */
+  // =======================================================
+  // DESCRIPTION
+  // =======================================================
 
   const description =
     card.querySelector(
@@ -1058,472 +936,25 @@ function updateTour(
     );
 
 
-  if (
-    description &&
-    tour.description
-  ) {
+  if (description) {
 
     description.textContent =
-      tour.description;
-
-  }
-
-}
-
-
-/* =========================================================
-   REVIEW FORM
-========================================================= */
-
-function initializeReviewForm() {
-
-  const reviewForm =
-    document.getElementById(
-      "reviewForm"
-    );
-
-
-  if (!reviewForm) {
-
-    return;
+      tour.description || "";
 
   }
 
 
-  reviewForm.addEventListener(
-    "submit",
-    async function (event) {
-
-      event.preventDefault();
-
-      event.stopPropagation();
-
-
-      const status =
-        document.getElementById(
-          "reviewStatus"
-        );
-
-
-      const submitButton =
-        document.getElementById(
-          "reviewSubmit"
-        );
-
-
-      const nameInput =
-        document.getElementById(
-          "reviewName"
-        );
-
-
-      const countryInput =
-        document.getElementById(
-          "reviewCountry"
-        );
-
-
-      const reviewInput =
-        document.getElementById(
-          "reviewText"
-        );
-
-
-      const ratingInput =
-        document.getElementById(
-          "reviewRating"
-        );
-
-
-      const photoInput =
-        document.getElementById(
-          "reviewPhoto"
-        );
-
-
-      const name =
-        nameInput
-          ? nameInput.value.trim()
-          : "";
-
-
-      const country =
-        countryInput
-          ? countryInput.value.trim()
-          : "";
-
-
-      const review =
-        reviewInput
-          ? reviewInput.value.trim()
-          : "";
-
-
-      const rating =
-        ratingInput
-          ? Number(
-              ratingInput.value
-            )
-          : 0;
-
-
-      const file =
-        photoInput &&
-        photoInput.files
-          ? photoInput.files[0]
-          : null;
-
-
-      /* -----------------------------------------------------
-         VALIDATION
-      ----------------------------------------------------- */
-
-      if (
-        rating < 1 ||
-        rating > 5
-      ) {
-
-        if (status) {
-
-          status.textContent =
-            "Please select a star rating.";
-
-          status.className =
-            "reviewStatus error";
-
-        }
-
-        return;
-
-      }
-
-
-      if (
-        !name ||
-        !country ||
-        !review
-      ) {
-
-        if (status) {
-
-          status.textContent =
-            "Please complete all required fields.";
-
-          status.className =
-            "reviewStatus error";
-
-        }
-
-        return;
-
-      }
-
-
-      if (file) {
-
-        const allowedTypes = [
-
-          "image/jpeg",
-          "image/png",
-          "image/webp"
-
-        ];
-
-
-        if (
-          !allowedTypes.includes(
-            file.type
-          )
-        ) {
-
-          if (status) {
-
-            status.textContent =
-              "Please upload a JPG, PNG or WebP image.";
-
-            status.className =
-              "reviewStatus error";
-
-          }
-
-          return;
-
-        }
-
-
-        if (
-          file.size >
-          5 * 1024 * 1024
-        ) {
-
-          if (status) {
-
-            status.textContent =
-              "Photo must be smaller than 5MB.";
-
-            status.className =
-              "reviewStatus error";
-
-          }
-
-          return;
-
-        }
-
-      }
-
-
-      if (submitButton) {
-
-        submitButton.disabled =
-          true;
-
-        submitButton.textContent =
-          "Posting Review...";
-
-      }
-
-
-      if (status) {
-
-        status.textContent =
-          "Please wait...";
-
-        status.className =
-          "reviewStatus";
-
-      }
-
-
-      try {
-
-        let photoURL =
-          null;
-
-
-        let photoPath =
-          null;
-
-
-        /* ---------------------------------------------------
-           UPLOAD REVIEW PHOTO
-        --------------------------------------------------- */
-
-        if (file) {
-
-          const extension =
-            file.name
-              .split(".")
-              .pop()
-              .toLowerCase();
-
-
-          const uniqueName =
-
-            Date.now() +
-            "-" +
-            Math.random()
-              .toString(36)
-              .substring(2) +
-            "." +
-            extension;
-
-
-          photoPath =
-            uniqueName;
-
-
-          const uploadResult =
-            await supabase
-              .storage
-              .from("review-photos")
-              .upload(
-                photoPath,
-                file,
-                {
-                  cacheControl: "3600",
-                  contentType: file.type,
-                  upsert: false
-                }
-              );
-
-
-          if (
-            uploadResult.error
-          ) {
-
-            throw uploadResult.error;
-
-          }
-
-
-          const publicURLResult =
-            supabase
-              .storage
-              .from("review-photos")
-              .getPublicUrl(
-                photoPath
-              );
-
-
-          photoURL =
-            publicURLResult
-              .data
-              .publicUrl;
-
-        }
-
-
-        /* ---------------------------------------------------
-           SAVE REVIEW
-        --------------------------------------------------- */
-
-        const insertResult =
-          await supabase
-            .from("reviews")
-            .insert({
-
-              name:
-                name,
-
-              country:
-                country,
-
-              rating:
-                rating,
-
-              review:
-                review,
-
-              photo_url:
-                photoURL
-
-            });
-
-
-        if (
-          insertResult.error
-        ) {
-
-          if (photoPath) {
-
-            await supabase
-              .storage
-              .from("review-photos")
-              .remove([
-                photoPath
-              ]);
-
-          }
-
-
-          throw insertResult.error;
-
-        }
-
-
-        /* ---------------------------------------------------
-           SUCCESS
-        --------------------------------------------------- */
-
-        if (status) {
-
-          status.textContent =
-            "Your review has been posted successfully!";
-
-          status.className =
-            "reviewStatus success";
-
-        }
-
-
-        reviewForm.reset();
-
-
-        if (ratingInput) {
-
-          ratingInput.value =
-            "0";
-
-        }
-
-
-        document
-          .querySelectorAll(
-            "#starRating button"
-          )
-          .forEach(function (star) {
-
-            star.classList.remove(
-              "selected"
-            );
-
-          });
-
-
-        const photoPreview =
-          document.getElementById(
-            "photoPreview"
-          );
-
-
-        if (photoPreview) {
-
-          photoPreview.innerHTML =
-            "";
-
-        }
-
-
-        await loadReviews();
-
-      }
-
-
-      catch (error) {
-
-        console.error(
-          "Review submission error:",
-          error
-        );
-
-
-        if (status) {
-
-          status.textContent =
-            "Unable to post your review. Please try again.";
-
-          status.className =
-            "reviewStatus error";
-
-        }
-
-      }
-
-
-      finally {
-
-        if (submitButton) {
-
-          submitButton.disabled =
-            false;
-
-          submitButton.textContent =
-            "Post My Review →";
-
-        }
-
-      }
-
-    }
+  console.log(
+    "Tour updated:",
+    tour.title
   );
 
 }
 
 
-/* =========================================================
-   LOAD REVIEWS
-========================================================= */
+// =========================================================
+// LOAD REVIEWS
+// =========================================================
 
 async function loadReviews() {
 
@@ -1533,266 +964,208 @@ async function loadReviews() {
     );
 
 
-  if (!container) {
-
-    return;
-
-  }
+  if (!container) return;
 
 
-  container.innerHTML = `
-
-    <div class="reviewsLoading">
-      Loading traveller reviews...
-    </div>
-
-  `;
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabase
-        .from("reviews")
-        .select(
-          "id, name, country, rating, review, photo_url, created_at"
-        )
-        .order(
-          "created_at",
-          {
-            ascending: false
-          }
-        );
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    const reviews =
-      data || [];
-
-
-    container.innerHTML =
-      "";
-
-
-    if (
-      reviews.length === 0
-    ) {
-
-      container.innerHTML = `
-
-        <div class="noReviews">
-
-          No traveller reviews yet.
-          Be the first to share your experience!
-
-        </div>
-
-      `;
-
-      return;
-
-    }
-
-
-    reviews.forEach(
-      function (review) {
-
-        const card =
-          createReviewCard(
-            review
-          );
-
-
-        container.appendChild(
-          card
-        );
-
+  const {
+    data,
+    error
+  } = await supabase
+    .from("reviews")
+    .select(`
+      id,
+      name,
+      country,
+      rating,
+      review,
+      photo_url,
+      created_at
+    `)
+    .order(
+      "created_at",
+      {
+        ascending: false
       }
     );
 
-  }
 
-
-  catch (error) {
+  if (error) {
 
     console.error(
-      "Loading reviews failed:",
+      "Reviews loading error:",
       error
     );
 
+    return;
+  }
+
+
+  container.innerHTML = "";
+
+
+  if (!data || !data.length) {
 
     container.innerHTML = `
-
-      <div class="noReviews">
-
-        Reviews are temporarily unavailable.
-
-      </div>
-
+      <p>
+        No reviews yet.
+      </p>
     `;
 
+    return;
   }
+
+
+  data.forEach(review => {
+
+    container.appendChild(
+      createReviewCard(review)
+    );
+
+  });
 
 }
 
 
-/* =========================================================
-   CREATE REVIEW CARD
-========================================================= */
+// =========================================================
+// ESCAPE HTML
+// =========================================================
 
-function createReviewCard(
-  data
-) {
+function escapeHTML(value) {
 
-  const article =
-    document.createElement(
-      "article"
-    );
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
 
 
-  article.className =
-    "reviewCard realReviewCard";
+// =========================================================
+// CREATE REVIEW CARD
+// =========================================================
+
+function createReviewCard(review) {
+
+  const card =
+    document.createElement("div");
+
+
+  card.className =
+    "reviewCard";
+
+
+  const name =
+    escapeHTML(review.name);
+
+
+  const country =
+    escapeHTML(review.country);
+
+
+  const text =
+    escapeHTML(review.review);
 
 
   const rating =
     Math.max(
-      1,
+      0,
       Math.min(
         5,
-        Number(data.rating) || 5
+        Number(review.rating || 5)
       )
     );
 
 
-  const starsHTML =
+  let stars = "";
 
-    "★".repeat(
-      rating
-    ) +
-
-    "☆".repeat(
-      5 - rating
-    );
-
-
-  const name =
-    escapeHTML(
-      data.name ||
-      "Traveller"
-    );
-
-
-  const country =
-    escapeHTML(
-      data.country ||
-      ""
-    );
-
-
-  const text =
-    escapeHTML(
-      data.review ||
-      ""
-    );
-
-
-  let photoHTML =
-    "";
-
-
-  if (
-    data.photo_url
+  for (
+    let i = 1;
+    i <= 5;
+    i++
   ) {
 
-    photoHTML = `
-
-      <img
-        src="${escapeAttribute(data.photo_url)}"
-        class="reviewPhoto"
-        alt="Photo shared by ${name}"
-        loading="lazy">
-
-    `;
+    stars +=
+      i <= rating
+        ? "★"
+        : "☆";
 
   }
 
 
-  article.innerHTML = `
+  const photo =
+    review.photo_url
+      ? `
+        <img
+          src="${escapeHTML(review.photo_url)}"
+          alt="${name}"
+          style="
+            width:70px;
+            height:70px;
+            object-fit:cover;
+            border-radius:50%;
+            margin-bottom:12px;
+          "
+        >
+      `
+      : "";
 
-    ${photoHTML}
 
-    <div class="rating">
-      ${starsHTML}
+  card.innerHTML = `
+
+    <div class="reviewInner">
+
+      ${photo}
+
+      <div class="reviewStars">
+        ${stars}
+      </div>
+
+      <h4>
+        ${name}
+      </h4>
+
+      ${
+        country
+          ? `<small>${country}</small>`
+          : ""
+      }
+
+      <p>
+        ${text}
+      </p>
+
     </div>
-
-    <p>
-      “${text}”
-    </p>
-
-    <strong>
-      ${name}
-    </strong>
-
-    <span class="reviewCountry">
-      ${country}
-    </span>
 
   `;
 
 
-  return article;
+  return card;
 
 }
 
 
-/* =========================================================
-   SECURITY HELPERS
-========================================================= */
+// =========================================================
+// GLOBAL SUPABASE DEBUG
+// =========================================================
 
-function escapeHTML(
-  value
-) {
+window.travelWithSriLanka = {
 
-  return String(value)
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+  supabase,
 
-}
+  reloadDestinations:
+    loadDestinations,
+
+  reloadTours:
+    loadTours,
+
+  reloadReviews:
+    loadReviews
+
+};
 
 
-function escapeAttribute(
-  value
-) {
-
-  return escapeHTML(
-    value
-  );
-
-}
+console.log(
+  "Travel With Sri Lanka script loaded successfully."
+);
