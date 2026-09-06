@@ -13,7 +13,6 @@ const SUPABASE_URL =
 const SUPABASE_ANON_KEY =
   "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
 
-
 const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
@@ -57,16 +56,13 @@ function initMobileMenu() {
   const nav =
     document.querySelector(".mainNav");
 
-
   if (!menuBtn || !nav) return;
-
 
   menuBtn.addEventListener("click", () => {
 
     nav.classList.toggle("active");
 
   });
-
 
   nav.querySelectorAll("a").forEach(link => {
 
@@ -90,14 +86,11 @@ function initTripForm() {
   const form =
     document.getElementById("tripForm");
 
-
   if (!form) return;
-
 
   form.addEventListener("submit", (event) => {
 
     event.preventDefault();
-
 
     const name =
       document.getElementById("name")?.value.trim() || "";
@@ -114,7 +107,6 @@ function initTripForm() {
     const message =
       document.getElementById("message")?.value.trim() || "";
 
-
     const whatsappMessage =
       `Hello Travel With Sri Lanka!
 
@@ -126,12 +118,10 @@ Guests: ${guests || "Not specified"}
 Trip Details:
 ${message}`;
 
-
     const whatsappURL =
       `https://wa.me/94758453391?text=${encodeURIComponent(
         whatsappMessage
       )}`;
-
 
     window.open(
       whatsappURL,
@@ -156,15 +146,10 @@ function initStarRating() {
   const ratingInput =
     document.getElementById("reviewRating");
 
-
   if (!starRating || !ratingInput) return;
 
-
   const stars =
-    starRating.querySelectorAll(
-      "[data-rating]"
-    );
-
+    starRating.querySelectorAll("[data-rating]");
 
   function updateStars(rating) {
 
@@ -182,7 +167,6 @@ function initStarRating() {
 
   }
 
-
   stars.forEach(star => {
 
     star.addEventListener("click", () => {
@@ -190,14 +174,14 @@ function initStarRating() {
       const rating =
         Number(star.dataset.rating);
 
-      ratingInput.value = rating;
+      ratingInput.value =
+        rating;
 
       updateStars(rating);
 
     });
 
   });
-
 
   updateStars(
     Number(ratingInput.value) || 5
@@ -218,32 +202,25 @@ function initReviewPhotoPreview() {
   const preview =
     document.getElementById("photoPreview");
 
-
   if (!input || !preview) return;
-
 
   input.addEventListener("change", () => {
 
     preview.innerHTML = "";
 
-
     const file =
       input.files?.[0];
 
-
     if (!file) return;
-
 
     const image =
       document.createElement("img");
-
 
     image.src =
       URL.createObjectURL(file);
 
     image.alt =
       "Review photo preview";
-
 
     preview.appendChild(image);
 
@@ -257,6 +234,11 @@ function initReviewPhotoPreview() {
 // =========================================================
 
 async function loadDestinations() {
+
+  const container =
+    document.querySelector(".cardGrid");
+
+  if (!container) return;
 
   const {
     data,
@@ -279,7 +261,6 @@ async function loadDestinations() {
       }
     );
 
-
   if (error) {
 
     console.error(
@@ -291,14 +272,16 @@ async function loadDestinations() {
 
   }
 
-
   if (!data) return;
 
+  // Clear old hardcoded destination cards
+  container.innerHTML = "";
 
+  // Create cards from Supabase
   data.forEach(destination => {
 
-    updateDestination(
-      destination
+    container.appendChild(
+      createDestinationCard(destination)
     );
 
   });
@@ -307,110 +290,101 @@ async function loadDestinations() {
 
 
 // =========================================================
-// UPDATE DESTINATION
+// CREATE DESTINATION CARD
 // =========================================================
 
-function updateDestination(destination) {
-
-  if (!destination.slug) return;
-
-
-  const slug =
-    String(destination.slug)
-      .trim()
-      .toLowerCase();
-
+function createDestinationCard(destination) {
 
   const card =
-    document.querySelector(
-      `.card[data-slug="${CSS.escape(slug)}"]`
-    );
+    document.createElement("article");
 
+  card.className =
+    "card";
 
-  if (!card) {
+  card.dataset.slug =
+    destination.slug || "";
 
-    console.warn(
-      "Destination card not found:",
-      slug
-    );
+  const photo =
+    document.createElement("div");
 
-    return;
-
-  }
-
-
-  // IMAGE
+  photo.className =
+    "photo";
 
   const image =
-    card.querySelector(
-      "[data-dynamic-image]"
-    );
+    document.createElement("img");
+
+  image.loading =
+    "lazy";
+
+  image.alt =
+    `${destination.name || "Sri Lanka"} Sri Lanka`;
+
+  image.src =
+    destination.image_url ||
+    "images/hero.jpg";
+
+  image.dataset.dynamicImage =
+    destination.slug || "";
+
+  photo.appendChild(image);
 
 
-  if (image && destination.image_url) {
+  const content =
+    document.createElement("div");
 
-    image.src =
-      destination.image_url;
-
-  }
-
-
-  // NAME
-
-  const name =
-    card.querySelector(
-      "[data-dynamic-name]"
-    );
+  content.className =
+    "cardContent";
 
 
-  if (name) {
+  const title =
+    document.createElement("h3");
 
-    name.textContent =
-      destination.name || "";
+  title.textContent =
+    destination.name || "";
 
-  }
+  title.dataset.dynamicName =
+    destination.slug || "";
 
-
-  // DESCRIPTION
 
   const description =
-    card.querySelector(
-      "[data-dynamic-description]"
-    );
+    document.createElement("p");
 
+  description.textContent =
+    destination.description || "";
 
-  if (description) {
+  description.dataset.dynamicDescription =
+    destination.slug || "";
 
-    description.textContent =
-      destination.description || "";
-
-  }
-
-
-  // PAGE URL
 
   const link =
-    card.querySelector(
-      "[data-dynamic-link]"
+    document.createElement("a");
+
+  link.className =
+    "textLink";
+
+  link.textContent =
+    "Discover →";
+
+  link.dataset.dynamicLink =
+    destination.slug || "";
+
+  link.href =
+    safePageUrl(
+      destination.page_url
     );
 
 
-  if (link && destination.page_url) {
+  content.appendChild(title);
 
-    link.href =
-      destination.page_url;
+  content.appendChild(description);
 
-  }
+  content.appendChild(link);
 
+  card.appendChild(photo);
 
-  // IMAGE ALT
+  card.appendChild(content);
 
-  if (image && destination.name) {
-
-    image.alt =
-      `${destination.name} Sri Lanka`;
-
-  }
+  return card;
 
 }
 
@@ -420,6 +394,11 @@ function updateDestination(destination) {
 // =========================================================
 
 async function loadTours() {
+
+  const container =
+    document.querySelector(".tourGrid");
+
+  if (!container) return;
 
   const {
     data,
@@ -442,7 +421,6 @@ async function loadTours() {
       }
     );
 
-
   if (error) {
 
     console.error(
@@ -454,13 +432,17 @@ async function loadTours() {
 
   }
 
-
   if (!data) return;
 
+  // Clear old hardcoded tour cards
+  container.innerHTML = "";
 
+  // Create cards from Supabase
   data.forEach(tour => {
 
-    updateTour(tour);
+    container.appendChild(
+      createTourCard(tour)
+    );
 
   });
 
@@ -468,110 +450,177 @@ async function loadTours() {
 
 
 // =========================================================
-// UPDATE TOUR
+// CREATE TOUR CARD
 // =========================================================
 
-function updateTour(tour) {
-
-  if (!tour.slug) return;
-
-
-  const slug =
-    String(tour.slug)
-      .trim()
-      .toLowerCase();
-
+function createTourCard(tour) {
 
   const card =
-    document.querySelector(
-      `.tourCard[data-slug="${CSS.escape(slug)}"]`
-    );
+    document.createElement("article");
+
+  card.className =
+    "tourCard";
+
+  card.dataset.slug =
+    tour.slug || "";
 
 
-  if (!card) {
+  const picture =
+    document.createElement("div");
 
-    console.warn(
-      "Tour card not found:",
-      slug
-    );
+  picture.className =
+    "tourPic";
 
-    return;
-
-  }
-
-
-  // IMAGE
 
   const image =
-    card.querySelector(
-      "[data-dynamic-image]"
-    );
+    document.createElement("img");
+
+  image.loading =
+    "lazy";
+
+  image.alt =
+    `${tour.title || "Sri Lanka Tour"} Sri Lanka`;
+
+  image.src =
+    tour.image_url ||
+    "images/hero.jpg";
+
+  image.dataset.dynamicImage =
+    tour.slug || "";
 
 
-  if (image && tour.image_url) {
-
-    image.src =
-      tour.image_url;
-
-  }
+  picture.appendChild(image);
 
 
-  // TITLE
+  const body =
+    document.createElement("div");
+
+  body.className =
+    "tourBody";
+
 
   const title =
-    card.querySelector(
-      "[data-dynamic-name]"
-    );
+    document.createElement("h3");
 
+  title.textContent =
+    tour.title || "";
 
-  if (title) {
+  title.dataset.dynamicName =
+    tour.slug || "";
 
-    title.textContent =
-      tour.title || "";
-
-  }
-
-
-  // DESCRIPTION
 
   const description =
-    card.querySelector(
-      "[data-dynamic-description]"
-    );
+    document.createElement("p");
 
+  description.textContent =
+    tour.description || "";
 
-  if (description) {
+  description.dataset.dynamicDescription =
+    tour.slug || "";
 
-    description.textContent =
-      tour.description || "";
-
-  }
-
-
-  // PAGE URL
 
   const link =
-    card.querySelector(
-      "[data-dynamic-link]"
-    );
+    document.createElement("a");
+
+  link.className =
+    "textLink";
+
+  link.textContent =
+    "Plan This Tour →";
+
+  link.dataset.dynamicLink =
+    tour.slug || "";
 
 
-  if (link && tour.page_url) {
+  if (tour.page_url) {
 
     link.href =
-      tour.page_url;
+      safePageUrl(
+        tour.page_url
+      );
+
+  } else {
+
+    link.href =
+      "#planner";
 
   }
 
 
-  // IMAGE ALT
+  body.appendChild(title);
 
-  if (image && tour.title) {
+  body.appendChild(description);
 
-    image.alt =
-      `${tour.title} Sri Lanka`;
+  body.appendChild(link);
+
+
+  card.appendChild(picture);
+
+  card.appendChild(body);
+
+
+  return card;
+
+}
+
+
+// =========================================================
+// SAFE PAGE URL
+// =========================================================
+
+function safePageUrl(url) {
+
+  if (!url) {
+
+    return "#";
 
   }
+
+  const value =
+    String(url).trim();
+
+
+  if (
+    value.startsWith("/") ||
+    value.startsWith("./") ||
+    value.startsWith("../") ||
+    value.startsWith("#")
+  ) {
+
+    return value;
+
+  }
+
+
+  try {
+
+    const parsed =
+      new URL(
+        value,
+        window.location.origin
+      );
+
+
+    if (
+      parsed.protocol === "http:" ||
+      parsed.protocol === "https:"
+    ) {
+
+      return value;
+
+    }
+
+  } catch (error) {
+
+    console.warn(
+      "Invalid page URL:",
+      url
+    );
+
+  }
+
+
+  return "#";
 
 }
 
@@ -583,13 +632,9 @@ function updateTour(tour) {
 function initReviewForm() {
 
   const form =
-    document.getElementById(
-      "reviewForm"
-    );
-
+    document.getElementById("reviewForm");
 
   if (!form) return;
-
 
   form.addEventListener(
     "submit",
@@ -607,48 +652,37 @@ async function submitReview(event) {
 
   event.preventDefault();
 
-
   const submitButton =
-    document.getElementById(
-      "reviewSubmit"
-    );
+    document.getElementById("reviewSubmit");
 
   const status =
-    document.getElementById(
-      "reviewStatus"
-    );
+    document.getElementById("reviewStatus");
 
 
   const name =
-    document.getElementById(
-      "reviewName"
-    )?.value.trim() || "";
+    document.getElementById("reviewName")
+      ?.value.trim() || "";
 
 
   const country =
-    document.getElementById(
-      "reviewCountry"
-    )?.value.trim() || "";
+    document.getElementById("reviewCountry")
+      ?.value.trim() || "";
 
 
   const rating =
     Number(
-      document.getElementById(
-        "reviewRating"
-      )?.value || 5
+      document.getElementById("reviewRating")
+        ?.value || 5
     );
 
 
   const reviewText =
-    document.getElementById(
-      "reviewText"
-    )?.value.trim() || "";
+    document.getElementById("reviewText")
+      ?.value.trim() || "";
 
 
   const photoInput =
-    document.getElementById(
-      "reviewPhoto"
-    );
+    document.getElementById("reviewPhoto");
 
 
   const file =
@@ -833,7 +867,6 @@ async function submitReview(event) {
 
     initStarRating();
 
-
     await loadReviews();
 
   }
@@ -882,7 +915,6 @@ async function loadReviews() {
     document.getElementById(
       "reviewsContainer"
     );
-
 
   if (!container) return;
 
@@ -953,10 +985,7 @@ async function loadReviews() {
 function createReviewCard(review) {
 
   const card =
-    document.createElement(
-      "article"
-    );
-
+    document.createElement("article");
 
   card.className =
     "reviewCard";
