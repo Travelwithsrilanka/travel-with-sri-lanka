@@ -1,1 +1,80 @@
-<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title> Admin Dashboard | Travel With Sri Lanka </title> </head> <body> <div id="adminStatus"> Admin panel loading... </div> <script type="module" src="admin-dashboard.js"> </script> </body> </html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Travel With Sri Lanka</title>
+</head>
+
+<body>
+
+  <div id="adminStatus"
+       style="
+         padding:30px;
+         font-family:Arial,sans-serif;
+         text-align:center;
+       ">
+    Admin panel loading...
+  </div>
+
+  <script type="module">
+    console.log("ADMIN HTML SCRIPT STARTED");
+
+    const status = document.getElementById("adminStatus");
+
+    status.innerHTML = `
+      <h2>Admin Panel Starting...</h2>
+      <p>JavaScript is working.</p>
+    `;
+
+    import("./admin-dashboard.js")
+      .then(() => {
+        console.log("admin-dashboard.js loaded successfully");
+      })
+      .catch((error) => {
+        console.error("admin-dashboard.js LOAD ERROR:", error);
+
+        status.innerHTML = `
+          <div style="
+            max-width:600px;
+            margin:30px auto;
+            padding:25px;
+            background:#fff3f3;
+            border:1px solid #e0aaaa;
+            border-radius:12px;
+            text-align:left;
+          ">
+            <h2 style="color:#c0392b;">
+              Admin Panel Error
+            </h2>
+
+            <p>
+              admin-dashboard.js load වෙන්නේ නැහැ.
+            </p>
+
+            <pre style="
+              white-space:pre-wrap;
+              word-break:break-word;
+            ">${error.message}</pre>
+
+            <button
+              onclick="location.href='admin.html'"
+              style="
+                padding:12px 20px;
+                background:#176b4d;
+                color:white;
+                border:0;
+                border-radius:8px;
+              "
+            >
+              Back to Login
+            </button>
+          </div>
+        `;
+      });
+  </script>
+
+</body>
+
+</html>
