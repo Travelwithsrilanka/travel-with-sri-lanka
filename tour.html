@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Tour | Travel With Sri Lanka</title>
+
+  <meta
+    name="description"
+    content="Explore Sri Lanka with Travel With Sri Lanka."
+  >
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+
+<body>
+
+<header class="site-header">
+
+  <div class="header-inner">
+
+    <a href="index.html" class="logo">
+      Travel With Sri Lanka
+    </a>
+
+    <nav class="mainNav">
+
+      <a href="index.html">Home</a>
+
+      <a href="index.html#about">About</a>
+
+      <a href="index.html#destinations">Destinations</a>
+
+      <a href="index.html#tours">Tours</a>
+
+      <a href="index.html#planner">Plan Your Trip</a>
+
+    </nav>
+
+    <button
+      class="menuBtn"
+      id="menuBtn"
+      type="button"
+    >
+      ☰
+    </button>
+
+  </div>
+
+</header>
+
+
+
+<section
+  class="hero"
+  id="tourHero"
+>
+
+  <div class="heroShade"></div>
+
+  <div class="heroText">
+
+    <p class="eyebrow">
+      SRI LANKA TOUR
+    </p>
+
+    <h1 id="tourTitle">
+      Loading...
+    </h1>
+
+    <p id="tourDescription">
+      Loading tour information...
+    </p>
+
+  </div>
+
+</section>
+
+
+
+<main>
+
+  <section class="section">
+
+    <div class="sectionHead">
+
+      <p class="eyebrow">
+        EXPLORE OUR TOUR
+      </p>
+
+      <h2 id="tourHeading">
+        Loading...
+      </h2>
+
+    </div>
+
+
+    <div class="aboutGrid">
+
+      <div class="aboutText">
+
+        <p id="tourFullDescription">
+          Loading tour information...
+        </p>
+
+      </div>
+
+
+      <div class="aboutHighlights">
+
+        <div>
+
+          <strong>
+            🇱🇰 Destination
+          </strong>
+
+          <span>
+            Sri Lanka
+          </span>
+
+        </div>
+
+
+        <div>
+
+          <strong>
+            ✈️ Private Journey
+          </strong>
+
+          <span>
+            Personalized travel experience
+          </span>
+
+        </div>
+
+
+        <div>
+
+          <strong>
+            💬 Plan Your Tour
+          </strong>
+
+          <span>
+            Contact us for your perfect journey
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <section class="planner">
+
+    <div class="sectionHead">
+
+      <p class="eyebrow">
+        PLAN YOUR TOUR
+      </p>
+
+      <h2>
+        Book <span id="plannerTour">Your Tour</span>
+      </h2>
+
+    </div>
+
+
+    <form
+      class="plannerForm"
+      id="tourForm"
+    >
+
+      <div class="formGrid">
+
+        <input
+          type="text"
+          id="name"
+          placeholder="Your Name"
+          required
+        >
+
+        <input
+          type="text"
+          id="country"
+          placeholder="Country"
+          required
+        >
+
+        <input
+          type="date"
+          id="date"
+        >
+
+        <input
+          type="number"
+          id="guests"
+          placeholder="Number of Guests"
+          min="1"
+        >
+
+      </div>
+
+
+      <textarea
+        id="message"
+        placeholder="Tell us about your trip..."
+        rows="5"
+      ></textarea>
+
+
+      <button
+        type="submit"
+        class="btn"
+      >
+        Plan This Tour
+      </button>
+
+    </form>
+
+  </section>
+
+</main>
+
+
+
+<footer class="footer">
+
+  <div class="footerBottom">
+
+    <p>
+      © 2026 Travel With Sri Lanka. All rights reserved.
+    </p>
+
+  </div>
+
+</footer>
+
+
+
+<script type="module">
+
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+
+const SUPABASE_URL =
+  "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
+
+
+const SUPABASE_ANON_KEY =
+  "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
+
+
+const supabase =
+  createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+
+
+/* =====================================================
+   GET SLUG
+===================================================== */
+
+const params =
+  new URLSearchParams(
+    window.location.search
+  );
+
+
+const slug =
+  (params.get("slug") || "")
+    .trim()
+    .toLowerCase();
+
+
+
+/* =====================================================
+   MOBILE MENU
+===================================================== */
+
+const menuBtn =
+  document.getElementById("menuBtn");
+
+
+const nav =
+  document.querySelector(".mainNav");
+
+
+if (menuBtn && nav) {
+
+  menuBtn.addEventListener(
+    "click",
+    () => {
+
+      nav.classList.toggle(
+        "active"
+      );
+
+    }
+  );
+
+}
+
+
+
+/* =====================================================
+   TOUR FORM
+===================================================== */
+
+const tourForm =
+  document.getElementById("tourForm");
+
+
+if (tourForm) {
+
+  tourForm.addEventListener(
+    "submit",
+    event => {
+
+      event.preventDefault();
+
+
+      const name =
+        document.getElementById("name")
+          ?.value.trim() || "";
+
+
+      const country =
+        document.getElementById("country")
+          ?.value.trim() || "";
+
+
+      const date =
+        document.getElementById("date")
+          ?.value || "";
+
+
+      const guests =
+        document.getElementById("guests")
+          ?.value || "";
+
+
+      const message =
+        document.getElementById("message")
+          ?.value.trim() || "";
+
+
+      const tourName =
+        document.getElementById(
+          "plannerTour"
+        )?.textContent || "Sri Lanka Tour";
+
+
+      const whatsappMessage =
+        `Hello Travel With Sri Lanka!
+
+I am interested in the ${tourName}.
+
+Name: ${name}
+Country: ${country}
+Travel Date: ${date || "Not specified"}
+Guests: ${guests || "Not specified"}
+
+Trip Details:
+${message}`;
+
+
+      const whatsappURL =
+        `https://wa.me/94758453391?text=${encodeURIComponent(
+          whatsappMessage
+        )}`;
+
+
+      window.open(
+        whatsappURL,
+        "_blank",
+        "noopener"
+      );
+
+    }
+  );
+
+}
+
+
+
+/* =====================================================
+   LOAD TOUR
+===================================================== */
+
+async function loadTour() {
+
+  if (!slug) {
+
+    showError(
+      "Tour not specified."
+    );
+
+    return;
+
+  }
+
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from("tours")
+    .select(`
+      id,
+      title,
+      slug,
+      description,
+      image_url,
+      page_url
+    `)
+    .eq(
+      "slug",
+      slug
+    )
+    .single();
+
+
+  if (error) {
+
+    console.error(
+      "Tour load error:",
+      error
+    );
+
+
+    showError(
+      "Tour not found."
+    );
+
+    return;
+
+  }
+
+
+  if (!data) {
+
+    showError(
+      "Tour not found."
+    );
+
+    return;
+
+  }
+
+
+  displayTour(data);
+
+}
+
+
+
+/* =====================================================
+   DISPLAY TOUR
+===================================================== */
+
+function displayTour(tour) {
+
+  const title =
+    tour.title ||
+    "Sri Lanka Tour";
+
+
+  const description =
+    tour.description ||
+    "Discover Sri Lanka with Travel With Sri Lanka.";
+
+
+  document.title =
+    `${title} | Travel With Sri Lanka`;
+
+
+  /* HERO IMAGE */
+
+  const hero =
+    document.getElementById(
+      "tourHero"
+    );
+
+
+  if (
+    hero &&
+    tour.image_url
+  ) {
+
+    hero.style.backgroundImage =
+      `url("${tour.image_url}")`;
+
+  }
+
+
+  /* TITLE */
+
+  const tourTitle =
+    document.getElementById(
+      "tourTitle"
+    );
+
+
+  if (tourTitle) {
+
+    tourTitle.textContent =
+      title;
+
+  }
+
+
+  /* HERO DESCRIPTION */
+
+  const tourDescription =
+    document.getElementById(
+      "tourDescription"
+    );
+
+
+  if (tourDescription) {
+
+    tourDescription.textContent =
+      description;
+
+  }
+
+
+  /* HEADING */
+
+  const tourHeading =
+    document.getElementById(
+      "tourHeading"
+    );
+
+
+  if (tourHeading) {
+
+    tourHeading.textContent =
+      `Explore ${title}`;
+
+  }
+
+
+  /* FULL DESCRIPTION */
+
+  const fullDescription =
+    document.getElementById(
+      "tourFullDescription"
+    );
+
+
+  if (fullDescription) {
+
+    fullDescription.textContent =
+      description;
+
+  }
+
+
+  /* PLANNER */
+
+  const plannerTour =
+    document.getElementById(
+      "plannerTour"
+    );
+
+
+  if (plannerTour) {
+
+    plannerTour.textContent =
+      title;
+
+  }
+
+}
+
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+function showError(message) {
+
+  const title =
+    document.getElementById(
+      "tourTitle"
+    );
+
+
+  if (title) {
+
+    title.textContent =
+      message;
+
+  }
+
+
+  const description =
+    document.getElementById(
+      "tourDescription"
+    );
+
+
+  if (description) {
+
+    description.textContent =
+      "Please return to the tours page.";
+
+  }
+
+}
+
+
+
+/* =====================================================
+   START
+===================================================== */
+
+loadTour();
+
+</script>
+
+</body>
+
+</html>
