@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Destination | Travel With Sri Lanka</title>
+
+  <meta
+    name="description"
+    content="Discover Sri Lanka with Travel With Sri Lanka."
+  >
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header class="site-header">
+
+  <div class="header-inner">
+
+    <a
+      href="index.html"
+      class="logo"
+    >
+      Travel With Sri Lanka
+    </a>
+
+
+    <nav class="mainNav">
+
+      <a href="index.html">Home</a>
+
+      <a href="index.html#about">About</a>
+
+      <a href="index.html#destinations">Destinations</a>
+
+      <a href="index.html#tours">Tours</a>
+
+      <a href="index.html#planner">Plan Your Trip</a>
+
+    </nav>
+
+
+    <button
+      class="menuBtn"
+      id="menuBtn"
+      type="button"
+    >
+      ☰
+    </button>
+
+  </div>
+
+</header>
+
+
+
+<!-- =====================================================
+     DESTINATION HERO
+===================================================== -->
+
+<section
+  class="hero"
+  id="destinationHero"
+>
+
+  <div class="heroShade"></div>
+
+  <div class="heroText">
+
+    <p class="eyebrow">
+      DESTINATION
+    </p>
+
+    <h1 id="destinationName">
+      Loading...
+    </h1>
+
+    <p id="destinationDescription">
+      Discovering Sri Lanka...
+    </p>
+
+  </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     DESTINATION CONTENT
+===================================================== -->
+
+<main>
+
+  <section class="section">
+
+    <div class="sectionHead">
+
+      <p class="eyebrow">
+        EXPLORE SRI LANKA
+      </p>
+
+      <h2 id="destinationTitle">
+        Loading...
+      </h2>
+
+    </div>
+
+
+    <div class="aboutGrid">
+
+      <div class="aboutText">
+
+        <p id="destinationFullDescription">
+          Loading destination information...
+        </p>
+
+      </div>
+
+
+      <div class="aboutHighlights">
+
+        <div>
+
+          <strong>
+            📍 Location
+          </strong>
+
+          <span id="destinationLocation">
+            Sri Lanka
+          </span>
+
+        </div>
+
+
+        <div>
+
+          <strong>
+            ✈️ Travel With Us
+          </strong>
+
+          <span>
+            Private journeys & authentic experiences
+          </span>
+
+        </div>
+
+
+        <div>
+
+          <strong>
+            💬 Plan Your Trip
+          </strong>
+
+          <span>
+            Contact us for a personalized journey
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ===================================================
+       CONTACT / PLANNER
+  ==================================================== -->
+
+  <section class="planner">
+
+    <div class="sectionHead">
+
+      <p class="eyebrow">
+        PLAN YOUR JOURNEY
+      </p>
+
+      <h2>
+        Visit <span id="plannerDestination">Sri Lanka</span>
+      </h2>
+
+    </div>
+
+
+    <form
+      class="plannerForm"
+      id="tripForm"
+    >
+
+      <div class="formGrid">
+
+        <input
+          type="text"
+          id="name"
+          placeholder="Your Name"
+          required
+        >
+
+        <input
+          type="text"
+          id="country"
+          placeholder="Country"
+          required
+        >
+
+        <input
+          type="date"
+          id="date"
+        >
+
+        <input
+          type="number"
+          id="guests"
+          placeholder="Number of Guests"
+          min="1"
+        >
+
+      </div>
+
+
+      <textarea
+        id="message"
+        placeholder="Tell us about your trip..."
+        rows="5"
+      ></textarea>
+
+
+      <button
+        type="submit"
+        class="btn"
+      >
+        Plan My Trip
+      </button>
+
+    </form>
+
+  </section>
+
+</main>
+
+
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
+<footer class="footer">
+
+  <div class="footerBottom">
+
+    <p>
+      © 2026 Travel With Sri Lanka. All rights reserved.
+    </p>
+
+  </div>
+
+</footer>
+
+
+
+<!-- =====================================================
+     SUPABASE + DYNAMIC PAGE
+===================================================== -->
+
+<script type="module">
+
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+
+
+const SUPABASE_URL =
+  "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
+
+
+const SUPABASE_ANON_KEY =
+  "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
+
+
+const supabase =
+  createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+
+
+/* =====================================================
+   GET SLUG FROM URL
+===================================================== */
+
+const params =
+  new URLSearchParams(
+    window.location.search
+  );
+
+
+const slug =
+  (params.get("slug") || "")
+    .trim()
+    .toLowerCase();
+
+
+
+/* =====================================================
+   MOBILE MENU
+===================================================== */
+
+const menuBtn =
+  document.getElementById("menuBtn");
+
+
+const nav =
+  document.querySelector(".mainNav");
+
+
+if (menuBtn && nav) {
+
+  menuBtn.addEventListener(
+    "click",
+    () => {
+
+      nav.classList.toggle(
+        "active"
+      );
+
+    }
+  );
+
+}
+
+
+
+/* =====================================================
+   TRIP FORM
+===================================================== */
+
+const tripForm =
+  document.getElementById("tripForm");
+
+
+if (tripForm) {
+
+  tripForm.addEventListener(
+    "submit",
+    event => {
+
+      event.preventDefault();
+
+
+      const name =
+        document.getElementById("name")
+          ?.value.trim() || "";
+
+
+      const country =
+        document.getElementById("country")
+          ?.value.trim() || "";
+
+
+      const date =
+        document.getElementById("date")
+          ?.value || "";
+
+
+      const guests =
+        document.getElementById("guests")
+          ?.value || "";
+
+
+      const message =
+        document.getElementById("message")
+          ?.value.trim() || "";
+
+
+      const destinationName =
+        document.getElementById(
+          "plannerDestination"
+        )?.textContent || "Sri Lanka";
+
+
+      const whatsappMessage =
+        `Hello Travel With Sri Lanka!
+
+I am interested in visiting ${destinationName}.
+
+Name: ${name}
+Country: ${country}
+Travel Date: ${date || "Not specified"}
+Guests: ${guests || "Not specified"}
+
+Trip Details:
+${message}`;
+
+
+      const whatsappURL =
+        `https://wa.me/94758453391?text=${encodeURIComponent(
+          whatsappMessage
+        )}`;
+
+
+      window.open(
+        whatsappURL,
+        "_blank",
+        "noopener"
+      );
+
+    }
+  );
+
+}
+
+
+
+/* =====================================================
+   LOAD DESTINATION
+===================================================== */
+
+async function loadDestination() {
+
+  if (!slug) {
+
+    showError(
+      "Destination not specified."
+    );
+
+    return;
+
+  }
+
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from("destinations")
+    .select(`
+      id,
+      name,
+      slug,
+      description,
+      image_url,
+      page_url
+    `)
+    .eq(
+      "slug",
+      slug
+    )
+    .single();
+
+
+  if (error) {
+
+    console.error(
+      "Destination load error:",
+      error
+    );
+
+
+    showError(
+      "Destination not found."
+    );
+
+    return;
+
+  }
+
+
+  if (!data) {
+
+    showError(
+      "Destination not found."
+    );
+
+    return;
+
+  }
+
+
+  displayDestination(
+    data
+  );
+
+}
+
+
+
+/* =====================================================
+   DISPLAY DESTINATION
+===================================================== */
+
+function displayDestination(
+  destination
+) {
+
+  const name =
+    destination.name ||
+    "Sri Lanka";
+
+
+  const description =
+    destination.description ||
+    "Discover this beautiful destination in Sri Lanka.";
+
+
+  /* TITLE */
+
+  document.title =
+    `${name} | Travel With Sri Lanka`;
+
+
+  /* HERO */
+
+  const hero =
+    document.getElementById(
+      "destinationHero"
+    );
+
+
+  if (
+    hero &&
+    destination.image_url
+  ) {
+
+    hero.style.backgroundImage =
+      `url("${destination.image_url}")`;
+
+  }
+
+
+  /* NAME */
+
+  const destinationName =
+    document.getElementById(
+      "destinationName"
+    );
+
+
+  if (destinationName) {
+
+    destinationName.textContent =
+      name;
+
+  }
+
+
+  /* HERO DESCRIPTION */
+
+  const destinationDescription =
+    document.getElementById(
+      "destinationDescription"
+    );
+
+
+  if (destinationDescription) {
+
+    destinationDescription.textContent =
+      description;
+
+  }
+
+
+  /* TITLE */
+
+  const destinationTitle =
+    document.getElementById(
+      "destinationTitle"
+    );
+
+
+  if (destinationTitle) {
+
+    destinationTitle.textContent =
+      `Discover ${name}`;
+
+  }
+
+
+  /* FULL DESCRIPTION */
+
+  const fullDescription =
+    document.getElementById(
+      "destinationFullDescription"
+    );
+
+
+  if (fullDescription) {
+
+    fullDescription.textContent =
+      description;
+
+  }
+
+
+  /* LOCATION */
+
+  const location =
+    document.getElementById(
+      "destinationLocation"
+    );
+
+
+  if (location) {
+
+    location.textContent =
+      name;
+
+  }
+
+
+  /* PLANNER */
+
+  const plannerDestination =
+    document.getElementById(
+      "plannerDestination"
+    );
+
+
+  if (plannerDestination) {
+
+    plannerDestination.textContent =
+      name;
+
+  }
+
+}
+
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+function showError(
+  message
+) {
+
+  const name =
+    document.getElementById(
+      "destinationName"
+    );
+
+
+  if (name) {
+
+    name.textContent =
+      message;
+
+  }
+
+
+  const description =
+    document.getElementById(
+      "destinationDescription"
+    );
+
+
+  if (description) {
+
+    description.textContent =
+      "Please return to the destinations page.";
+
+  }
+
+}
+
+
+
+/* =====================================================
+   START
+===================================================== */
+
+loadDestination();
+
+</script>
+
+</body>
+
+</html>
