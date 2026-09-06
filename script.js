@@ -1,11 +1,6 @@
-// =========================================================
-// TRAVEL WITH SRI LANKA
-// MAIN WEBSITE SCRIPT
-// Supabase Dynamic Content + Reviews
-// =========================================================
-
-import { createClient } from
-  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 
 // =========================================================
@@ -15,29 +10,36 @@ import { createClient } from
 const SUPABASE_URL =
   "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
 
-const SUPABASE_KEY =
+const SUPABASE_ANON_KEY =
   "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
+
 
 const supabase = createClient(
   SUPABASE_URL,
-  SUPABASE_KEY
+  SUPABASE_ANON_KEY
 );
 
 
 // =========================================================
-// DOM READY
+// PAGE READY
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
 
   initMobileMenu();
+
   initTripForm();
+
   initStarRating();
+
   initReviewPhotoPreview();
+
   initReviewForm();
 
   loadDestinations();
+
   loadTours();
+
   loadReviews();
 
 });
@@ -50,24 +52,28 @@ document.addEventListener("DOMContentLoaded", () => {
 function initMobileMenu() {
 
   const menuBtn =
-    document.querySelector(".menuBtn") ||
-    document.querySelector("#menuBtn") ||
-    document.querySelector(".hamburger");
+    document.getElementById("menuBtn");
 
   const nav =
-    document.querySelector("nav") ||
-    document.querySelector(".nav");
+    document.querySelector(".mainNav");
+
 
   if (!menuBtn || !nav) return;
 
+
   menuBtn.addEventListener("click", () => {
+
     nav.classList.toggle("active");
+
   });
+
 
   nav.querySelectorAll("a").forEach(link => {
 
     link.addEventListener("click", () => {
+
       nav.classList.remove("active");
+
     });
 
   });
@@ -81,13 +87,17 @@ function initMobileMenu() {
 
 function initTripForm() {
 
-  const form = document.getElementById("tripForm");
+  const form =
+    document.getElementById("tripForm");
+
 
   if (!form) return;
 
-  form.addEventListener("submit", async (e) => {
 
-    e.preventDefault();
+  form.addEventListener("submit", (event) => {
+
+    event.preventDefault();
+
 
     const name =
       document.getElementById("name")?.value.trim() || "";
@@ -104,22 +114,30 @@ function initTripForm() {
     const message =
       document.getElementById("message")?.value.trim() || "";
 
-    const text = `
-Hello Travel With Sri Lanka,
+
+    const whatsappMessage =
+      `Hello Travel With Sri Lanka!
 
 Name: ${name}
 Country: ${country}
-Travel Date: ${date}
-Guests: ${guests}
+Travel Date: ${date || "Not specified"}
+Guests: ${guests || "Not specified"}
 
-Message:
-${message}
-    `.trim();
+Trip Details:
+${message}`;
+
 
     const whatsappURL =
-      `https://wa.me/94758453391?text=${encodeURIComponent(text)}`;
+      `https://wa.me/94758453391?text=${encodeURIComponent(
+        whatsappMessage
+      )}`;
 
-    window.open(whatsappURL, "_blank");
+
+    window.open(
+      whatsappURL,
+      "_blank",
+      "noopener"
+    );
 
   });
 
@@ -130,72 +148,60 @@ ${message}
 // STAR RATING
 // =========================================================
 
-let selectedRating = 5;
-
 function initStarRating() {
 
-  const stars =
-    document.querySelectorAll(".star");
+  const starRating =
+    document.getElementById("starRating");
 
   const ratingInput =
     document.getElementById("reviewRating");
 
-  const ratingContainer =
-    document.getElementById("starRating");
 
-  if (!stars.length) return;
+  if (!starRating || !ratingInput) return;
 
-  stars.forEach((star, index) => {
 
-    const rating = index + 1;
+  const stars =
+    starRating.querySelectorAll(
+      "[data-rating]"
+    );
 
-    star.addEventListener("click", () => {
 
-      selectedRating = rating;
+  function updateStars(rating) {
 
-      if (ratingInput) {
-        ratingInput.value = rating;
-      }
+    stars.forEach(star => {
 
-      updateStars(rating);
+      const value =
+        Number(star.dataset.rating);
 
-    });
+      star.classList.toggle(
+        "active",
+        value <= rating
+      );
 
-    star.addEventListener("mouseenter", () => {
-      updateStars(rating);
-    });
-
-  });
-
-  if (ratingContainer) {
-
-    ratingContainer.addEventListener("mouseleave", () => {
-      updateStars(selectedRating);
     });
 
   }
 
-  updateStars(selectedRating);
 
-}
+  stars.forEach(star => {
 
+    star.addEventListener("click", () => {
 
-function updateStars(rating) {
+      const rating =
+        Number(star.dataset.rating);
 
-  const stars =
-    document.querySelectorAll(".star");
+      ratingInput.value = rating;
 
-  stars.forEach((star, index) => {
+      updateStars(rating);
 
-    if (index < rating) {
-      star.classList.add("active");
-      star.textContent = "★";
-    } else {
-      star.classList.remove("active");
-      star.textContent = "☆";
-    }
+    });
 
   });
+
+
+  updateStars(
+    Number(ratingInput.value) || 5
+  );
 
 }
 
@@ -212,231 +218,34 @@ function initReviewPhotoPreview() {
   const preview =
     document.getElementById("photoPreview");
 
+
   if (!input || !preview) return;
+
 
   input.addEventListener("change", () => {
 
-    const file = input.files?.[0];
+    preview.innerHTML = "";
 
-    if (!file) {
 
-      preview.innerHTML = "";
-      preview.style.display = "none";
+    const file =
+      input.files?.[0];
 
-      return;
-    }
 
-    const url =
+    if (!file) return;
+
+
+    const image =
+      document.createElement("img");
+
+
+    image.src =
       URL.createObjectURL(file);
 
-    preview.innerHTML = `
-      <img
-        src="${url}"
-        alt="Review photo preview"
-        style="
-          width:120px;
-          height:120px;
-          object-fit:cover;
-          border-radius:12px;
-          margin-top:10px;
-        "
-      >
-    `;
-
-    preview.style.display = "block";
-
-  });
-
-}
+    image.alt =
+      "Review photo preview";
 
 
-// =========================================================
-// REVIEW FORM
-// =========================================================
-
-function initReviewForm() {
-
-  const form =
-    document.getElementById("reviewForm");
-
-  if (!form) return;
-
-  form.addEventListener("submit", async (e) => {
-
-    e.preventDefault();
-
-    const submitBtn =
-      document.getElementById("reviewSubmit");
-
-    const status =
-      document.getElementById("reviewStatus");
-
-    const name =
-      document.getElementById("reviewName")?.value.trim() || "";
-
-    const country =
-      document.getElementById("reviewCountry")?.value.trim() || "";
-
-    const text =
-      document.getElementById("reviewText")?.value.trim() || "";
-
-    const rating =
-      Number(
-        document.getElementById("reviewRating")?.value ||
-        selectedRating ||
-        5
-      );
-
-    const photoInput =
-      document.getElementById("reviewPhoto");
-
-    const photoFile =
-      photoInput?.files?.[0] || null;
-
-    if (!name || !text) {
-
-      if (status) {
-        status.textContent =
-          "Please enter your name and review.";
-      }
-
-      return;
-    }
-
-    try {
-
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Submitting...";
-      }
-
-      if (status) {
-        status.textContent = "";
-      }
-
-      let photoUrl = null;
-
-
-      // ===================================================
-      // UPLOAD REVIEW PHOTO
-      // ===================================================
-
-      if (photoFile) {
-
-        const extension =
-          photoFile.name
-            .split(".")
-            .pop()
-            .toLowerCase();
-
-        const safeName =
-          name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-
-        const filePath =
-          `reviews/${safeName}-${Date.now()}.${extension}`;
-
-        const { error: uploadError } =
-          await supabase
-            .storage
-            .from("review-photos")
-            .upload(
-              filePath,
-              photoFile,
-              {
-                cacheControl: "3600",
-                upsert: false
-              }
-            );
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const { data: publicData } =
-          supabase
-            .storage
-            .from("review-photos")
-            .getPublicUrl(filePath);
-
-        photoUrl =
-          publicData?.publicUrl || null;
-
-      }
-
-
-      // ===================================================
-      // INSERT REVIEW
-      // ===================================================
-
-      const { error } =
-        await supabase
-          .from("reviews")
-          .insert({
-            name,
-            country,
-            rating,
-            review: text,
-            photo_url: photoUrl
-          });
-
-      if (error) {
-        throw error;
-      }
-
-
-      // ===================================================
-      // SUCCESS
-      // ===================================================
-
-      form.reset();
-
-      selectedRating = 5;
-
-      updateStars(5);
-
-      const preview =
-        document.getElementById("photoPreview");
-
-      if (preview) {
-        preview.innerHTML = "";
-        preview.style.display = "none";
-      }
-
-      if (status) {
-        status.textContent =
-          "Thank you! Your review has been submitted.";
-      }
-
-      await loadReviews();
-
-    } catch (error) {
-
-      console.error(
-        "Review submission error:",
-        error
-      );
-
-      if (status) {
-
-        status.textContent =
-          error?.message ||
-          "Failed to submit review.";
-
-      }
-
-    } finally {
-
-      if (submitBtn) {
-
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Submit Review";
-
-      }
-
-    }
+    preview.appendChild(image);
 
   });
 
@@ -474,116 +283,26 @@ async function loadDestinations() {
   if (error) {
 
     console.error(
-      "Destinations loading error:",
+      "Destinations load error:",
       error
     );
 
     return;
+
   }
 
 
-  if (!data || !data.length) {
-
-    console.log(
-      "No destinations found."
-    );
-
-    return;
-  }
-
-
-  console.log(
-    "Destinations loaded:",
-    data
-  );
+  if (!data) return;
 
 
   data.forEach(destination => {
 
-    updateDestination(destination);
+    updateDestination(
+      destination
+    );
 
   });
 
-}
-
-
-// =========================================================
-// FIND DESTINATION IMAGE
-// =========================================================
-
-function findDestinationImage(slug) {
-
-  const cleanSlug =
-    String(slug || "")
-      .toLowerCase()
-      .trim();
-
-  if (!cleanSlug) return null;
-
-
-  const images =
-    document.querySelectorAll("img");
-
-
-  for (const img of images) {
-
-    const src =
-      String(
-        img.getAttribute("src") || ""
-      ).toLowerCase();
-
-    const alt =
-      String(
-        img.getAttribute("alt") || ""
-      ).toLowerCase();
-
-
-    if (
-      src.includes(
-        `/destinations/${cleanSlug}/`
-      )
-    ) {
-      return img;
-    }
-
-
-    if (
-      src.includes(
-        `/destinations/${cleanSlug}.`
-      )
-    ) {
-      return img;
-    }
-
-
-    if (
-      src.includes(
-        `/${cleanSlug}.jpg`
-      ) ||
-      src.includes(
-        `/${cleanSlug}.jpeg`
-      ) ||
-      src.includes(
-        `/${cleanSlug}.png`
-      ) ||
-      src.includes(
-        `/${cleanSlug}.webp`
-      )
-    ) {
-      return img;
-    }
-
-
-    if (
-      alt.includes(cleanSlug)
-    ) {
-      return img;
-    }
-
-  }
-
-
-  return null;
 }
 
 
@@ -593,83 +312,70 @@ function findDestinationImage(slug) {
 
 function updateDestination(destination) {
 
+  if (!destination.slug) return;
+
+
   const slug =
-    String(destination.slug || "")
-      .toLowerCase()
-      .trim();
+    String(destination.slug)
+      .trim()
+      .toLowerCase();
 
-
-  const image =
-    findDestinationImage(slug);
-
-
-  if (!image) {
-
-    console.warn(
-      "Destination image not found:",
-      destination
-    );
-
-    return;
-  }
-
-
-  // =======================================================
-  // PHOTO
-  // =======================================================
-
-  if (destination.image_url) {
-
-    image.src =
-      destination.image_url;
-
-    image.removeAttribute("srcset");
-
-  }
-
-
-  // =======================================================
-  // FIND CARD
-  // =======================================================
 
   const card =
-    image.closest(".card");
+    document.querySelector(
+      `.card[data-slug="${CSS.escape(slug)}"]`
+    );
 
 
   if (!card) {
 
     console.warn(
       "Destination card not found:",
-      destination
+      slug
     );
 
     return;
+
   }
 
 
-  // =======================================================
+  // IMAGE
+
+  const image =
+    card.querySelector(
+      "[data-dynamic-image]"
+    );
+
+
+  if (image && destination.image_url) {
+
+    image.src =
+      destination.image_url;
+
+  }
+
+
   // NAME
-  // =======================================================
 
-  const title =
-    card.querySelector("h3");
+  const name =
+    card.querySelector(
+      "[data-dynamic-name]"
+    );
 
 
-  if (title) {
+  if (name) {
 
-    title.textContent =
+    name.textContent =
       destination.name || "";
 
   }
 
 
-  // =======================================================
   // DESCRIPTION
-  // =======================================================
 
   const description =
     card.querySelector(
-      ".cardContent p"
+      "[data-dynamic-description]"
     );
 
 
@@ -681,12 +387,12 @@ function updateDestination(destination) {
   }
 
 
-  // =======================================================
-  // LINK
-  // =======================================================
+  // PAGE URL
 
   const link =
-    card.querySelector(".textLink");
+    card.querySelector(
+      "[data-dynamic-link]"
+    );
 
 
   if (link && destination.page_url) {
@@ -697,10 +403,14 @@ function updateDestination(destination) {
   }
 
 
-  console.log(
-    "Destination updated:",
-    destination.name
-  );
+  // IMAGE ALT
+
+  if (image && destination.name) {
+
+    image.alt =
+      `${destination.name} Sri Lanka`;
+
+  }
 
 }
 
@@ -736,28 +446,16 @@ async function loadTours() {
   if (error) {
 
     console.error(
-      "Tours loading error:",
+      "Tours load error:",
       error
     );
 
     return;
+
   }
 
 
-  if (!data || !data.length) {
-
-    console.log(
-      "No tours found."
-    );
-
-    return;
-  }
-
-
-  console.log(
-    "Tours loaded:",
-    data
-  );
+  if (!data) return;
 
 
   data.forEach(tour => {
@@ -770,152 +468,60 @@ async function loadTours() {
 
 
 // =========================================================
-// FIND TOUR IMAGE
-// =========================================================
-
-function findTourImage(slug) {
-
-  const cleanSlug =
-    String(slug || "")
-      .toLowerCase()
-      .trim();
-
-
-  if (!cleanSlug) return null;
-
-
-  const images =
-    document.querySelectorAll("img");
-
-
-  for (const img of images) {
-
-    const src =
-      String(
-        img.getAttribute("src") || ""
-      ).toLowerCase();
-
-    const alt =
-      String(
-        img.getAttribute("alt") || ""
-      ).toLowerCase();
-
-
-    if (
-      src.includes(
-        `/tours/${cleanSlug}/`
-      )
-    ) {
-      return img;
-    }
-
-
-    if (
-      src.includes(
-        `/tours/${cleanSlug}.`
-      )
-    ) {
-      return img;
-    }
-
-
-    if (
-      src.includes(
-        `/${cleanSlug}.jpg`
-      ) ||
-      src.includes(
-        `/${cleanSlug}.jpeg`
-      ) ||
-      src.includes(
-        `/${cleanSlug}.png`
-      ) ||
-      src.includes(
-        `/${cleanSlug}.webp`
-      )
-    ) {
-      return img;
-    }
-
-
-    if (
-      alt.includes(cleanSlug)
-    ) {
-      return img;
-    }
-
-  }
-
-
-  return null;
-}
-
-
-// =========================================================
 // UPDATE TOUR
 // =========================================================
 
 function updateTour(tour) {
 
+  if (!tour.slug) return;
+
+
   const slug =
-    String(tour.slug || "")
-      .toLowerCase()
-      .trim();
+    String(tour.slug)
+      .trim()
+      .toLowerCase();
 
-
-  const image =
-    findTourImage(slug);
-
-
-  if (!image) {
-
-    console.warn(
-      "Tour image not found:",
-      tour
-    );
-
-    return;
-  }
-
-
-  // =======================================================
-  // PHOTO
-  // =======================================================
-
-  if (tour.image_url) {
-
-    image.src =
-      tour.image_url;
-
-    image.removeAttribute("srcset");
-
-  }
-
-
-  // =======================================================
-  // FIND TOUR CARD
-  // =======================================================
 
   const card =
-    image.closest(".tourCard");
+    document.querySelector(
+      `.tourCard[data-slug="${CSS.escape(slug)}"]`
+    );
 
 
   if (!card) {
 
     console.warn(
       "Tour card not found:",
-      tour
+      slug
     );
 
     return;
+
   }
 
 
-  // =======================================================
+  // IMAGE
+
+  const image =
+    card.querySelector(
+      "[data-dynamic-image]"
+    );
+
+
+  if (image && tour.image_url) {
+
+    image.src =
+      tour.image_url;
+
+  }
+
+
   // TITLE
-  // =======================================================
 
   const title =
-    card.querySelector("h3");
+    card.querySelector(
+      "[data-dynamic-name]"
+    );
 
 
   if (title) {
@@ -926,13 +532,11 @@ function updateTour(tour) {
   }
 
 
-  // =======================================================
   // DESCRIPTION
-  // =======================================================
 
   const description =
     card.querySelector(
-      ".tourBody p"
+      "[data-dynamic-description]"
     );
 
 
@@ -944,10 +548,326 @@ function updateTour(tour) {
   }
 
 
-  console.log(
-    "Tour updated:",
-    tour.title
+  // PAGE URL
+
+  const link =
+    card.querySelector(
+      "[data-dynamic-link]"
+    );
+
+
+  if (link && tour.page_url) {
+
+    link.href =
+      tour.page_url;
+
+  }
+
+
+  // IMAGE ALT
+
+  if (image && tour.title) {
+
+    image.alt =
+      `${tour.title} Sri Lanka`;
+
+  }
+
+}
+
+
+// =========================================================
+// REVIEW FORM
+// =========================================================
+
+function initReviewForm() {
+
+  const form =
+    document.getElementById(
+      "reviewForm"
+    );
+
+
+  if (!form) return;
+
+
+  form.addEventListener(
+    "submit",
+    submitReview
   );
+
+}
+
+
+// =========================================================
+// SUBMIT REVIEW
+// =========================================================
+
+async function submitReview(event) {
+
+  event.preventDefault();
+
+
+  const submitButton =
+    document.getElementById(
+      "reviewSubmit"
+    );
+
+  const status =
+    document.getElementById(
+      "reviewStatus"
+    );
+
+
+  const name =
+    document.getElementById(
+      "reviewName"
+    )?.value.trim() || "";
+
+
+  const country =
+    document.getElementById(
+      "reviewCountry"
+    )?.value.trim() || "";
+
+
+  const rating =
+    Number(
+      document.getElementById(
+        "reviewRating"
+      )?.value || 5
+    );
+
+
+  const reviewText =
+    document.getElementById(
+      "reviewText"
+    )?.value.trim() || "";
+
+
+  const photoInput =
+    document.getElementById(
+      "reviewPhoto"
+    );
+
+
+  const file =
+    photoInput?.files?.[0] || null;
+
+
+  if (!name || !country || !reviewText) {
+
+    if (status) {
+
+      status.textContent =
+        "Please fill all required fields.";
+
+    }
+
+    return;
+
+  }
+
+
+  if (submitButton) {
+
+    submitButton.disabled =
+      true;
+
+    submitButton.textContent =
+      "Submitting...";
+
+  }
+
+
+  if (status) {
+
+    status.textContent =
+      "";
+
+  }
+
+
+  try {
+
+    let photoUrl =
+      null;
+
+
+    // =====================================================
+    // UPLOAD REVIEW PHOTO
+    // =====================================================
+
+    if (file) {
+
+      const extension =
+        file.name
+          .split(".")
+          .pop()
+          .toLowerCase();
+
+
+      const safeName =
+        name
+          .toLowerCase()
+          .replace(
+            /[^a-z0-9]+/g,
+            "-"
+          )
+          .replace(
+            /^-+|-+$/g,
+            ""
+          );
+
+
+      const filePath =
+        `${safeName || "review"}-${Date.now()}.${extension}`;
+
+
+      const {
+        error: uploadError
+      } = await supabase
+        .storage
+        .from("review-photos")
+        .upload(
+          filePath,
+          file,
+          {
+            upsert: false
+          }
+        );
+
+
+      if (uploadError) {
+
+        throw uploadError;
+
+      }
+
+
+      const {
+        data: publicData
+      } =
+        supabase
+          .storage
+          .from("review-photos")
+          .getPublicUrl(
+            filePath
+          );
+
+
+      photoUrl =
+        publicData.publicUrl;
+
+    }
+
+
+    // =====================================================
+    // INSERT REVIEW
+    // =====================================================
+
+    const {
+      error
+    } = await supabase
+      .from("reviews")
+      .insert({
+
+        name,
+
+        country,
+
+        rating,
+
+        review_text: reviewText,
+
+        photo_url: photoUrl
+
+      });
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (status) {
+
+      status.textContent =
+        "Thank you! Your review has been submitted.";
+
+    }
+
+
+    event.target.reset();
+
+
+    const ratingInput =
+      document.getElementById(
+        "reviewRating"
+      );
+
+
+    if (ratingInput) {
+
+      ratingInput.value =
+        5;
+
+    }
+
+
+    const preview =
+      document.getElementById(
+        "photoPreview"
+      );
+
+
+    if (preview) {
+
+      preview.innerHTML =
+        "";
+
+    }
+
+
+    initStarRating();
+
+
+    await loadReviews();
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Review submission error:",
+      error
+    );
+
+
+    if (status) {
+
+      status.textContent =
+        "Something went wrong. Please try again.";
+
+    }
+
+  }
+
+  finally {
+
+    if (submitButton) {
+
+      submitButton.disabled =
+        false;
+
+      submitButton.textContent =
+        "Submit Review";
+
+    }
+
+  }
 
 }
 
@@ -967,20 +887,16 @@ async function loadReviews() {
   if (!container) return;
 
 
+  container.innerHTML =
+    `<p class="reviewsLoading">Loading reviews...</p>`;
+
+
   const {
     data,
     error
   } = await supabase
     .from("reviews")
-    .select(`
-      id,
-      name,
-      country,
-      rating,
-      review,
-      photo_url,
-      created_at
-    `)
+    .select("*")
     .order(
       "created_at",
       {
@@ -992,27 +908,31 @@ async function loadReviews() {
   if (error) {
 
     console.error(
-      "Reviews loading error:",
+      "Reviews load error:",
       error
     );
 
+
+    container.innerHTML =
+      `<p class="noReviews">Unable to load reviews.</p>`;
+
     return;
+
   }
 
 
-  container.innerHTML = "";
+  if (!data || data.length === 0) {
 
-
-  if (!data || !data.length) {
-
-    container.innerHTML = `
-      <p>
-        No reviews yet.
-      </p>
-    `;
+    container.innerHTML =
+      `<p class="noReviews">No reviews yet.</p>`;
 
     return;
+
   }
+
+
+  container.innerHTML =
+    "";
 
 
   data.forEach(review => {
@@ -1027,114 +947,83 @@ async function loadReviews() {
 
 
 // =========================================================
-// ESCAPE HTML
-// =========================================================
-
-function escapeHTML(value) {
-
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
-
-
-// =========================================================
 // CREATE REVIEW CARD
 // =========================================================
 
 function createReviewCard(review) {
 
   const card =
-    document.createElement("div");
+    document.createElement(
+      "article"
+    );
 
 
   card.className =
     "reviewCard";
 
 
-  const name =
-    escapeHTML(review.name);
-
-
-  const country =
-    escapeHTML(review.country);
-
-
-  const text =
-    escapeHTML(review.review);
-
-
-  const rating =
-    Math.max(
-      0,
-      Math.min(
-        5,
-        Number(review.rating || 5)
+  const stars =
+    "★".repeat(
+      Math.max(
+        0,
+        Math.min(
+          5,
+          Number(review.rating) || 0
+        )
       )
     );
 
 
-  let stars = "";
-
-  for (
-    let i = 1;
-    i <= 5;
-    i++
-  ) {
-
-    stars +=
-      i <= rating
-        ? "★"
-        : "☆";
-
-  }
+  const safeName =
+    escapeHTML(
+      review.name || "Traveler"
+    );
 
 
-  const photo =
-    review.photo_url
-      ? `
-        <img
-          src="${escapeHTML(review.photo_url)}"
-          alt="${name}"
-          style="
-            width:70px;
-            height:70px;
-            object-fit:cover;
-            border-radius:50%;
-            margin-bottom:12px;
-          "
-        >
-      `
-      : "";
+  const safeCountry =
+    escapeHTML(
+      review.country || ""
+    );
+
+
+  const safeText =
+    escapeHTML(
+      review.review_text || ""
+    );
 
 
   card.innerHTML = `
 
-    <div class="reviewInner">
+    ${
+      review.photo_url
+        ? `
+          <img
+            class="reviewPhoto"
+            src="${escapeAttribute(review.photo_url)}"
+            alt="Traveler review photo"
+            loading="lazy"
+          >
+        `
+        : ""
+    }
 
-      ${photo}
+    <div>
 
-      <div class="reviewStars">
+      <div class="starRating">
         ${stars}
       </div>
 
-      <h4>
-        ${name}
-      </h4>
-
-      ${
-        country
-          ? `<small>${country}</small>`
-          : ""
-      }
-
       <p>
-        ${text}
+        ${safeText}
       </p>
+
+      <strong>
+        ${safeName}
+      </strong>
+
+      <span>
+        ${safeCountry}
+      </span>
 
     </div>
 
@@ -1147,25 +1036,42 @@ function createReviewCard(review) {
 
 
 // =========================================================
-// GLOBAL SUPABASE DEBUG
+// ESCAPE HTML
 // =========================================================
 
-window.travelWithSriLanka = {
+function escapeHTML(value) {
 
-  supabase,
+  return String(value)
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
-  reloadDestinations:
-    loadDestinations,
-
-  reloadTours:
-    loadTours,
-
-  reloadReviews:
-    loadReviews
-
-};
+}
 
 
-console.log(
-  "Travel With Sri Lanka script loaded successfully."
-);
+// =========================================================
+// ESCAPE ATTRIBUTE
+// =========================================================
+
+function escapeAttribute(value) {
+
+  return escapeHTML(value);
+
+}
