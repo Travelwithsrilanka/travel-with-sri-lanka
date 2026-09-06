@@ -1,7 +1,14 @@
 /* =========================================================
    TRAVEL WITH SRI LANKA
-   Main JavaScript + Supabase
-   Reviews + Dynamic Destinations + Dynamic Tours
+   Main Website JavaScript + Supabase
+   ---------------------------------------------------------
+   Features:
+   - Mobile Menu
+   - WhatsApp Trip Planner
+   - Dynamic Destinations
+   - Dynamic Tours
+   - Traveller Reviews
+   - Review Photo Upload
    ========================================================= */
 
 
@@ -18,14 +25,14 @@ const SUPABASE_URL =
   "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
 
 
-const SUPABASE_ANON_KEY =
+const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
 
 
 const supabase =
   createClient(
     SUPABASE_URL,
-    SUPABASE_ANON_KEY
+    SUPABASE_PUBLISHABLE_KEY
   );
 
 
@@ -63,29 +70,23 @@ document.addEventListener(
 
 function initializeMobileMenu() {
 
-  function toggleMenu() {
-
-    const nav =
-      document.getElementById("mainNav");
-
-    if (nav) {
-
-      nav.classList.toggle("open");
-
-    }
-
-  }
-
-
   const menuButton =
     document.getElementById("menuBtn");
 
 
-  if (menuButton) {
+  const nav =
+    document.getElementById("mainNav");
+
+
+  if (menuButton && nav) {
 
     menuButton.addEventListener(
       "click",
-      toggleMenu
+      function () {
+
+        nav.classList.toggle("open");
+
+      }
     );
 
   }
@@ -98,9 +99,6 @@ function initializeMobileMenu() {
       link.addEventListener(
         "click",
         function () {
-
-          const nav =
-            document.getElementById("mainNav");
 
           if (nav) {
 
@@ -190,7 +188,10 @@ function initializeTripForm() {
         "\n" +
 
         "Travel Date: " +
-        (date || "Not specified") +
+        (
+          date ||
+          "Not specified"
+        ) +
         "\n" +
 
         "Guests: " +
@@ -200,7 +201,10 @@ function initializeTripForm() {
         "Travel Preferences:" +
         "\n" +
 
-        (message || "Not specified");
+        (
+          message ||
+          "Not specified"
+        );
 
 
       const whatsappURL =
@@ -261,15 +265,15 @@ function initializeStarRating() {
         }
 
 
-        stars.forEach(function (s) {
+        stars.forEach(function (item) {
 
           const value =
             Number(
-              s.dataset.rating
+              item.dataset.rating
             );
 
 
-          s.classList.toggle(
+          item.classList.toggle(
             "selected",
             value <= selectedRating
           );
@@ -285,7 +289,7 @@ function initializeStarRating() {
 
 
 /* =========================================================
-   PHOTO PREVIEW
+   REVIEW PHOTO PREVIEW
 ========================================================= */
 
 function initializePhotoPreview() {
@@ -315,7 +319,8 @@ function initializePhotoPreview() {
 
       if (photoPreview) {
 
-        photoPreview.innerHTML = "";
+        photoPreview.innerHTML =
+          "";
 
       }
 
@@ -332,9 +337,11 @@ function initializePhotoPreview() {
 
 
       const allowedTypes = [
+
         "image/jpeg",
         "image/png",
         "image/webp"
+
       ];
 
 
@@ -402,18 +409,21 @@ function initializePhotoPreview() {
 
 
 /* =========================================================
-   LOAD DESTINATIONS FROM SUPABASE
+   LOAD DESTINATIONS
 ========================================================= */
 
 async function loadDestinations() {
 
   try {
 
-    const result =
+    const {
+      data,
+      error
+    } =
       await supabase
         .from("destinations")
         .select(
-          "id, name, slug, image_url"
+          "id, name, slug, description, image_url, page_url, sort_order"
         )
         .order(
           "sort_order",
@@ -423,11 +433,11 @@ async function loadDestinations() {
         );
 
 
-    if (result.error) {
+    if (error) {
 
       console.error(
         "Destination loading error:",
-        result.error
+        error
       );
 
       return;
@@ -436,12 +446,16 @@ async function loadDestinations() {
 
 
     const destinations =
-      result.data || [];
+      data || [];
 
 
     if (
       destinations.length === 0
     ) {
+
+      console.warn(
+        "No destinations found."
+      );
 
       return;
 
@@ -451,7 +465,7 @@ async function loadDestinations() {
     destinations.forEach(
       function (destination) {
 
-        updateDestinationImage(
+        updateDestination(
           destination
         );
 
@@ -473,80 +487,6 @@ async function loadDestinations() {
 
 
 /* =========================================================
-   UPDATE DESTINATION IMAGE
-========================================================= */
-
-function updateDestinationImage(
-  destination
-) {
-
-  if (
-    !destination ||
-    !destination.image_url
-  ) {
-
-    return;
-
-  }
-
-
-  const slug =
-    String(
-      destination.slug ||
-      destination.name ||
-      ""
-    )
-    .toLowerCase()
-    .trim();
-
-
-  if (!slug) {
-
-    return;
-
-  }
-
-
-  const image =
-    findDestinationImage(
-      slug
-    );
-
-
-  if (!image) {
-
-    return;
-
-  }
-
-
-  image.src =
-    destination.image_url;
-
-
-  image.dataset.supabaseImage =
-    "true";
-
-
-  image.removeAttribute(
-    "srcset"
-  );
-
-
-  image.onerror =
-    function () {
-
-      console.warn(
-        "Could not load Supabase image:",
-        destination.image_url
-      );
-
-    };
-
-}
-
-
-/* =========================================================
    FIND DESTINATION IMAGE
 ========================================================= */
 
@@ -558,6 +498,12 @@ function findDestinationImage(
     document.querySelectorAll(
       "#destinations img"
     );
+
+
+  const cleanSlug =
+    String(slug)
+      .toLowerCase()
+      .trim();
 
 
   for (
@@ -581,28 +527,62 @@ function findDestinationImage(
         src +
         " " +
         alt
-      ).toLowerCase();
+      )
+      .toLowerCase();
 
 
     if (
+
       combined.includes(
-        "/" + slug + "/"
-      ) ||
-      combined.includes(
-        slug + ".jpg"
-      ) ||
-      combined.includes(
-        slug + ".jpeg"
-      ) ||
-      combined.includes(
-        slug + ".png"
-      ) ||
-      combined.includes(
-        slug + ".webp"
-      ) ||
-      alt.toLowerCase().includes(
-        slug
+        "/" +
+        cleanSlug +
+        "/"
       )
+
+      ||
+
+      combined.includes(
+        "/" +
+        cleanSlug +
+        "."
+      )
+
+      ||
+
+      combined.includes(
+        cleanSlug +
+        ".jpg"
+      )
+
+      ||
+
+      combined.includes(
+        cleanSlug +
+        ".jpeg"
+      )
+
+      ||
+
+      combined.includes(
+        cleanSlug +
+        ".png"
+      )
+
+      ||
+
+      combined.includes(
+        cleanSlug +
+        ".webp"
+      )
+
+      ||
+
+      alt
+        .toLowerCase()
+        .includes(
+          cleanSlug
+        )
+
     ) {
 
       return image;
@@ -618,18 +598,174 @@ function findDestinationImage(
 
 
 /* =========================================================
-   LOAD TOURS FROM SUPABASE
+   UPDATE DESTINATION
+========================================================= */
+
+function updateDestination(
+  destination
+) {
+
+  if (!destination) {
+
+    return;
+
+  }
+
+
+  const slug =
+    String(
+      destination.slug ||
+      destination.name ||
+      ""
+    )
+      .toLowerCase()
+      .trim();
+
+
+  if (!slug) {
+
+    return;
+
+  }
+
+
+  const image =
+    findDestinationImage(
+      slug
+    );
+
+
+  if (!image) {
+
+    console.warn(
+      "Destination not found on website:",
+      slug
+    );
+
+    return;
+
+  }
+
+
+  /* -------------------------------------------------------
+     IMAGE
+  ------------------------------------------------------- */
+
+  if (
+    destination.image_url
+  ) {
+
+    image.src =
+      destination.image_url;
+
+    image.removeAttribute(
+      "srcset"
+    );
+
+    image.dataset.supabaseImage =
+      "true";
+
+  }
+
+
+  /* -------------------------------------------------------
+     CARD
+  ------------------------------------------------------- */
+
+  const card =
+    image.closest(
+      ".card"
+    );
+
+
+  if (!card) {
+
+    return;
+
+  }
+
+
+  /* -------------------------------------------------------
+     NAME
+  ------------------------------------------------------- */
+
+  const title =
+    card.querySelector(
+      "h3"
+    );
+
+
+  if (
+    title &&
+    destination.name
+  ) {
+
+    title.textContent =
+      destination.name;
+
+  }
+
+
+  /* -------------------------------------------------------
+     DESCRIPTION
+  ------------------------------------------------------- */
+
+  const description =
+    card.querySelector(
+      ".cardContent p"
+    );
+
+
+  if (
+    description &&
+    destination.description
+  ) {
+
+    description.textContent =
+      destination.description;
+
+  }
+
+
+  /* -------------------------------------------------------
+     PAGE URL
+  ------------------------------------------------------- */
+
+  const link =
+    card.querySelector(
+      ".textLink"
+    );
+
+
+  if (
+    link &&
+    destination.page_url
+  ) {
+
+    link.href =
+      destination.page_url;
+
+  }
+
+}
+
+
+/* =========================================================
+   LOAD TOURS
 ========================================================= */
 
 async function loadTours() {
 
   try {
 
-    const result =
+    const {
+      data,
+      error
+    } =
       await supabase
         .from("tours")
         .select(
-          "id, name, slug, image_url"
+          "id, title, slug, description, image_url, page_url, sort_order"
         )
         .order(
           "sort_order",
@@ -639,11 +775,11 @@ async function loadTours() {
         );
 
 
-    if (result.error) {
+    if (error) {
 
       console.error(
         "Tour loading error:",
-        result.error
+        error
       );
 
       return;
@@ -652,12 +788,16 @@ async function loadTours() {
 
 
     const tours =
-      result.data || [];
+      data || [];
 
 
     if (
       tours.length === 0
     ) {
+
+      console.warn(
+        "No tours found."
+      );
 
       return;
 
@@ -667,7 +807,7 @@ async function loadTours() {
     tours.forEach(
       function (tour) {
 
-        updateTourImage(
+        updateTour(
           tour
         );
 
@@ -689,80 +829,6 @@ async function loadTours() {
 
 
 /* =========================================================
-   UPDATE TOUR IMAGE
-========================================================= */
-
-function updateTourImage(
-  tour
-) {
-
-  if (
-    !tour ||
-    !tour.image_url
-  ) {
-
-    return;
-
-  }
-
-
-  const slug =
-    String(
-      tour.slug ||
-      tour.name ||
-      ""
-    )
-    .toLowerCase()
-    .trim();
-
-
-  if (!slug) {
-
-    return;
-
-  }
-
-
-  const image =
-    findTourImage(
-      slug
-    );
-
-
-  if (!image) {
-
-    return;
-
-  }
-
-
-  image.src =
-    tour.image_url;
-
-
-  image.dataset.supabaseImage =
-    "true";
-
-
-  image.removeAttribute(
-    "srcset"
-  );
-
-
-  image.onerror =
-    function () {
-
-      console.warn(
-        "Could not load Supabase tour image:",
-        tour.image_url
-      );
-
-    };
-
-}
-
-
-/* =========================================================
    FIND TOUR IMAGE
 ========================================================= */
 
@@ -774,6 +840,12 @@ function findTourImage(
     document.querySelectorAll(
       "#tours img"
     );
+
+
+  const cleanSlug =
+    String(slug)
+      .toLowerCase()
+      .trim();
 
 
   for (
@@ -797,19 +869,62 @@ function findTourImage(
         src +
         " " +
         alt
-      ).toLowerCase();
+      )
+      .toLowerCase();
 
 
     if (
+
       combined.includes(
-        "/" + slug + "."
-      ) ||
-      combined.includes(
-        "/" + slug + "/"
-      ) ||
-      alt.toLowerCase().includes(
-        slug
+        "/" +
+        cleanSlug +
+        "/"
       )
+
+      ||
+
+      combined.includes(
+        "/" +
+        cleanSlug +
+        "."
+      )
+
+      ||
+
+      combined.includes(
+        cleanSlug +
+        ".jpg"
+      )
+
+      ||
+
+      combined.includes(
+        cleanSlug +
+        ".jpeg"
+      )
+
+      ||
+
+      combined.includes(
+        cleanSlug +
+        ".png"
+      )
+
+      ||
+
+      combined.includes(
+        cleanSlug +
+        ".webp"
+      )
+
+      ||
+
+      alt
+        .toLowerCase()
+        .includes(
+          cleanSlug
+        )
+
     ) {
 
       return image;
@@ -820,6 +935,138 @@ function findTourImage(
 
 
   return null;
+
+}
+
+
+/* =========================================================
+   UPDATE TOUR
+========================================================= */
+
+function updateTour(
+  tour
+) {
+
+  if (!tour) {
+
+    return;
+
+  }
+
+
+  const slug =
+    String(
+      tour.slug ||
+      tour.title ||
+      ""
+    )
+      .toLowerCase()
+      .trim();
+
+
+  if (!slug) {
+
+    return;
+
+  }
+
+
+  const image =
+    findTourImage(
+      slug
+    );
+
+
+  if (!image) {
+
+    console.warn(
+      "Tour not found on website:",
+      slug
+    );
+
+    return;
+
+  }
+
+
+  /* -------------------------------------------------------
+     IMAGE
+  ------------------------------------------------------- */
+
+  if (
+    tour.image_url
+  ) {
+
+    image.src =
+      tour.image_url;
+
+    image.removeAttribute(
+      "srcset"
+    );
+
+    image.dataset.supabaseImage =
+      "true";
+
+  }
+
+
+  /* -------------------------------------------------------
+     TOUR CARD
+  ------------------------------------------------------- */
+
+  const card =
+    image.closest(
+      ".tourCard"
+    );
+
+
+  if (!card) {
+
+    return;
+
+  }
+
+
+  /* -------------------------------------------------------
+     TITLE
+  ------------------------------------------------------- */
+
+  const title =
+    card.querySelector(
+      "h3"
+    );
+
+
+  if (
+    title &&
+    tour.title
+  ) {
+
+    title.textContent =
+      tour.title;
+
+  }
+
+
+  /* -------------------------------------------------------
+     DESCRIPTION
+  ------------------------------------------------------- */
+
+  const description =
+    card.querySelector(
+      ".tourBody p"
+    );
+
+
+  if (
+    description &&
+    tour.description
+  ) {
+
+    description.textContent =
+      tour.description;
+
+  }
 
 }
 
@@ -927,9 +1174,9 @@ function initializeReviewForm() {
           : null;
 
 
-      /* =================================================
+      /* -----------------------------------------------------
          VALIDATION
-      ================================================= */
+      ----------------------------------------------------- */
 
       if (
         rating < 1 ||
@@ -975,9 +1222,11 @@ function initializeReviewForm() {
       if (file) {
 
         const allowedTypes = [
+
           "image/jpeg",
           "image/png",
           "image/webp"
+
         ];
 
 
@@ -1051,13 +1300,14 @@ function initializeReviewForm() {
         let photoURL =
           null;
 
+
         let photoPath =
           null;
 
 
-        /* =================================================
+        /* ---------------------------------------------------
            UPLOAD REVIEW PHOTO
-        ================================================= */
+        --------------------------------------------------- */
 
         if (file) {
 
@@ -1124,19 +1374,30 @@ function initializeReviewForm() {
         }
 
 
-        /* =================================================
+        /* ---------------------------------------------------
            SAVE REVIEW
-        ================================================= */
+        --------------------------------------------------- */
 
         const insertResult =
           await supabase
             .from("reviews")
             .insert({
-              name: name,
-              country: country,
-              rating: rating,
-              review: review,
-              photo_url: photoURL
+
+              name:
+                name,
+
+              country:
+                country,
+
+              rating:
+                rating,
+
+              review:
+                review,
+
+              photo_url:
+                photoURL
+
             });
 
 
@@ -1161,9 +1422,9 @@ function initializeReviewForm() {
         }
 
 
-        /* =================================================
+        /* ---------------------------------------------------
            SUCCESS
-        ================================================= */
+        --------------------------------------------------- */
 
         if (status) {
 
@@ -1279,17 +1540,21 @@ async function loadReviews() {
   }
 
 
-  container.innerHTML =
-    `
+  container.innerHTML = `
+
     <div class="reviewsLoading">
       Loading traveller reviews...
     </div>
-    `;
+
+  `;
 
 
   try {
 
-    const result =
+    const {
+      data,
+      error
+    } =
       await supabase
         .from("reviews")
         .select(
@@ -1303,17 +1568,15 @@ async function loadReviews() {
         );
 
 
-    if (
-      result.error
-    ) {
+    if (error) {
 
-      throw result.error;
+      throw error;
 
     }
 
 
     const reviews =
-      result.data || [];
+      data || [];
 
 
     container.innerHTML =
@@ -1324,13 +1587,16 @@ async function loadReviews() {
       reviews.length === 0
     ) {
 
-      container.innerHTML =
-        `
+      container.innerHTML = `
+
         <div class="noReviews">
+
           No traveller reviews yet.
           Be the first to share your experience!
+
         </div>
-        `;
+
+      `;
 
       return;
 
@@ -1338,11 +1604,11 @@ async function loadReviews() {
 
 
     reviews.forEach(
-      function (data) {
+      function (review) {
 
         const card =
           createReviewCard(
-            data
+            review
           );
 
 
@@ -1364,12 +1630,15 @@ async function loadReviews() {
     );
 
 
-    container.innerHTML =
-      `
+    container.innerHTML = `
+
       <div class="noReviews">
+
         Reviews are temporarily unavailable.
+
       </div>
-      `;
+
+    `;
 
   }
 
@@ -1405,9 +1674,11 @@ function createReviewCard(
 
 
   const starsHTML =
+
     "★".repeat(
       rating
     ) +
+
     "☆".repeat(
       5 - rating
     );
