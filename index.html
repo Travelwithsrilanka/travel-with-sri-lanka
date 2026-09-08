@@ -20,6 +20,81 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="style.css">
+  <!-- =====================================================
+     TOUR GALLERY MODAL
+===================================================== -->
+
+<div
+  id="tourGalleryModal"
+  class="tour-gallery-modal"
+  aria-hidden="true"
+>
+
+  <div class="tour-gallery-overlay"></div>
+
+  <div class="tour-gallery-dialog">
+
+    <button
+      id="tourGalleryClose"
+      class="tour-gallery-close"
+      type="button"
+      aria-label="Close gallery"
+    >
+      ×
+    </button>
+
+    <div class="tour-gallery-header">
+
+      <p class="tour-gallery-eyebrow">
+        TOUR GALLERY
+      </p>
+
+      <h2 id="tourGalleryTitle">
+        Tour Gallery
+      </h2>
+
+    </div>
+
+
+    <div
+      id="tourGalleryLoading"
+      class="tour-gallery-loading"
+    >
+      Loading gallery...
+    </div>
+
+
+    <div
+      id="tourGalleryEmpty"
+      class="tour-gallery-empty"
+      style="display:none;"
+    >
+      <div class="tour-gallery-empty-icon">
+        📷
+      </div>
+
+      <h3>No gallery images yet</h3>
+
+      <p>
+        Gallery photos for this journey will appear here.
+      </p>
+    </div>
+
+
+    <div
+      id="tourGalleryGrid"
+      class="tour-gallery-grid"
+    ></div>
+
+  </div>
+
+</div>
+
+
+<script
+  type="module"
+  src="script.js?v=20260908-gallery"
+></script>
 
 </head>
 
