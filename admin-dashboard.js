@@ -1,3 +1,4 @@
+
 import {
   createClient
 } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -27,7 +28,7 @@ const supabase = createClient(
 
 
 /* =========================================================
-   GLOBAL STATE
+   STATE
 ========================================================= */
 
 let currentSection = "dashboard";
@@ -38,379 +39,130 @@ let editingLocationId = null;
 
 let currentLocationDestinationId = null;
 
-
-/* =========================================================
-   SECURITY HELPERS
-========================================================= */
-
-function escapeHTML(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-
-function escapeAttribute(value) {
-  return escapeHTML(value);
-}
-
-
-function safeImageUrl(value) {
-  const fallback =
-    "https://via.placeholder.com/800x500?text=No+Image";
-
-  if (!value) {
-    return fallback;
-  }
-
-  const url = String(value).trim();
-
-  if (!url) {
-    return fallback;
-  }
-
-  if (
-    url.startsWith("https://") ||
-    url.startsWith("http://") ||
-    url.startsWith("/") ||
-    url.startsWith("./") ||
-    url.startsWith("../") ||
-    url.startsWith("images/")
-  ) {
-    return url;
-  }
-
-  return fallback;
-}
+let currentGalleryTourId = null;
+let currentGalleryTourTitle = "";
 
 
 /* =========================================================
-   INITIALIZATION
+   DOM READY
 ========================================================= */
 
-document.addEventListener(
-  "DOMContentLoaded",
-  initAdminDashboard
-);
+document.addEventListener("DOMContentLoaded", initAdminDashboard);
 
+
+/* 
+
+=========================================================
+   INITIALIZE
+========================================================= */
 
 async function initAdminDashboard() {
+
+  const loading = document.getElementById("loading");
 
   try {
 
     const {
       data: {
         session
-      }
+      },
+      error
     } = await supabase.auth.getSession();
 
+    if (error) {
+      throw error;
 
-    if (!session) {
-
-      window.location.href =
-        "admin.html";
-
-      return;
     }
 
+    if (!session) {
+      window.location.href = "admin.html";
+      return;
+    }
 
     createDashboard();
 
     await loadDashboard();
 
+    supabase.auth.onAuthStateChange((event) => {
 
-    supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-
-        if (!session) {
-
-          window.location.href =
-            "admin.html";
-
-        }
-
+      if (event === "SIGNED_OUT") {
+        window.location.href = "admin.html";
       }
-    );
 
+    });
 
   } catch (error) {
 
-    console.error(
-      "Admin initialization error:",
-      error
-    );
 
-    showFatalError(error);
+    console.error(error);
+
+    if (loading) {
+      loading.innerHTML = `
+        <div style="padding:30px;text-align:center;">
+          <h2>Admin Panel Error</h2>
+          <p>${escapeHTML(getReadableError(error))}</p>
+          <button onclick="location.reload()">
+            Reload
+          </button>
+        </div>
+      `;
+    }
 
   }
 
 }
 
-
 /* =========================================================
-   FATAL ERROR
-========================================================= */
-
-function showFatalError(error) {
-
-  const loading =
-    document.getElementById("loading");
-
-  const message =
-    error?.message ||
-    "Unknown error";
-
-
-  if (loading) {
-
-    loading.innerHTML = `
-      <div style="
-        max-width:600px;
-        padding:30px;
-        text-align:center;
-        font-family:Arial,Helvetica,sans-serif;
-      ">
-
-        <h2 style="
-          margin-bottom:15px;
-          color:#b42318;
-        ">
-          Admin Panel Error
-        </h2>
-
-        <p style="
-          line-height:1.7;
-          color:#555;
-        ">
-          ${escapeHTML(message)}
-        </p>
-
-        <button
-          onclick="location.reload()"
-          style="
-            margin-top:20px;
-            padding:12px 20px;
-            border:0;
-            border-radius:8px;
-            background:#176b4d;
-            color:#fff;
-            cursor:pointer;
-          "
-        >
-          Reload
-        </button>
-
-      </div>
-    `;
-
-    return;
-  }
-
-
-  document.body.innerHTML = `
-    <div style="
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:30px;
-      font-family:Arial,Helvetica,sans-serif;
-      background:#f4f7f5;
-    ">
-
-      <div style="
-        max-width:600px;
-        background:#fff;
-        padding:35px;
-        border-radius:14px;
-        text-align:center;
-      ">
-
-        <h2 style="color:#b42318;">
-          Admin Panel Error
-        </h2>
-
-        <p style="color:#555;">
-          ${escapeHTML(message)}
-        </p>
-
-        <button
-          onclick="location.reload()"
-          style="
-            padding:12px 20px;
-            border:0;
-            border-radius:8px;
-            background:#176b4d;
-            color:#fff;
-            cursor:pointer;
-          "
-        >
-          Reload
-        </button>
-
-      </div>
-
-    </div>
-  `;
-
-}
-
-
-/* =========================================================
-   DASHBOARD UI
+   CREATE DASHBOARD
 ========================================================= */
 
 function createDashboard() {
 
-  const loading =
-    document.getElementById("loading");
-
+  const loading = document.getElementById("loading");
 
   if (!loading) {
     return;
   }
 
-
   loading.outerHTML = `
 
-    <div
-      id="adminApp"
-      style="
-        min-height:100vh;
-        background:#f4f7f5;
-        font-family:Arial,Helvetica,sans-serif;
-        color:#17221d;
-      "
-    >
+    <div class="admin-app">
 
-      <!-- HEADER -->
+      <header class="admin-header">
 
-      <header
-        style="
-          background:#10251d;
-          color:#fff;
-          padding:18px 24px;
-          position:sticky;
-          top:0;
-          z-index:1000;
-          box-shadow:0 5px 20px rgba(0,0,0,.12);
-        "
-      >
+        <div>
+          <h1>TRAVEL WITH SRI LANKA ADMIN</h1>
+          <p>Website Management Dashboard</p>
+        </div>
 
-        <div
-          style="
-            max-width:1400px;
-            margin:auto;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:20px;
-          "
-        >
+        <div class="admin-user">
 
-          <div>
+          <span id="adminEmail"></span>
 
-            <div
-              style="
-                font-size:13px;
-                letter-spacing:2px;
-                opacity:.8;
-              "
-            >
-              TRAVEL WITH
-            </div>
-
-            <div
-              style="
-                font-size:22px;
-                font-weight:700;
-              "
-            >
-              SRI LANKA
-              <span
-                style="
-                  color:#c9a85b;
-                "
-              >
-                ADMIN
-              </span>
-            </div>
-
-          </div>
-
-
-          <div
-            style="
-              display:flex;
-              align-items:center;
-              gap:10px;
-            "
+          <button
+            id="logoutBtn"
+            class="admin-logout-btn"
+            type="button"
           >
-
-            <span
-              id="adminEmailDisplay"
-              style="
-                font-size:13px;
-                opacity:.8;
-              "
-            ></span>
-
-            <button
-              id="logoutBtn"
-              type="button"
-              style="
-                border:1px solid rgba(255,255,255,.25);
-                background:transparent;
-                color:#fff;
-                padding:9px 14px;
-                border-radius:7px;
-                cursor:pointer;
-              "
-            >
-              Logout
-            </button>
-
-          </div>
+            Logout
+          </button>
 
         </div>
 
       </header>
 
 
-      <!-- BODY -->
 
-      <div
-        style="
-          max-width:1400px;
-          margin:auto;
-          padding:24px;
-          display:grid;
-          grid-template-columns:220px minmax(0,1fr);
-          gap:24px;
-        "
-      >
+      <div class="admin-layout">
 
-        <!-- SIDEBAR -->
-
-        <aside
-          style="
-            background:#fff;
-            border:1px solid #e4e3db;
-            border-radius:12px;
-            padding:14px;
-            height:max-content;
-          "
-        >
+        <aside class="admin-sidebar">
 
           <button
-            class="admin-nav-btn"
+            class="admin-nav-btn active"
             data-section="dashboard"
             type="button"
           >
-            Dashboard
+            📊 Dashboard
           </button>
 
           <button
@@ -418,7 +170,7 @@ function createDashboard() {
             data-section="destinations"
             type="button"
           >
-            Destinations
+            📍 Destinations
           </button>
 
           <button
@@ -426,7 +178,7 @@ function createDashboard() {
             data-section="tours"
             type="button"
           >
-            Tours
+            🧳 Tours
           </button>
 
           <button
@@ -434,7 +186,7 @@ function createDashboard() {
             data-section="locations"
             type="button"
           >
-            Destination Locations
+            📌 Destination Locations
           </button>
 
           <button
@@ -442,80 +194,90 @@ function createDashboard() {
             data-section="reviews"
             type="button"
           >
-            Reviews
+            ⭐ Reviews
+
           </button>
 
         </aside>
 
 
-        <!-- CONTENT -->
-
-        <main>
-
-          <div
-            id="adminMessage"
-            style="
-              display:none;
-              margin-bottom:18px;
-              padding:13px 16px;
-              border-radius:8px;
-              font-size:14px;
-            "
-          ></div>
+        <main class="admin-main">
 
 
-          <!-- DASHBOARD -->
+          <!-- =================================================
+               DASHBOARD
+          ================================================== -->
 
           <section
             id="section-dashboard"
             class="admin-section"
           >
 
-            <div
-              style="
-                background:#fff;
-                border:1px solid #e4e3db;
-                border-radius:12px;
-                padding:25px;
-              "
-            >
+            <div class="admin-section-header">
 
-              <h1
-                style="
-                  margin:0 0 8px;
-                  font-size:28px;
-                "
-              >
-                Dashboard
-              </h1>
-
-              <p
-                style="
-                  margin:0;
-                  color:#69736e;
-                "
-              >
-                Manage Travel With Sri Lanka website content.
-              </p>
+              <div>
+                <h2>Dashboard</h2>
+                <p>
+                  Manage your Travel With Sri Lanka website.
+                </p>
+              </div>
 
             </div>
 
 
-            <div
-              id="statsGrid"
-              style="
-                display:grid;
-                grid-template-columns:
-                  repeat(4,minmax(0,1fr));
-                gap:16px;
-                margin-top:20px;
-              "
-            ></div>
+            <div class="admin-stats-grid">
+
+              <div class="admin-stat-card">
+                <span>Destinations</span>
+                <strong id="statDestinations">0</strong>
+              </div>
+
+              <div class="admin-stat-card">
+                <span>Tours</span>
+                <strong id="statTours">0</strong>
+
+              </div>
+
+              <div class="admin-stat-card">
+                <span>Locations</span>
+                <strong id="statLocations">0</strong>
+              </div>
+
+              <div class="admin-stat-card">
+                <span>Reviews</span>
+                <strong id="statReviews">0</strong>
+              </div>
+
+              <div class="admin-stat-card">
+                <span>Tour Gallery Images</span>
+                <strong id="statGallery">0</strong>
+              </div>
+
+            </div>
+
+
+
+            <div class="admin-dashboard-box">
+
+              <h3>Quick Information</h3>
+
+              <p>
+                Use the sidebar to manage destinations,
+                tours, destination locations, reviews and
+                tour gallery images.
+              </p>
+
+            </div>
 
           </section>
 
 
-          <!-- DESTINATIONS -->
+
+          <!-- ===================================
+
+==============
+               DESTINATIONS
+          ================================================== -->
 
           <section
             id="section-destinations"
@@ -526,18 +288,14 @@ function createDashboard() {
             <div class="admin-section-header">
 
               <div>
-
-                <h2>
-                  Destinations
-                </h2>
-
+                <h2>Destinations</h2>
                 <p>
-                  Manage destination pages.
+                  Manage Sri Lankan destinations.
                 </p>
-
               </div>
 
               <button
+
                 id="addDestinationBtn"
                 class="admin-primary-btn"
                 type="button"
@@ -547,7 +305,6 @@ function createDashboard() {
 
             </div>
 
-
             <div
               id="destinationsList"
               class="admin-card-list"
@@ -556,7 +313,11 @@ function createDashboard() {
           </section>
 
 
-          <!-- TOURS -->
+
+          <!-- =================================================
+               TOURS
+
+          ================================================== -->
 
           <section
             id="section-tours"
@@ -567,27 +328,22 @@ function createDashboard() {
             <div class="admin-section-header">
 
               <div>
-
-                <h2>
-                  Tours
-                </h2>
-
+                <h2>Tours</h2>
                 <p>
-                  Manage tour packages.
+                  Manage tour packages and galleries.
                 </p>
-
               </div>
 
               <button
                 id="addTourBtn"
                 class="admin-primary-btn"
+
                 type="button"
               >
                 + Add Tour
               </button>
 
             </div>
-
 
             <div
               id="toursList"
@@ -597,7 +353,12 @@ function createDashboard() {
           </section>
 
 
-          <!-- LOCATIONS -->
+
+          <!-- =================================================
+               LOCATIONS
+          ===================================
+
+=============== -->
 
           <section
             id="section-locations"
@@ -608,35 +369,27 @@ function createDashboard() {
             <div class="admin-section-header">
 
               <div>
-
-                <h2>
-                  Destination Locations
-                </h2>
-
+                <h2>Destination Locations</h2>
                 <p>
-                  Manage places displayed inside destinations.
+                  Manage locations inside destinations.
                 </p>
-
               </div>
 
             </div>
 
-
-            <div
-              id="locationDestinationSelector"
-              style="margin-bottom:20px;"
-            ></div>
-
-
             <div
               id="locationsList"
+
               class="admin-card-list"
             ></div>
 
           </section>
 
 
-          <!-- REVIEWS -->
+
+          <!-- =================================================
+               REVIEWS
+          ================================================== -->
 
           <section
             id="section-reviews"
@@ -646,20 +399,15 @@ function createDashboard() {
 
             <div class="admin-section-header">
 
+
               <div>
-
-                <h2>
-                  Reviews
-                </h2>
-
+                <h2>Reviews</h2>
                 <p>
-                  View and manage customer reviews.
+                  Manage customer reviews.
                 </p>
-
               </div>
 
             </div>
-
 
             <div
               id="reviewsList"
@@ -668,6 +416,7 @@ function createDashboard() {
 
           </section>
 
+
         </main>
 
       </div>
@@ -675,7 +424,10 @@ function createDashboard() {
     </div>
 
 
-    <!-- CONTENT MODAL -->
+
+    <!-- =====================================================
+         CONTENT MODAL
+    ====================================================== -->
 
     <div
       id="contentModal"
@@ -687,14 +439,14 @@ function createDashboard() {
 
         <div class="admin-modal-header">
 
-          <h3 id="contentModalTitle">
-            Add Destination
-          </h3>
+          <h2 id="contentModalTitle">
+            Add Content
+          </h2>
 
           <button
+            class="admin-modal-close"
+            id="closeContentModal"
             type="button"
-            class="admin-close-btn"
-            data-close-modal="contentModal"
           >
             ×
           </button>
@@ -707,79 +459,112 @@ function createDashboard() {
           <input
             type="hidden"
             id="contentType"
-          >
+          />
 
-          <label>
-            Name / Title
+          <div class="admin-form-group">
+
+
+            <label id="nameLabel">
+              Name
+            </label>
+
             <input
               id="contentName"
+              type="text"
               required
-            >
-          </label>
+            />
+
+          </div>
 
 
-          <label>
-            Slug
+          <div class="admin-form-group">
+
+            <label>
+              Slug
+            </label>
+
             <input
               id="contentSlug"
+
+              type="text"
               required
-            >
-          </label>
+            />
+
+          </div>
 
 
-          <label>
-            Description
+          <div class="admin-form-group">
+
+            <label>
+              Description
+            </label>
+
             <textarea
               id="contentDescription"
               rows="5"
             ></textarea>
-          </label>
+
+          </div>
 
 
-          <label>
-            Image URL
+          <div class="admin-form-group">
+
+
+            <label>
+              Main Image URL
+            </label>
+
             <input
               id="contentImageUrl"
               type="url"
               placeholder="https://..."
-            >
-          </label>
+            />
+
+          </div>
 
 
-          <label>
-            Page URL
+          <div class="admin-form-group">
+
+            <label>
+              Page URL
+            </label>
+
             <input
               id="contentPageUrl"
+
               type="text"
-              placeholder="ella.html"
-            >
-          </label>
+              placeholder="tour.html?tour=..."
+            />
+
+          </div>
 
 
-          <label>
-            Sort Order
+          <div class="admin-form-group">
+
+            <label>
+              Sort Order
+            </label>
+
             <input
               id="contentSortOrder"
               type="number"
               value="0"
-            >
-          </label>
+            />
 
+          </div>
 
           <div
-            id="contentCurrentImage"
-            style="
-              margin-top:10px;
-            "
+            id="currentContentImage"
+            class="admin-current-image"
           ></div>
 
 
-          <div class="admin-modal-actions">
+          <div class="admin-form-actions">
 
             <button
               type="button"
+              id="cancelContentBtn"
               class="admin-secondary-btn"
-              data-close-modal="contentModal"
             >
               Cancel
             </button>
@@ -787,10 +572,11 @@ function createDashboard() {
             <button
               type="submit"
               class="admin-primary-btn"
-              id="contentSaveBtn"
+              id="saveContentBtn"
             >
               Save
             </button>
+
 
           </div>
 
@@ -801,11 +587,15 @@ function createDashboard() {
     </div>
 
 
-    <!-- LOCATION MODAL -->
+
+    <!-- =====================================================
+         LOCATION MODAL
+    ====================================================== -->
 
     <div
       id="locationModal"
       class="admin-modal"
+
       style="display:none;"
     >
 
@@ -813,99 +603,140 @@ function createDashboard() {
 
         <div class="admin-modal-header">
 
-          <h3 id="locationModalTitle">
+          <h2 id="locationModalTitle">
             Add Location
-          </h3>
+          </h2>
 
           <button
+            id="closeLocationModal"
+            class="admin-modal-close"
             type="button"
-            class="admin-close-btn"
-            data-close-modal="locationModal"
           >
             ×
           </button>
 
         </div>
 
-
         <form id="locationForm">
 
           <input
             type="hidden"
-            id="locationId"
-          >
+            id="locationDestinationId"
+          />
 
 
-          <label>
-            Location Name
-            <input
-              id="locationName"
+          <div class="admin-form-group">
+
+            <label>
+              Destination
+            </label>
+
+            <select
+              id="locationDestinationSelect"
               required
-            >
-          </label>
+            ></select>
 
+          </div>
 
-          <label>
-            Description
-            <textarea
-              id="locationDescription"
-              rows="5"
-            ></textarea>
-          </label>
+          <div class="admin-form-group">
 
+            <label>
+              Location Number
+            </label>
 
-          <label>
-            Location Number
             <input
               id="locationNumber"
               type="number"
               min="1"
               value="1"
-            >
-          </label>
+              required
+            />
+
+          </div>
 
 
-          <label>
-            Image URL
+          <div class="admin-form-group">
+
+            <label>
+              Location Name
+            </label>
+
+
+            <input
+              id="locationName"
+              type="text"
+              required
+            />
+
+          </div>
+
+
+          <div class="admin-form-group">
+
+            <label>
+              Description
+            </label>
+
+            <textarea
+              id="locationDescription"
+              rows="4"
+            ></textarea>
+
+          </div>
+
+
+
+          <div class="admin-form-group">
+
+            <label>
+              Image URL
+            </label>
+
             <input
               id="locationImageUrl"
               type="url"
               placeholder="https://..."
-            >
-          </label>
+            />
+
+          </div>
 
 
-          <label>
-            Image Path
+          <div class="admin-form-group">
+
+            <label>
+              Image Path
+            </label>
+
             <input
               id="locationImagePath"
               type="text"
-              placeholder="images/destinations/ella/..."
-            >
-          </label>
+              placeholder="images/destinations/..."
+            />
+
+          </div>
 
 
-          <label>
-            Sort Order
+          <div class="admin-form-group">
+
+            <label>
+              Sort Order
+            </label>
+
             <input
               id="locationSortOrder"
               type="number"
               value="0"
-            >
-          </label>
+            />
+
+          </div>
 
 
-          <div
-            id="locationCurrentImage"
-          ></div>
-
-
-          <div class="admin-modal-actions">
+          <div class="admin-form-actions">
 
             <button
               type="button"
+              id="cancelLocationBtn"
               class="admin-secondary-btn"
-              data-close-modal="locationModal"
             >
               Cancel
             </button>
@@ -913,11 +744,13 @@ function createDashboard() {
             <button
               type="submit"
               class="admin-primary-btn"
+              id="saveLocationBtn"
             >
               Save
             </button>
 
           </div>
+
 
         </form>
 
@@ -926,265 +759,774 @@ function createDashboard() {
     </div>
 
 
+
+    <!-- =====================================================
+         TOUR GALLERY MODAL
+    ====================================================== -->
+
+    <div
+      id="galleryModal"
+      class="admin-modal"
+      style="display:none;"
+    >
+
+
+      <div class="admin-modal-box admin-gallery-modal-box">
+
+        <div class="admin-modal-header">
+
+          <div>
+
+            <h2>
+              Tour Gallery
+            </h2>
+
+            <p
+              id="galleryTourTitle"
+              class="admin-modal-subtitle"
+            ></p>
+
+          </div>
+
+          <button
+            id="closeGalleryModal"
+            class="admin-modal-close"
+
+            type="button"
+          >
+            ×
+          </button>
+
+        </div>
+
+
+        <div class="gallery-upload-box">
+
+          <label
+            for="galleryFileInput"
+            class="gallery-upload-label"
+          >
+            📷 Select Gallery Images
+          </label>
+
+          <input
+            id="galleryFileInput"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+
+          />
+
+          <p>
+            You can select multiple images.
+            Maximum 5MB per image.
+          </p>
+
+          <button
+            id="uploadGalleryBtn"
+            class="admin-primary-btn"
+            type="button"
+          >
+            Upload Images
+          </button>
+
+          <div
+            id="galleryUploadStatus"
+            class="gallery-upload-status"
+          ></div>
+
+        </div>
+
+
+        <div
+          id="galleryPreview"
+          class="gallery-admin-grid"
+        ></div>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         ADMIN STYLES
+    ====================================================== -->
+
     <style>
 
-      .admin-nav-btn {
-        display:block;
-        width:100%;
-        text-align:left;
-        padding:12px 13px;
-        margin-bottom:5px;
-        border:0;
-        background:transparent;
-        border-radius:7px;
-        cursor:pointer;
-        color:#17221d;
+      * {
+        box-sizing: border-box;
       }
+
+
+      body {
+        margin: 0;
+        background: #f5f7f4;
+        color: #18352a;
+        font-family:
+          Arial,
+          Helvetica,
+          sans-serif;
+      }
+
+
+      .admin-app {
+        min-height: 100vh;
+      }
+
+
+      .admin-header {
+
+        min-height: 78px;
+        background: #173f2c;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 16px 28px;
+      }
+
+
+      .admin-header h1 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: .5px;
+      }
+
+
+      .admin-header p {
+        margin: 5px 0 0;
+        opacity: .75;
+        font-size: 13px;
+
+      }
+
+
+      .admin-user {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-size: 13px;
+      }
+
+
+      .admin-logout-btn {
+        border: 1px solid rgba(255,255,255,.4);
+        background: transparent;
+        color: white;
+        padding: 9px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+
+      .admin-layout {
+
+        display: flex;
+        min-height: calc(100vh - 78px);
+      }
+
+
+      .admin-sidebar {
+        width: 240px;
+        background: white;
+        border-right: 1px solid #e1e8e2;
+        padding: 18px 12px;
+        flex-shrink: 0;
+      }
+
+
+      .admin-nav-btn {
+        display: block;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        padding: 13px 15px;
+        margin-bottom: 5px;
+        border-radius: 9px;
+
+        color: #315044;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
 
       .admin-nav-btn:hover,
       .admin-nav-btn.active {
-        background:#edf4ef;
-        color:#176b4d;
-        font-weight:700;
+        background: #e9f1eb;
+        color: #173f2c;
+        font-weight: 700;
       }
+
+
+      .admin-main {
+        flex: 1;
+        padding: 30px;
+        min-width: 0;
+      }
+
 
       .admin-section-header {
-        background:#fff;
-        border:1px solid #e4e3db;
-        border-radius:12px;
-        padding:20px;
-        margin-bottom:18px;
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:20px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 25px;
       }
+
 
       .admin-section-header h2 {
-        margin:0 0 5px;
+        margin: 0 0 6px;
+        font-size: 27px;
       }
+
 
       .admin-section-header p {
-        margin:0;
-        color:#69736e;
+        margin: 0;
+        color: #718078;
+        font-size: 14px;
       }
+
 
       .admin-primary-btn,
+
       .admin-secondary-btn,
-      .admin-danger-btn {
-        border:0;
-        border-radius:7px;
-        padding:10px 15px;
-        cursor:pointer;
-        font-weight:600;
+      .admin-danger-btn,
+      .admin-small-btn {
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
       }
+
 
       .admin-primary-btn {
-        background:#176b4d;
-        color:#fff;
+        background: #1e5c3f;
+        color: white;
       }
+
 
       .admin-primary-btn:hover {
-        background:#12583f;
+        background: #174b34;
       }
+
 
       .admin-secondary-btn {
-        background:#eef2ef;
-        color:#17221d;
+        background: #edf1ee;
+        color: #30473b;
       }
+
 
       .admin-danger-btn {
-        background:#b42318;
-        color:#fff;
+        background: #c53d3d;
+        color: white;
       }
+
+
+      .admin-small-btn {
+        background: #edf1ee;
+        color: #264438;
+        padding: 8px 11px;
+      }
+
 
       .admin-card-list {
-        display:grid;
-        gap:15px;
+        display: grid;
+
+        gap: 15px;
       }
 
-      .admin-item-card {
-        background:#fff;
-        border:1px solid #e4e3db;
-        border-radius:12px;
-        padding:18px;
-        display:flex;
-        gap:18px;
-        align-items:flex-start;
+
+      .admin-card {
+        background: white;
+        border: 1px solid #e1e8e2;
+        border-radius: 13px;
+        padding: 15px;
+        display: flex;
+        gap: 18px;
+        align-items: center;
       }
 
-      .admin-item-image {
-        width:150px;
-        height:100px;
-        object-fit:cover;
-        border-radius:8px;
-        background:#eef2ef;
-        flex:none;
+
+      .admin-card-image {
+        width: 130px;
+        height: 95px;
+        object-fit: cover;
+        border-radius: 9px;
+        background: #edf1ee;
+        flex-shrink: 0;
+
       }
 
-      .admin-item-content {
-        flex:1;
-        min-width:0;
+
+      .admin-card-info {
+        flex: 1;
+        min-width: 0;
       }
 
-      .admin-item-content h3 {
-        margin:0 0 7px;
+
+      .admin-card-info h3 {
+        margin: 0 0 6px;
+        font-size: 18px;
       }
 
-      .admin-item-content p {
-        margin:0 0 10px;
-        color:#69736e;
-        line-height:1.6;
+
+      .admin-card-info p {
+        margin: 0 0 7px;
+        color: #697870;
+        font-size: 13px;
+        line-height: 1.5;
       }
 
-      .admin-item-meta {
-        font-size:13px;
-        color:#69736e;
+      .admin-card-meta {
+        color: #87938d;
+        font-size: 12px;
       }
 
-      .admin-item-actions {
-        display:flex;
-        gap:7px;
-        flex-wrap:wrap;
+
+      .admin-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
       }
+
+
+      .gallery-btn {
+        background: #d7a83c;
+        color: #172a20;
+      }
+
+
+      .admin-stats-grid {
+        display: grid;
+        grid-template-columns:
+
+          repeat(5, minmax(0, 1fr));
+        gap: 15px;
+      }
+
+
+      .admin-stat-card {
+        background: white;
+        border: 1px solid #e1e8e2;
+        border-radius: 13px;
+        padding: 20px;
+      }
+
+
+      .admin-stat-card span {
+        display: block;
+        color: #738079;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+
+      .admin-stat-card strong {
+
+        font-size: 30px;
+        color: #1e5c3f;
+      }
+
+
+      .admin-dashboard-box {
+        margin-top: 25px;
+        padding: 25px;
+        background: white;
+        border: 1px solid #e1e8e2;
+        border-radius: 13px;
+      }
+
+
+      .admin-dashboard-box h3 {
+        margin-top: 0;
+      }
+
 
       .admin-modal {
-        position:fixed;
-        inset:0;
-        z-index:2000;
-        background:rgba(0,0,0,.55);
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        padding:20px;
-        overflow:auto;
+        position: fixed;
+        inset: 0;
+
+        z-index: 9999;
+        background: rgba(10, 25, 18, .68);
+        padding: 25px;
+        overflow-y: auto;
       }
+
 
       .admin-modal-box {
-        width:min(650px,100%);
-        max-height:90vh;
-        overflow:auto;
-        background:#fff;
-        border-radius:12px;
-        padding:22px;
+        width: min(700px, 100%);
+        margin: 30px auto;
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
       }
+
+
+      .admin-gallery-modal-box {
+        width: min(1000px, 100%);
+      }
+
 
       .admin-modal-header {
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:20px;
-        margin-bottom:20px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
       }
 
-      .admin-modal-header h3 {
-        margin:0;
+
+      .admin-modal-header h2 {
+        margin: 0;
       }
 
-      .admin-close-btn {
-        border:0;
-        background:transparent;
-        font-size:28px;
-        cursor:pointer;
-        color:#69736e;
+
+      .admin-modal-subtitle {
+        margin: 5px 0 0;
+        color: #718078;
+        font-size: 13px;
       }
 
-      .admin-modal-box label {
-        display:block;
-        margin-bottom:15px;
-        font-size:14px;
-        font-weight:600;
+
+      .admin-modal-close {
+        width: 35px;
+        height: 35px;
+
+        border: 0;
+        border-radius: 8px;
+        background: #edf1ee;
+        font-size: 25px;
+        line-height: 1;
+        cursor: pointer;
       }
 
-      .admin-modal-box input,
-      .admin-modal-box textarea,
-      .admin-modal-box select {
-        display:block;
-        width:100%;
-        box-sizing:border-box;
-        margin-top:7px;
-        padding:11px 12px;
-        border:1px solid #d9ddd9;
-        border-radius:7px;
-        font:inherit;
-        background:#fff;
+
+      .admin-form-group {
+        margin-bottom: 17px;
       }
 
-      .admin-modal-box textarea {
-        resize:vertical;
+
+      .admin-form-group label {
+        display: block;
+        margin-bottom: 7px;
+        font-weight: 700;
+        font-size: 13px;
       }
 
-      .admin-modal-actions {
-        display:flex;
-        justify-content:flex-end;
-        gap:8px;
-        margin-top:20px;
+      .admin-form-group input,
+      .admin-form-group textarea,
+      .admin-form-group select {
+        width: 100%;
+        border: 1px solid #d8e0da;
+        border-radius: 8px;
+        padding: 11px 12px;
+        font: inherit;
+        outline: none;
       }
 
-      .admin-stats-card {
-        background:#fff;
-        border:1px solid #e4e3db;
-        border-radius:12px;
-        padding:20px;
+
+      .admin-form-group input:focus,
+      .admin-form-group textarea:focus,
+      .admin-form-group select:focus {
+        border-color: #1e5c3f;
       }
 
-      .admin-stats-number {
-        font-size:32px;
-        font-weight:700;
-        color:#176b4d;
-        margin-bottom:5px;
+
+      .admin-form-actions {
+        display: flex;
+        justify-content: flex-end;
+
+        gap: 9px;
+        margin-top: 22px;
       }
 
-      .admin-stats-label {
-        color:#69736e;
-        font-size:14px;
+
+      .admin-current-image {
+        margin-top: 10px;
       }
 
-      .admin-stars {
-        color:#c9a85b;
-        letter-spacing:2px;
+
+      .admin-current-image img {
+        width: 130px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 8px;
       }
+
+
+      /* =====================================================
+         GALLERY
+
+      ================================================== */
+
+
+      .gallery-upload-box {
+        border: 2px dashed #cbd8ce;
+        border-radius: 13px;
+        padding: 22px;
+        text-align: center;
+        margin-bottom: 25px;
+        background: #f8faf8;
+      }
+
+
+      .gallery-upload-label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 12px;
+        font-size: 16px;
+      }
+
+
+      #galleryFileInput {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+
+      .gallery-upload-box p {
+        margin: 8px 0 15px;
+        color: #738079;
+        font-size: 12px;
+      }
+
+
+      .gallery-upload-status {
+        min-height: 20px;
+        margin-top: 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+
+      .gallery-admin-grid {
+        display: grid;
+        grid-template-columns:
+          repeat(4, minmax(0, 1fr));
+        gap: 15px;
+      }
+
+
+      .gallery-admin-item {
+        background: #f7f9f7;
+        border: 1px solid #dfe7e1;
+        border-radius: 11px;
+        overflow: hidden;
+      }
+
+
+      .gallery-admin-image-wrap {
+        position: relative;
+        aspect-ratio: 4 / 3;
+        background: #e9efea;
+      }
+
+
+      .gallery-admin-item img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+      }
+
+
+      .gallery-admin-number {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(0,0,0,.65);
+        color: white;
+        border-radius: 6px;
+        padding: 4px 7px;
+        font-size: 11px;
+      }
+
+
+      .gallery-admin-item-bottom {
+
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+
+
+      .gallery-admin-item-bottom small {
+        color: #718078;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+
+      .gallery-delete-btn {
+        border: 0;
+        background: #c53d3d;
+        color: white;
+        border-radius: 7px;
+        padding: 7px 9px;
+
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+
+      .gallery-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 45px 20px;
+        border: 1px dashed #cbd8ce;
+        border-radius: 12px;
+        color: #718078;
+      }
+
+
+      .admin-review-card {
+        align-items: flex-start;
+      }
+
+
+      .admin-review-rating {
+        color: #d7a83c;
+
+        margin-bottom: 5px;
+      }
+
 
       .admin-review-photo {
-        width:90px;
-        height:90px;
-        object-fit:cover;
-        border-radius:8px;
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
       }
 
-      @media(max-width:900px) {
 
-        .adminApp > div {
-          grid-template-columns:1fr !important;
+      @media (max-width: 1100px) {
+
+        .admin-stats-grid {
+          grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+        }
+
+        .gallery-admin-grid {
+          grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        }
+
+      }
+
+
+      @media (max-width: 850px) {
+
+        .admin-layout {
+          display: block;
+        }
+
+        .admin-sidebar {
+          width: 100%;
+          display: flex;
+          overflow-x: auto;
+          gap: 5px;
+          border-right: 0;
+          border-bottom: 1px solid #e1e8e2;
         }
 
         .admin-nav-btn {
-          display:inline-block;
-          width:auto;
-          margin-right:5px;
+          width: auto;
+          min-width: max-content;
+
+          margin: 0;
+        }
+
+        .admin-main {
+          padding: 20px;
+        }
+
+        .admin-header {
+          padding: 15px 18px;
+        }
+
+        .admin-user span {
+          display: none;
         }
 
       }
 
-      @media(max-width:600px) {
 
-        .admin-item-card {
-          flex-direction:column;
+      @media (max-width: 650px) {
+
+        .admin-header {
+          display: block;
+
         }
 
-        .admin-item-image {
-          width:100%;
-          height:180px;
-        }
-
-        #statsGrid {
-          grid-template-columns:
-            repeat(2,minmax(0,1fr)) !important;
+        .admin-user {
+          margin-top: 12px;
+          justify-content: space-between;
         }
 
         .admin-section-header {
-          flex-direction:column;
-          align-items:flex-start;
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .admin-stats-grid {
+          grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+        }
+
+        .admin-card {
+          display: block;
+        }
+
+        .admin-card-image {
+
+          width: 100%;
+          height: 180px;
+          margin-bottom: 12px;
+        }
+
+        .admin-card-actions {
+          margin-top: 12px;
+        }
+
+        .gallery-admin-grid {
+          grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+        }
+
+        .admin-modal {
+          padding: 10px;
+        }
+
+        .admin-modal-box {
+          padding: 18px;
+          margin: 10px auto;
+        }
+
+
+      }
+
+
+      @media (max-width: 400px) {
+
+        .admin-stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .gallery-admin-grid {
+          grid-template-columns: 1fr;
         }
 
       }
@@ -1192,119 +1534,151 @@ function createDashboard() {
     </style>
   `;
 
-
   setupDashboardEvents();
 
 }
 
 
+
 /* =========================================================
-   EVENTS
+   DASHBOARD EVENTS
 ========================================================= */
 
 function setupDashboardEvents() {
 
+  document.querySelectorAll(".admin-nav-btn").forEach((button) => {
+
+    button.addEventListener("click", () => {
+
+      switchSection(button.dataset.section);
+
+    });
+
+  });
+
+
   document
-    .querySelectorAll(".admin-nav-btn")
-    .forEach(button => {
+    .getElementById("logoutBtn")
+    ?.addEventListener("click", logout);
 
-      button.addEventListener(
-        "click",
-        () => {
 
-          showSection(
-            button.dataset.section
-          );
+  document
+    .getElementById("addDestinationBtn")
+    ?.addEventListener("click", () => {
 
-        }
-      );
+      openContentModal("destination");
 
     });
 
 
   document
-    .getElementById("logoutBtn")
-    ?.addEventListener(
-      "click",
-      logout
-    );
-
-
-  document
-    .getElementById("addDestinationBtn")
-    ?.addEventListener(
-      "click",
-      () => openContentModal("destination")
-    );
-
-
-  document
     .getElementById("addTourBtn")
-    ?.addEventListener(
-      "click",
-      () => openContentModal("tour")
-    );
+    ?.addEventListener("click", () => {
+
+      openContentModal("tour");
+
+    });
 
 
   document
     .getElementById("contentForm")
-    ?.addEventListener(
-      "submit",
-      saveContent
-    );
+    ?.addEventListener("submit", saveContent);
+
+
+  document
+    .getElementById("cancelContentBtn")
+    ?.addEventListener("click", closeContentModal);
+
+
+  document
+    .getElementById("closeContentModal")
+    ?.addEventListener("click", closeContentModal);
 
 
   document
     .getElementById("locationForm")
-    ?.addEventListener(
-      "submit",
-      saveLocation
-    );
+    ?.addEventListener("submit", 
+
+saveLocation);
 
 
   document
-    .querySelectorAll("[data-close-modal]")
-    .forEach(button => {
+    .getElementById("cancelLocationBtn")
+    ?.addEventListener("click", closeLocationModal);
 
-      button.addEventListener(
-        "click",
-        () => {
 
-          closeModal(
-            button.dataset.closeModal
-          );
+  document
+    .getElementById("closeLocationModal")
+    ?.addEventListener("click", closeLocationModal);
 
-        }
-      );
+
+  document
+    .getElementById("closeGalleryModal")
+    ?.addEventListener("click", closeGalleryModal);
+
+
+  document
+
+    .getElementById("uploadGalleryBtn")
+    ?.addEventListener("click", uploadGalleryImages);
+
+
+  document
+    .getElementById("galleryFileInput")
+    ?.addEventListener("change", previewSelectedGalleryFiles);
+
+
+  document
+    .getElementById("contentModal")
+    ?.addEventListener("click", (event) => {
+
+      if (event.target.id === "contentModal") {
+        closeContentModal();
+      }
+
+    });
+
+  document
+    .getElementById("locationModal")
+    ?.addEventListener("click", (event) => {
+
+      if (event.target.id === "locationModal") {
+        closeLocationModal();
+      }
+
+    });
+
+
+  document
+    .getElementById("galleryModal")
+    ?.addEventListener("click", (event) => {
+
+      if (event.target.id === "galleryModal") {
+        closeGalleryModal();
+      }
 
     });
 
 }
 
 
+
 /* =========================================================
-   SHOW SECTION
+   SWITCH SECTION
 ========================================================= */
 
-async function showSection(section) {
+async function switchSection(section) {
 
   currentSection = section;
 
-
-  document
-    .querySelectorAll(".admin-section")
-    .forEach(element => {
-
-      element.style.display =
-        "none";
-
-    });
+  document.querySelectorAll(".admin-section").forEach((item) => {
+    item.style.display = "none";
+  });
 
 
-  const target =
-    document.getElementById(
-      `section-${section}`
-    );
+  const target = document.getElementById(
+    `section-${section}`
+  );
 
 
   if (target) {
@@ -1312,16 +1686,14 @@ async function showSection(section) {
   }
 
 
-  document
-    .querySelectorAll(".admin-nav-btn")
-    .forEach(button => {
+  document.querySelectorAll(".admin-nav-btn").forEach((button) => {
 
-      button.classList.toggle(
-        "active",
-        button.dataset.section === section
-      );
+    button.classList.toggle(
+      "active",
+      button.dataset.section === section
+    );
 
-    });
+  });
 
 
   if (section === "dashboard") {
@@ -1329,19 +1701,20 @@ async function showSection(section) {
   }
 
   if (section === "destinations") {
-    await loadDestinations();
+    await loadDestinationsAdmin();
+
   }
 
   if (section === "tours") {
-    await loadTours();
+    await loadToursAdmin();
   }
 
   if (section === "locations") {
-    await loadLocationSection();
+    await loadLocationsAdmin();
   }
 
   if (section === "reviews") {
-    await loadReviews();
+    await loadReviewsAdmin();
   }
 
 }
@@ -1349,228 +1722,167 @@ async function showSection(section) {
 
 /* =========================================================
    LOAD DASHBOARD
-========================================================= */
+===================================
+
+====================== */
 
 async function loadDashboard() {
 
   try {
 
+    const sessionResult =
+      await supabase.auth.getSession();
+
+    const email =
+      sessionResult.data.session?.user?.email || "";
+
+    const emailElement =
+      document.getElementById("adminEmail");
+
+    if (emailElement) {
+      emailElement.textContent = email;
+    }
+
+
     const [
-      destinations,
-      tours,
-      locations,
-      reviews
+      destinationsResult,
+      toursResult,
+      locationsResult,
+      reviewsResult,
+      galleryResult
     ] = await Promise.all([
 
-      countRows("destinations"),
+      supabase
+        .from("destinations")
+        .select("id", {
+          count: "exact",
+          head: true
+        }),
 
-      countRows("tours"),
+      supabase
+        .from("tours")
+        .select("id", {
+          count: "exact",
+          head: true
+        }),
 
-      countRows("destination_locations"),
 
-      countRows("reviews")
+      supabase
+        .from("destination_locations")
+        .select("id", {
+          count: "exact",
+          head: true
+        }),
+
+      supabase
+        .from("reviews")
+        .select("id", {
+          count: "exact",
+          head: true
+        }),
+
+      supabase
+        .from("tour_gallery")
+        .select("id", {
+          count: "exact",
+          head: true
+        })
 
     ]);
 
 
-    const container =
-      document.getElementById(
-        "statsGrid"
-      );
+    setText(
+      "statDestinations",
+      destinationsResult.count || 0
+    );
+
+    setText(
+      "statTours",
+      toursResult.count || 0
+    );
+
+    setText(
+      "statLocations",
+      locationsResult.count || 0
+    );
+
+    setText(
+      "statReviews",
+      reviewsResult.count || 0
+    );
+
+    setText(
+      "statGallery",
+      galleryResult.count || 0
+    );
 
 
-    if (!container) {
+    if (currentSection === "dashboard") {
       return;
     }
 
-
-    container.innerHTML = `
-
-      ${createStatCard(
-        destinations,
-        "Destinations"
-      )}
-
-      ${createStatCard(
-        tours,
-        "Tours"
-      )}
-
-      ${createStatCard(
-        locations,
-        "Locations"
-      )}
-
-      ${createStatCard(
-        reviews,
-        "Reviews"
-      )}
-
-    `;
-
-
-    const {
-      data: {
-        user
-      }
-    } = await supabase.auth.getUser();
-
-
-    const emailDisplay =
-      document.getElementById(
-        "adminEmailDisplay"
-      );
-
-
-    if (emailDisplay) {
-      emailDisplay.textContent =
-        user?.email || "";
-    }
-
-
   } catch (error) {
 
-    console.error(
-      "Dashboard loading error:",
-      error
-    );
-
-    showMessage(
-      error.message,
-      "error"
-    );
+    console.error("Dashboard error:", error);
 
   }
-
-}
-
-
-async function countRows(table) {
-
-  const {
-    count,
-    error
-  } = await supabase
-    .from(table)
-    .select("*", {
-      count: "exact",
-      head: true
-    });
-
-
-  if (error) {
-    throw error;
-  }
-
-
-  return count || 0;
-
-}
-
-
-function createStatCard(number, label) {
-
-  return `
-
-    <div class="admin-stats-card">
-
-      <div class="admin-stats-number">
-        ${escapeHTML(number)}
-      </div>
-
-      <div class="admin-stats-label">
-        ${escapeHTML(label)}
-      </div>
-
-    </div>
-
-  `;
 
 }
 
 
 /* =========================================================
+
    DESTINATIONS
 ========================================================= */
 
-async function loadDestinations() {
+async function loadDestinationsAdmin() {
 
   const container =
-    document.getElementById(
-      "destinationsList"
-    );
+    document.getElementById("destinationsList");
+
+  if (!container) return;
+
+  container.innerHTML =
+    loadingHTML("Loading destinations...");
 
 
-  if (!container) {
+  const {
+    data,
+    error
+  } = await supabase
+    .from("destinations")
+
+    .select("*")
+    .order("sort_order", {
+      ascending: true
+    })
+    .order("created_at", {
+      ascending: true
+    });
+
+
+  if (error) {
+
+    container.innerHTML =
+      errorHTML(getReadableError(error));
+
     return;
   }
 
 
-  container.innerHTML =
-    loadingHTML();
-
-
-  try {
-
-    const {
-      data,
-      error
-    } = await supabase
-      .from("destinations")
-      .select(
-        "id,slug,name,description,image_url,page_url,sort_order,created_at,updated_at"
-      )
-      .order(
-        "sort_order",
-        {
-          ascending: true,
-          nullsFirst: false
-        }
-      )
-      .order(
-        "name",
-        {
-          ascending: true
-        }
-      );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (!data || data.length === 0) {
-
-      container.innerHTML =
-        emptyHTML(
-          "No destinations found."
-        );
-
-      return;
-    }
-
+  if (!data || data.length === 0) {
 
     container.innerHTML =
-      data
-        .map(createDestinationCard)
-        .join("");
+      emptyHTML("No destinations found.");
 
 
-    bindDestinationActions();
-
-  } catch (error) {
-
-    console.error(
-      "Destination loading error:",
-      error
-    );
-
-
-    container.innerHTML =
-      errorHTML(error.message);
+    return;
 
   }
+
+
+  container.innerHTML =
+    data.map(createDestinationCard).join("");
 
 }
 
@@ -1578,166 +1890,73 @@ async function loadDestinations() {
 function createDestinationCard(destination) {
 
   const image =
-    safeImageUrl(
-      destination.image_url
-    );
+    destination.image_url ||
+    "https://placehold.co/600x400?text=Destination";
 
 
   return `
 
-    <article class="admin-item-card">
+
+    <div class="admin-card">
 
       <img
-        class="admin-item-image"
+        class="admin-card-image"
         src="${escapeAttribute(image)}"
-        alt="${escapeAttribute(destination.name)}"
-        loading="lazy"
-        onerror="this.onerror=null;this.src='https://via.placeholder.com/800x500?text=No+Image';"
-      >
+        alt="${escapeAttribute(destination.name || "")}"
+      />
 
-
-      <div class="admin-item-content">
+      <div class="admin-card-info">
 
         <h3>
-          ${escapeHTML(destination.name)}
+          ${escapeHTML(destination.name || "Unnamed")}
         </h3>
 
         <p>
           ${escapeHTML(
-            destination.description ||
-            "No description."
+            truncate(destination.description || "", 180)
           )}
+
         </p>
 
-        <div class="admin-item-meta">
-
-          Slug:
-          <strong>
-            ${escapeHTML(destination.slug)}
-          </strong>
-
-          ${destination.page_url
-            ? ` · Page:
-              ${escapeHTML(destination.page_url)}`
-            : ""
-          }
-
-        </div>
-
-        <div
-          class="admin-item-actions"
-          style="margin-top:12px;"
-        >
-
-          <button
-            class="admin-secondary-btn"
-            type="button"
-            data-edit-destination="${escapeAttribute(destination.id)}"
-          >
-            Edit
-          </button>
-
-          <button
-            class="admin-secondary-btn"
-            type="button"
-            data-location-destination="${escapeAttribute(destination.id)}"
-          >
-            Locations
-          </button>
-
-          <button
-            class="admin-danger-btn"
-            type="button"
-            data-delete-destination="${escapeAttribute(destination.id)}"
-          >
-            Delete
-          </button>
-
+        <div class="admin-card-meta">
+          Slug: ${escapeHTML(destination.slug || "-")}
+          · Order: ${destination.sort_order ?? 0}
         </div>
 
       </div>
 
-    </article>
+      <div class="admin-card-actions">
+
+        <button
+          class="admin-small-btn"
+          data-edit-destination="${destination.id}"
+          type="button"
+        >
+          Edit
+        </button>
+
+        <button
+          class="admin-small-btn"
+
+          data-location-destination="${destination.id}"
+          type="button"
+        >
+          Locations
+        </button>
+
+        <button
+          class="admin-danger-btn"
+          data-delete-destination="${destination.id}"
+          type="button"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
 
   `;
-
-}
-
-
-function bindDestinationActions() {
-
-  document
-    .querySelectorAll(
-      "[data-edit-destination]"
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          openContentModal(
-            "destination",
-            Number(
-              button.dataset.editDestination
-            )
-          );
-
-        }
-      );
-
-    });
-
-
-  document
-    .querySelectorAll(
-      "[data-delete-destination]"
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          deleteDestination(
-            Number(
-              button.dataset.deleteDestination
-            )
-          );
-
-        }
-      );
-
-    });
-
-
-  document
-    .querySelectorAll(
-      "[data-location-destination]"
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        async () => {
-
-          currentLocationDestinationId =
-            Number(
-              button.dataset.locationDestination
-            );
-
-          await showSection(
-            "locations"
-          );
-
-          await selectLocationDestination(
-            currentLocationDestinationId
-          );
-
-        }
-      );
-
-    });
 
 }
 
@@ -1746,84 +1965,57 @@ function bindDestinationActions() {
    TOURS
 ========================================================= */
 
-async function loadTours() {
+async function loadToursAdmin() {
 
   const container =
-    document.getElementById(
-      "toursList"
-    );
+    document.getElementById("toursList");
+
+  if (!container) return;
+
+  container.innerHTML =
+    loadingHTML("Loading tours...");
 
 
-  if (!container) {
+  const {
+
+    data,
+    error
+  } = await supabase
+    .from("tours")
+    .select("*")
+    .order("sort_order", {
+      ascending: true
+    })
+    .order("created_at", {
+      ascending: true
+    });
+
+
+  if (error) {
+
+    container.innerHTML =
+      errorHTML(getReadableError(error));
+
     return;
+
+  }
+
+
+  if (!data || data.length === 0) {
+
+    container.innerHTML =
+      emptyHTML("No tours found.");
+
+    return;
+
   }
 
 
   container.innerHTML =
-    loadingHTML();
+    data.map(createTourCard).join("");
 
 
-  try {
-
-    const {
-      data,
-      error
-    } = await supabase
-      .from("tours")
-      .select(
-        "id,slug,title,description,image_url,page_url,sort_order,created_at,updated_at"
-      )
-      .order(
-        "sort_order",
-        {
-          ascending: true,
-          nullsFirst: false
-        }
-      )
-      .order(
-        "title",
-        {
-          ascending: true
-        }
-      );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (!data || data.length === 0) {
-
-      container.innerHTML =
-        emptyHTML(
-          "No tours found."
-        );
-
-      return;
-    }
-
-
-    container.innerHTML =
-      data
-        .map(createTourCard)
-        .join("");
-
-
-    bindTourActions();
-
-  } catch (error) {
-
-    console.error(
-      "Tour loading error:",
-      error
-    );
-
-
-    container.innerHTML =
-      errorHTML(error.message);
-
-  }
+  bindTourActions();
 
 }
 
@@ -1831,78 +2023,82 @@ async function loadTours() {
 function createTourCard(tour) {
 
   const image =
-    safeImageUrl(
-      tour.image_url
-    );
+    tour.image_url ||
+    "https://placehold.co/600x400?text=Tour";
 
 
   return `
 
-    <article class="admin-item-card">
+    <div class="admin-card">
 
       <img
-        class="admin-item-image"
+        class="admin-card-image"
         src="${escapeAttribute(image)}"
-        alt="${escapeAttribute(tour.title)}"
-        loading="lazy"
-        onerror="this.onerror=null;this.src='https://via.placeholder.com/800x500?text=No+Image';"
-      >
+        alt="${escapeAttribute(tour.title || "")}"
+      />
 
 
-      <div class="admin-item-content">
+      <div class="admin-card-info">
 
         <h3>
-          ${escapeHTML(tour.title)}
+          ${escapeHTML(tour.title || "Unnamed Tour")}
         </h3>
+
 
         <p>
           ${escapeHTML(
-            tour.description ||
-            "No description."
+            truncate(tour.description || "", 180)
           )}
         </p>
 
-        <div class="admin-item-meta">
+        <div class="admin-card-meta">
 
           Slug:
-          <strong>
-            ${escapeHTML(tour.slug)}
-          </strong>
+          ${escapeHTML(tour.slug || "-")}
 
-          ${tour.page_url
-            ? ` · Page:
-              ${escapeHTML(tour.page_url)}`
-            : ""
-          }
-
-        </div>
-
-        <div
-          class="admin-item-actions"
-          style="margin-top:12px;"
-        >
-
-          <button
-            class="admin-secondary-btn"
-            type="button"
-            data-edit-tour="${escapeAttribute(tour.id)}"
-          >
-            Edit
-          </button>
-
-          <button
-            class="admin-danger-btn"
-            type="button"
-            data-delete-tour="${escapeAttribute(tour.id)}"
-          >
-            Delete
-          </button>
+          · Order:
+          ${tour.sort_order ?? 0}
 
         </div>
 
       </div>
 
-    </article>
+
+      <div class="admin-card-actions">
+
+        <button
+          class="admin-small-btn"
+          data-edit-tour="${tour.id}"
+          type="button"
+        >
+          Edit
+        </button>
+
+
+        <button
+          class="admin-small-btn gallery-btn"
+          data-open-gallery="${tour.id}"
+          data-tour-title="${escapeAttribute(
+            tour.title || "Tour"
+          )}"
+          type="button"
+        >
+          📷 Gallery
+        </button>
+
+
+        <button
+
+          class="admin-danger-btn"
+          data-delete-tour="${tour.id}"
+          type="button"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
 
   `;
 
@@ -1912,46 +2108,102 @@ function createTourCard(tour) {
 function bindTourActions() {
 
   document
-    .querySelectorAll(
-      "[data-edit-tour]"
-    )
-    .forEach(button => {
+    .querySelectorAll("[data-edit-tour]")
+    .forEach((button) => {
 
-      button.addEventListener(
-        "click",
-        () => {
+      button.addEventListener("click", () => {
 
-          openContentModal(
-            "tour",
-            Number(
-              button.dataset.editTour
-            )
-          );
+        const id =
+          Number(button.dataset.editTour);
 
-        }
-      );
+        openContentModal("tour", id);
+
+      });
 
     });
 
 
   document
-    .querySelectorAll(
-      "[data-delete-tour]"
-    )
-    .forEach(button => {
+    .querySelectorAll("[data-open-gallery]")
+    .forEach((button) => {
 
-      button.addEventListener(
-        "click",
-        () => {
+      button.addEventListener("click", () => {
 
-          deleteTour(
-            Number(
-              button.dataset.deleteTour
-            )
-          );
+        const id =
+          Number(button.dataset.openGallery);
 
-        }
-      );
+        const title =
+
+          button.dataset.tourTitle || "Tour";
+
+        openGalleryModal(id, title);
+
+      });
+
+    });
+
+
+  document
+    .querySelectorAll("[data-delete-tour]")
+    .forEach((button) => {
+
+      button.addEventListener("click", () => {
+
+        const id =
+          Number(button.dataset.deleteTour);
+
+        deleteTour(id);
+
+      });
+
+    });
+
+
+  document
+    .querySelectorAll("[data-edit-destination]")
+    .forEach((button) => {
+
+      button.addEventListener("click", () => {
+
+        openContentModal(
+          "destination",
+          Number(button.dataset.editDestination)
+        );
+
+      });
+
+    });
+
+
+  document
+    .querySelectorAll("[data-delete-
+
+destination]")
+    .forEach((button) => {
+
+      button.addEventListener("click", () => {
+
+        deleteDestination(
+          Number(button.dataset.deleteDestination)
+        );
+
+      });
+
+    });
+
+
+  document
+    .querySelectorAll("[data-location-destination]")
+    .forEach((button) => {
+
+      button.addEventListener("click", () => {
+
+        currentLocationDestinationId =
+          Number(button.dataset.locationDestination);
+
+        switchSection("locations");
+
+      });
 
     });
 
@@ -1962,203 +2214,141 @@ function bindTourActions() {
    CONTENT MODAL
 ========================================================= */
 
-async function openContentModal(
-  type,
-  id = null
-) {
+async function openContentModal(type, id 
 
-  const modal =
-    document.getElementById(
-      "contentModal"
-    );
+= null) {
+
+  editingDestinationId = null;
+  editingTourId = null;
 
 
-  if (!modal) {
-    return;
-  }
-
-
-  editingDestinationId =
-    null;
-
-  editingTourId =
-    null;
-
-
-  document
-    .getElementById("contentType")
-    .value = type;
-
-
-  const title =
-    document.getElementById(
-      "contentModalTitle"
-    );
-
-
-  const name =
-    document.getElementById(
-      "contentName"
-    );
-
-  const slug =
-    document.getElementById(
-      "contentSlug"
-    );
-
-  const description =
-    document.getElementById(
-      "contentDescription"
-    );
-
-  const imageUrl =
-    document.getElementById(
-      "contentImageUrl"
-    );
-
-  const pageUrl =
-    document.getElementById(
-      "contentPageUrl"
-    );
-
-  const sortOrder =
-    document.getElementById(
-      "contentSortOrder"
-    );
-
-  const currentImage =
-    document.getElementById(
-      "contentCurrentImage"
-    );
-
-
-  name.value = "";
-  slug.value = "";
-  description.value = "";
-  imageUrl.value = "";
-  pageUrl.value = "";
-  sortOrder.value = "0";
-  currentImage.innerHTML = "";
+  document.getElementById("contentType").value = type;
 
 
   if (type === "destination") {
 
-    title.textContent =
-      id
-        ? "Edit Destination"
-        : "Add Destination";
+    document.getElementById("contentModalTitle").textContent =
+      id ? "Edit Destination" : "Add Destination";
+
+    document.getElementById("nameLabel").textContent =
+
+      "Destination Name";
 
   } else {
 
-    title.textContent =
-      id
-        ? "Edit Tour"
-        : "Add Tour";
+    document.getElementById("contentModalTitle").textContent =
+      id ? "Edit Tour" : "Add Tour";
+
+    document.getElementById("nameLabel").textContent =
+      "Tour Title";
 
   }
 
 
+  clearContentForm();
+
+
   if (id) {
 
-    try {
-
-      const table =
-        type === "destination"
-          ? "destinations"
-          : "tours";
+    const table =
+      type === "destination"
+        ? "destinations"
+        : "tours";
 
 
-      const {
-        data,
-        error
-      } = await supabase
-        .from(table)
-        .select("*")
-        .eq("id", id)
-        .single();
+    const {
+      data,
+      error
+    } = await supabase
+      .from(table)
+      .select("*")
+      .eq("id", id)
+      .single();
 
 
-      if (error) {
-        throw error;
-      }
+    if (error) {
 
-
-      if (type === "destination") {
-        editingDestinationId = id;
-      } else {
-        editingTourId = id;
-      }
-
-
-      name.value =
-        type === "destination"
-          ? data.name || ""
-          : data.title || "";
-
-
-      slug.value =
-        data.slug || "";
-
-
-      description.value =
-        data.description || "";
-
-
-      imageUrl.value =
-        data.image_url || "";
-
-
-      pageUrl.value =
-        data.page_url || "";
-
-
-      sortOrder.value =
-        data.sort_order ?? 0;
-
-
-      if (data.image_url) {
-
-        currentImage.innerHTML = `
-
-          <img
-            src="${escapeAttribute(
-              safeImageUrl(data.image_url)
-            )}"
-            alt="Current image"
-            style="
-              width:150px;
-              height:100px;
-              object-fit:cover;
-              border-radius:8px;
-            "
-          >
-
-        `;
-
-      }
-
-    } catch (error) {
-
-      showMessage(
-        error.message,
-        "error"
-      );
+      alert(getReadableError(error));
 
       return;
 
     }
 
+
+
+    document.getElementById("contentName").value =
+      type === "destination"
+        ? data.name || ""
+        : data.title || "";
+
+
+    document.getElementById("contentSlug").value =
+      data.slug || "";
+
+
+    document.getElementById("contentDescription").value =
+      data.description || "";
+
+    document.getElementById("contentImageUrl").value =
+      data.image_url || "";
+
+
+    document.getElementById("contentPageUrl").value =
+      data.page_url || "";
+
+
+    document.getElementById("contentSortOrder").value =
+      data.sort_order ?? 0;
+
+
+    if (type === "destination") {
+      editingDestinationId = id;
+    } else {
+      editingTourId = id;
+
+    }
+
+
+    if (data.image_url) {
+
+      document.getElementById(
+        "currentContentImage"
+      ).innerHTML = `
+
+        <img
+          src="${escapeAttribute(data.image_url)}"
+          alt="Current image"
+        />
+
+      `;
+
+    }
+
   }
 
-
-  modal.style.display =
-    "flex";
+  document.getElementById(
+    "contentModal"
+  ).style.display = "block";
 
 }
 
 
+function clearContentForm() {
+
+  document.getElementById("contentForm").reset();
+
+  document.getElementById("contentSortOrder").value = "0";
+
+  document.getElementById(
+    "currentContentImage"
+  ).innerHTML = "";
+
+}
+
+
+
 /* =========================================================
-   SAVE DESTINATION / TOUR
+   SAVE CONTENT
 ========================================================= */
 
 async function saveContent(event) {
@@ -2167,70 +2357,44 @@ async function saveContent(event) {
 
 
   const type =
-    document.getElementById(
-      "contentType"
-    ).value;
+    document.getElementById("contentType").value;
 
 
   const name =
-    document.getElementById(
-      "contentName"
-    ).value.trim();
+    
+
+document.getElementById("contentName").value.trim();
 
 
   const slug =
-    document.getElementById(
-      "contentSlug"
-    ).value.trim();
+    document.getElementById("contentSlug").value.trim();
 
 
   const description =
-    document.getElementById(
-      "contentDescription"
-    ).value.trim();
+    document.getElementById("contentDescription").value.trim();
 
 
   const imageUrl =
-    document.getElementById(
-      "contentImageUrl"
-    ).value.trim();
+    document.getElementById("contentImageUrl").value.trim();
 
 
   const pageUrl =
-    document.getElementById(
-      "contentPageUrl"
-    ).value.trim();
+
+    document.getElementById("contentPageUrl").value.trim();
 
 
   const sortOrder =
     Number(
-      document.getElementById(
-        "contentSortOrder"
-      ).value
+      document.getElementById("contentSortOrder").value
     ) || 0;
 
 
-  if (!name || !slug) {
-
-    showMessage(
-      "Name and slug are required.",
-      "error"
-    );
-
-    return;
-  }
-
-
   const button =
-    document.getElementById(
-      "contentSaveBtn"
-    );
+    document.getElementById("saveContentBtn");
 
 
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Saving...";
-  }
+  button.disabled = true;
+  button.textContent = "Saving...";
 
 
   try {
@@ -2241,105 +2405,106 @@ async function saveContent(event) {
         : "tours";
 
 
-    let payload;
+    const payload =
+      type === "destination"
+        ? {
+            name,
+            slug,
+            description: description || null,
+            image_url: imageUrl || null,
+            page_url: pageUrl || null,
+            sort_order: sortOrder
+          }
+        : {
+            title: name,
+            slug,
+
+            description: description || null,
+            image_url: imageUrl || null,
+            page_url: pageUrl || null,
+            sort_order: sortOrder
+          };
+
+
+    let error;
+
+
+    if (
+      type === "destination" &&
+      editingDestinationId
+    ) {
+
+      ({
+        error
+      } = await supabase
+        .from(table)
+        .update(payload)
+        .eq("id", editingDestinationId));
+
+    } else if (
+      type === "tour" &&
+      editingTourId
+    ) {
+
+      ({
+        error
+      } = await supabase
+        .from(table)
+        .update(payload)
+        .eq("id", editingTourId));
+
+    } else {
+
+      ({
+        error
+      } = await supabase
+        .from(table)
+        .insert(payload));
+
+    }
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    closeContentModal();
 
 
     if (type === "destination") {
 
-      payload = {
-        name,
-        slug,
-        description: description || null,
-        image_url: imageUrl || null,
-        page_url: pageUrl || null,
-        sort_order: sortOrder
-      };
+      await loadDestinationsAdmin();
 
     } else {
 
-      payload = {
-        title: name,
-        slug,
-        description: description || null,
-        image_url: imageUrl || null,
-        page_url: pageUrl || null,
-        sort_order: sortOrder
-      };
+      await loadToursAdmin();
 
     }
 
 
-    const editingId =
-      type === "destination"
-        ? editingDestinationId
-        : editingTourId;
+    await loadDashboard();
 
 
-    let result;
-
-
-    if (editingId) {
-
-      result =
-        await supabase
-          .from(table)
-          .update(payload)
-          .eq("id", editingId);
-
-    } else {
-
-      result =
-        await supabase
-          .from(table)
-          .insert(payload);
-
-    }
-
-
-    if (result.error) {
-      throw result.error;
-    }
-
-
-    closeModal(
-      "contentModal"
-    );
-
-
-    showMessage(
+    alert(
       type === "destination"
         ? "Destination saved successfully."
-        : "Tour saved successfully.",
-      "success"
+        : "Tour saved successfully."
     );
-
-
-    if (type === "destination") {
-      await loadDestinations();
-    } else {
-      await loadTours();
-    }
-
 
   } catch (error) {
 
-    console.error(
-      "Save content error:",
-      error
-    );
+    console.error(error);
 
-
-    showMessage(
-      error.message,
-      "error"
+    alert(
+      "Save failed:\n\n" +
+      getReadableError(error)
     );
 
   } finally {
 
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Save";
-    }
+    button.disabled = false;
+    button.textContent = "Save";
 
   }
 
@@ -2352,64 +2517,41 @@ async function saveContent(event) {
 
 async function deleteDestination(id) {
 
-  if (!confirm(
-    "Delete this destination? Related locations may also need to be removed."
-  )) {
+  if (
+    !confirm(
+      "Delete this destination?\n\n" +
+      "Its destination locations may also be deleted " +
+      "depending on your database foreign key settings."
+    )
+  ) {
     return;
+
+  }
+
+
+  const {
+    error
+  } = await supabase
+    .from("destinations")
+    .delete()
+    .eq("id", id);
+
+
+  if (error) {
+
+    alert(
+      "Delete failed:\n\n" +
+      getReadableError(error)
+    );
+
+    return;
+
   }
 
 
-  try {
+  await loadDestinationsAdmin();
 
-    const {
-      error: locationError
-    } = await supabase
-      .from("destination_locations")
-      .delete()
-      .eq("destination_id", id);
-
-
-    if (locationError) {
-      throw locationError;
-    }
-
-
-    const {
-      error
-    } = await supabase
-      .from("destinations")
-      .delete()
-      .eq("id", id);
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    showMessage(
-      "Destination deleted successfully.",
-      "success"
-    );
-
-
-    await loadDestinations();
-
-
-  } catch (error) {
-
-    console.error(
-      "Delete destination error:",
-      error
-    );
-
-
-    showMessage(
-      error.message,
-      "error"
-    );
-
-  }
+  await loadDashboard();
 
 }
 
@@ -2420,17 +2562,76 @@ async function deleteDestination(id) {
 
 async function deleteTour(id) {
 
-  if (!confirm(
-    "Delete this tour?"
-  )) {
+  if (
+    !confirm(
+      "Delete this tour?\n\n" +
+      "All gallery database records belonging to this " +
+
+      "tour will also be deleted."
+    )
+  ) {
     return;
   }
 
 
   try {
 
+    /*
+      First get gallery files so we can remove the
+      physical Storage objects too.
+    */
+
+    const {
+      data: galleryRows,
+      error: galleryError
+    } = await supabase
+      .from("tour_gallery")
+      .select("id,image_path")
+      .eq("tour_id", id);
+
+
+
+    if (galleryError) {
+
+      /*
+        If the table does not exist yet, this will fail.
+        In that situation we stop rather than deleting
+        the tour unexpectedly.
+      */
+
+      throw galleryError;
+
+    }
+
+
+    const paths =
+      (galleryRows || [])
+        .map(item => item.image_path)
+        .filter(Boolean);
+
+    if (paths.length > 0) {
+
+      const {
+        error: storageError
+      } = await supabase
+        .storage
+        .from("tour-gallery")
+        .remove(paths);
+
+
+      if (storageError) {
+        console.warn(
+          "Gallery storage cleanup failed:",
+          storageError
+        );
+      }
+
+    }
+
+
     const {
       error
+
     } = await supabase
       .from("tours")
       .delete()
@@ -2442,26 +2643,20 @@ async function deleteTour(id) {
     }
 
 
-    showMessage(
-      "Tour deleted successfully.",
-      "success"
-    );
+    await loadToursAdmin();
+
+    await loadDashboard();
 
 
-    await loadTours();
-
+    alert("Tour deleted successfully.");
 
   } catch (error) {
 
-    console.error(
-      "Delete tour error:",
-      error
-    );
+    console.error(error);
 
-
-    showMessage(
-      error.message,
-      "error"
+    alert(
+      "Delete failed:\n\n" +
+      getReadableError(error)
     );
 
   }
@@ -2470,391 +2665,146 @@ async function deleteTour(id) {
 
 
 /* =========================================================
-   LOCATION SECTION
+   LOCATION LIST
 ========================================================= */
 
-async function loadLocationSection() {
-
-  const selector =
-    document.getElementById(
-      "locationDestinationSelector"
-    );
-
-
-  if (!selector) {
-    return;
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } = await supabase
-      .from("destinations")
-      .select(
-        "id,name,slug"
-      )
-      .order(
-        "sort_order",
-        {
-          ascending: true,
-          nullsFirst: false
-        }
-      )
-      .order(
-        "name",
-        {
-          ascending: true
-        }
-      );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    selector.innerHTML = `
-
-      <div
-        style="
-          background:#fff;
-          border:1px solid #e4e3db;
-          border-radius:12px;
-          padding:18px;
-        "
-      >
-
-        <label
-          style="
-            display:block;
-            font-weight:600;
-            font-size:14px;
-          "
-        >
-
-          Select Destination
-
-          <select
-            id="locationDestinationSelect"
-            style="
-              display:block;
-              width:100%;
-              max-width:500px;
-              margin-top:8px;
-              padding:11px;
-              border:1px solid #d9ddd9;
-              border-radius:7px;
-              background:#fff;
-            "
-          >
-
-            <option value="">
-              Select a destination
-            </option>
-
-            ${(data || [])
-              .map(
-                destination => `
-                  <option
-                    value="${escapeAttribute(destination.id)}"
-                  >
-                    ${escapeHTML(
-                      destination.name
-                    )}
-                  </option>
-                `
-              )
-              .join("")}
-
-          </select>
-
-        </label>
-
-
-        <button
-          id="addLocationBtn"
-          class="admin-primary-btn"
-          type="button"
-          style="margin-top:12px;"
-        >
-          + Add Location
-        </button>
-
-      </div>
-
-    `;
-
-
-    const select =
-      document.getElementById(
-        "locationDestinationSelect"
-      );
-
-
-    if (currentLocationDestinationId) {
-
-      select.value =
-        String(
-          currentLocationDestinationId
-        );
-
-      await selectLocationDestination(
-        currentLocationDestinationId
-      );
-
-    }
-
-
-    select.addEventListener(
-      "change",
-      async () => {
-
-        const id =
-          Number(
-            select.value
-          );
-
-
-        currentLocationDestinationId =
-          id || null;
-
-
-        await selectLocationDestination(
-          id
-        );
-
-      }
-    );
-
-
-    document
-      .getElementById(
-        "addLocationBtn"
-      )
-      ?.addEventListener(
-        "click",
-        () => {
-
-          if (!currentLocationDestinationId) {
-
-            showMessage(
-              "Select a destination first.",
-              "error"
-            );
-
-            return;
-          }
-
-
-          openLocationModal(
-            currentLocationDestinationId
-          );
-
-        }
-      );
-
-
-  } catch (error) {
-
-    selector.innerHTML =
-      errorHTML(
-        error.message
-      );
-
-  }
-
-}
-
-
-/* =========================================================
-   SELECT LOCATION DESTINATION
-========================================================= */
-
-async function selectLocationDestination(
-  destinationId
-) {
+async function loadLocationsAdmin() {
 
   const container =
-    document.getElementById(
-      "locationsList"
-    );
+    document.getElementById("locationsList");
 
 
-  if (!container) {
+  if (!container) return;
+
+  container.innerHTML =
+    loadingHTML("Loading locations...");
+
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from("destination_locations")
+    .select(`
+      *,
+      destinations (
+        id,
+        name
+      )
+    `)
+    .order("destination_id", {
+      ascending: true
+    })
+
+    .order("sort_order", {
+      ascending: true
+    });
+
+
+  if (error) {
+
+    container.innerHTML =
+      errorHTML(getReadableError(error));
+
     return;
+
   }
 
 
-  if (!destinationId) {
+  if (!data || data.length === 0) {
 
     container.innerHTML =
-      emptyHTML(
-        "Select a destination to view its locations."
-      );
+      emptyHTML("No destination locations found.");
 
     return;
+
+
   }
 
 
   container.innerHTML =
-    loadingHTML();
+    data.map(createLocationCard).join("");
 
 
-  try {
-
-    const {
-      data,
-      error
-    } = await supabase
-      .from("destination_locations")
-      .select(
-        "id,destination_id,location_number,name,description,image_path,image_url,sort_order,created_at,updated_at"
-      )
-      .eq(
-        "destination_id",
-        destinationId
-      )
-      .order(
-        "location_number",
-        {
-          ascending: true,
-          nullsFirst: false
-        }
-      )
-      .order(
-        "sort_order",
-        {
-          ascending: true,
-          nullsFirst: false
-        }
-      );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (!data || data.length === 0) {
-
-      container.innerHTML =
-        emptyHTML(
-          "No locations found for this destination."
-        );
-
-      return;
-    }
-
-
-    container.innerHTML =
-      data
-        .map(createLocationCard)
-        .join("");
-
-
-    bindLocationActions();
-
-  } catch (error) {
-
-    container.innerHTML =
-      errorHTML(
-        error.message
-      );
-
-  }
+  bindLocationActions();
 
 }
 
 
-/* =========================================================
-   LOCATION CARD
-========================================================= */
-
 function createLocationCard(location) {
 
   const image =
-    safeImageUrl(
-      location.image_url ||
-      location.image_path
-    );
+    location.image_url ||
+    "https://placehold.co/600x400?text=Location";
+
+
+  const destinationName =
+    location.destinations?.name ||
+
+    "Unknown Destination";
 
 
   return `
 
-    <article class="admin-item-card">
+    <div class="admin-card">
 
       <img
-        class="admin-item-image"
+        class="admin-card-image"
         src="${escapeAttribute(image)}"
-        alt="${escapeAttribute(location.name)}"
-        loading="lazy"
-        onerror="this.onerror=null;this.src='https://via.placeholder.com/800x500?text=No+Image';"
-      >
+        alt="${escapeAttribute(location.name || "")}"
+      />
 
 
-      <div class="admin-item-content">
+      <div class="admin-card-info">
 
         <h3>
-          ${escapeHTML(location.name)}
+          ${escapeHTML(location.name || "Unnamed")}
         </h3>
 
         <p>
           ${escapeHTML(
-            location.description ||
-            "No description."
+            truncate(location.description || "", 180)
           )}
         </p>
 
-        <div class="admin-item-meta">
+        <div class="admin-card-meta">
 
-          Location number:
-          <strong>
-            ${escapeHTML(
-              location.location_number ?? ""
-            )}
-          </strong>
+          Destination:
+          ${escapeHTML(destinationName)}
 
-          ${
-            location.image_path
-              ? ` · Image path:
-                ${escapeHTML(
-                  location.image_path
-                )}`
-              : ""
-          }
+          · Location #:
+          ${location.location_number ?? "-"}
 
-        </div>
-
-
-        <div
-          class="admin-item-actions"
-          style="margin-top:12px;"
-        >
-
-          <button
-            class="admin-secondary-btn"
-            type="button"
-            data-edit-location="${escapeAttribute(location.id)}"
-          >
-            Edit
-          </button>
-
-          <button
-            class="admin-danger-btn"
-            type="button"
-            data-delete-location="${escapeAttribute(location.id)}"
-          >
-            Delete
-          </button>
+          · Order:
+          ${location.sort_order ?? 0}
 
         </div>
 
       </div>
 
-    </article>
+
+      <div class="admin-card-actions">
+
+        <button
+          class="admin-small-btn"
+          data-edit-location="${location.id}"
+          type="button"
+        >
+          Edit
+        </button>
+
+        <button
+          class="admin-danger-btn"
+          data-delete-location="${location.id}"
+          type="button"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+
 
   `;
 
@@ -2864,46 +2814,31 @@ function createLocationCard(location) {
 function bindLocationActions() {
 
   document
-    .querySelectorAll(
-      "[data-edit-location]"
-    )
-    .forEach(button => {
+    .querySelectorAll("[data-edit-location]")
+    .forEach((button) => {
 
-      button.addEventListener(
-        "click",
-        () => {
+      button.addEventListener("click", () => {
 
-          openLocationModal(
-            currentLocationDestinationId,
-            Number(
-              button.dataset.editLocation
-            )
-          );
+        openLocationModal(
+          Number(button.dataset.editLocation)
+        );
 
-        }
-      );
+      });
 
     });
 
 
   document
-    .querySelectorAll(
-      "[data-delete-location]"
-    )
-    .forEach(button => {
+    .querySelectorAll("[data-delete-location]")
+    .forEach((button) => {
 
-      button.addEventListener(
-        "click",
-        () => {
+      button.addEventListener("click", () => {
 
-          deleteLocation(
-            Number(
-              button.dataset.deleteLocation
-            )
-          );
+        deleteLocation(
+          Number(button.dataset.deleteLocation)
+        );
 
-        }
-      );
+      });
 
     });
 
@@ -2912,185 +2847,179 @@ function bindLocationActions() {
 
 /* =========================================================
    LOCATION MODAL
+
 ========================================================= */
 
-async function openLocationModal(
-  destinationId,
-  locationId = null
-) {
+async function openLocationModal(id = null) {
 
-  const modal =
-    document.getElementById(
-      "locationModal"
-    );
+  editingLocationId = id;
 
 
-  if (!modal) {
-    return;
-  }
+  document.getElementById(
+    "locationModalTitle"
+  ).textContent =
+    id
+      ? "Edit Location"
+      : "Add Location";
 
 
-  editingLocationId =
-    locationId;
+  await populateDestinationSelect();
 
 
-  currentLocationDestinationId =
-    destinationId;
+  clearLocationForm();
 
 
-  document
-    .getElementById("locationModalTitle")
-    .textContent =
-      locationId
-        ? "Edit Location"
-        : "Add Location";
+  if (id) {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("destination_locations")
+      .select("*")
+      .eq("id", id)
+      .single();
 
 
-  document
-    .getElementById("locationId")
-    .value =
-      locationId || "";
+    if (error) {
 
-
-  document
-    .getElementById("locationName")
-    .value = "";
-
-
-  document
-    .getElementById("locationDescription")
-    .value = "";
-
-
-  document
-    .getElementById("locationNumber")
-    .value = "1";
-
-
-  document
-    .getElementById("locationImageUrl")
-    .value = "";
-
-
-  document
-    .getElementById("locationImagePath")
-    .value = "";
-
-
-  document
-    .getElementById("locationSortOrder")
-    .value = "0";
-
-
-  document
-    .getElementById("locationCurrentImage")
-    .innerHTML = "";
-
-
-  if (locationId) {
-
-    try {
-
-      const {
-        data,
-        error
-      } = await supabase
-        .from("destination_locations")
-        .select("*")
-        .eq("id", locationId)
-        .single();
-
-
-      if (error) {
-        throw error;
-      }
-
-
-      document
-        .getElementById("locationName")
-        .value =
-          data.name || "";
-
-
-      document
-        .getElementById("locationDescription")
-        .value =
-          data.description || "";
-
-
-      document
-        .getElementById("locationNumber")
-        .value =
-          data.location_number ?? 1;
-
-
-      document
-        .getElementById("locationImageUrl")
-        .value =
-          data.image_url || "";
-
-
-      document
-        .getElementById("locationImagePath")
-        .value =
-          data.image_path || "";
-
-
-      document
-        .getElementById("locationSortOrder")
-        .value =
-          data.sort_order ?? 0;
-
-
-      const image =
-        data.image_url ||
-        data.image_path;
-
-
-      if (image) {
-
-        document
-          .getElementById(
-            "locationCurrentImage"
-          )
-          .innerHTML = `
-
-            <img
-              src="${escapeAttribute(
-                safeImageUrl(image)
-              )}"
-              alt="Current location image"
-              style="
-                width:150px;
-                height:100px;
-                object-fit:cover;
-                border-radius:8px;
-              "
-            >
-
-          `;
-
-      }
-
-    } catch (error) {
-
-      showMessage(
-        error.message,
-        "error"
-      );
+      alert(getReadableError(error));
 
       return;
 
     }
 
+    document.getElementById(
+      "locationDestinationSelect"
+    ).value =
+      data.destination_id;
+
+
+    document.getElementById(
+      "locationNumber"
+    ).value =
+      data.location_number;
+
+
+    document.getElementById(
+      "locationName"
+    ).value =
+      data.name || "";
+
+
+    document.getElementById(
+      "locationDescription"
+    ).value =
+      data.description || "";
+
+
+
+    document.getElementById(
+      "locationImageUrl"
+    ).value =
+      data.image_url || "";
+
+
+    document.getElementById(
+      "locationImagePath"
+    ).value =
+      data.image_path || "";
+
+
+    document.getElementById(
+      "locationSortOrder"
+    ).value =
+      data.sort_order ?? 0;
+
   }
 
-
-  modal.style.display =
-    "flex";
+  document.getElementById(
+    "locationModal"
+  ).style.display = "block";
 
 }
 
+
+async function populateDestinationSelect() {
+
+  const select =
+    document.getElementById(
+      "locationDestinationSelect"
+    );
+
+
+  if (!select) return;
+
+
+  const {
+    data,
+    error
+
+  } = await supabase
+    .from("destinations")
+    .select("id,name")
+    .order("sort_order", {
+      ascending: true
+    });
+
+
+  if (error) {
+
+    select.innerHTML =
+      `<option value="">Unable to load</option>`;
+
+    return;
+
+  }
+
+
+  select.innerHTML = `
+    <option value="">
+      Select destination
+    </option>
+
+  `;
+
+
+  (data || []).forEach((destination) => {
+
+    select.insertAdjacentHTML(
+      "beforeend",
+      `
+        <option value="${destination.id}">
+          ${escapeHTML(destination.name)}
+        </option>
+      `
+    );
+
+  });
+
+
+  if (currentLocationDestinationId) {
+
+    select.value =
+      currentLocationDestinationId;
+
+  }
+
+}
+
+
+function clearLocationForm() {
+
+  document
+    .getElementById("locationForm")
+    .reset();
+
+  document
+    .getElementById("locationNumber")
+    .value = "1";
+
+  document
+    .getElementById("locationSortOrder")
+    .value = "0";
+
+}
 
 /* =========================================================
    SAVE LOCATION
@@ -3101,93 +3030,83 @@ async function saveLocation(event) {
   event.preventDefault();
 
 
-  if (!currentLocationDestinationId) {
-
-    showMessage(
-      "Please select a destination.",
-      "error"
+  const destinationId =
+    Number(
+      document.getElementById(
+        "locationDestinationSelect"
+      ).value
     );
-
-    return;
-  }
-
-
-  const name =
-    document
-      .getElementById(
-        "locationName"
-      )
-      .value
-      .trim();
-
-
-  const description =
-    document
-      .getElementById(
-        "locationDescription"
-      )
-      .value
-      .trim();
 
 
   const locationNumber =
     Number(
-      document
-        .getElementById(
-          "locationNumber"
-        )
-        .value
-    ) || 1;
+
+      document.getElementById(
+        "locationNumber"
+      ).value
+    );
+
+
+  const name =
+    document.getElementById(
+      "locationName"
+    ).value.trim();
+
+
+  const description =
+    document.getElementById(
+      "locationDescription"
+    ).value.trim();
 
 
   const imageUrl =
-    document
-      .getElementById(
-        "locationImageUrl"
-      )
-      .value
-      .trim();
+    document.getElementById(
+      "locationImageUrl"
+    ).value.trim();
+
 
 
   const imagePath =
-    document
-      .getElementById(
-        "locationImagePath"
-      )
-      .value
-      .trim();
+    document.getElementById(
+      "locationImagePath"
+    ).value.trim();
 
 
   const sortOrder =
     Number(
-      document
-        .getElementById(
-          "locationSortOrder"
-        )
-        .value
+      document.getElementById(
+        "locationSortOrder"
+      ).value
     ) || 0;
 
 
-  if (!name) {
+  if (!destinationId) {
 
-    showMessage(
-      "Location name is required.",
-      "error"
-    );
+    alert("Please select a destination.");
 
     return;
+
   }
+
+
+
+  const button =
+    document.getElementById(
+      "saveLocationBtn"
+    );
+
+
+  button.disabled = true;
+  button.textContent = "Saving...";
 
 
   try {
 
     const payload = {
 
-      destination_id:
-        currentLocationDestinationId,
+      destination_id: destinationId,
 
-      location_number:
-        locationNumber,
+      location_number: locationNumber,
 
       name,
 
@@ -3206,63 +3125,56 @@ async function saveLocation(event) {
     };
 
 
-    let result;
+    let error;
 
 
     if (editingLocationId) {
 
-      result =
-        await supabase
-          .from("destination_locations")
-          .update(payload)
-          .eq(
-            "id",
-            editingLocationId
-          );
+      ({
+        error
+
+      } = await supabase
+        .from("destination_locations")
+        .update(payload)
+        .eq("id", editingLocationId));
 
     } else {
 
-      result =
-        await supabase
-          .from("destination_locations")
-          .insert(payload);
+      ({
+        error
+      } = await supabase
+        .from("destination_locations")
+        .insert(payload));
 
     }
 
 
-    if (result.error) {
-      throw result.error;
+    if (error) {
+      throw error;
     }
 
 
-    closeModal(
-      "locationModal"
-    );
+    closeLocationModal();
 
 
-    showMessage(
-      "Location saved successfully.",
-      "success"
-    );
+    await loadLocationsAdmin();
+
+    await loadDashboard();
 
 
-    await selectLocationDestination(
-      currentLocationDestinationId
-    );
-
+    alert("Location saved successfully.");
 
   } catch (error) {
 
-    console.error(
-      "Save location error:",
-      error
+    alert(
+      "Save failed:\n\n" +
+      getReadableError(error)
     );
 
+  } finally {
 
-    showMessage(
-      error.message,
-      "error"
-    );
+    button.disabled = false;
+    button.textContent = "Save";
 
   }
 
@@ -3275,53 +3187,39 @@ async function saveLocation(event) {
 
 async function deleteLocation(id) {
 
-  if (!confirm(
-    "Delete this location?"
-  )) {
+  if (
+    !confirm(
+      "Delete this destination location?"
+    )
+  ) {
     return;
   }
 
 
-  try {
+  const {
 
-    const {
-      error
-    } = await supabase
-      .from("destination_locations")
-      .delete()
-      .eq("id", id);
-
-
-    if (error) {
-      throw error;
-    }
+    error
+  } = await supabase
+    .from("destination_locations")
+    .delete()
+    .eq("id", id);
 
 
-    showMessage(
-      "Location deleted successfully.",
-      "success"
+  if (error) {
+
+    alert(
+      "Delete failed:\n\n" +
+      getReadableError(error)
     );
 
-
-    await selectLocationDestination(
-      currentLocationDestinationId
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      "Delete location error:",
-      error
-    );
-
-
-    showMessage(
-      error.message,
-      "error"
-    );
+    return;
 
   }
+
+
+  await loadLocationsAdmin();
+
+  await loadDashboard();
 
 }
 
@@ -3330,86 +3228,69 @@ async function deleteLocation(id) {
    REVIEWS
 ========================================================= */
 
-async function loadReviews() {
+async function loadReviewsAdmin() {
 
   const container =
-    document.getElementById(
-      "reviewsList"
-    );
+    document.getElementById("reviewsList");
+
+  if (!container) return;
+
+  container.innerHTML =
+    loadingHTML("Loading reviews...");
 
 
-  if (!container) {
+  const {
+
+    data,
+    error
+  } = await supabase
+    .from("reviews")
+    .select("*")
+    .order("created_at", {
+      ascending: false
+    });
+
+
+  if (error) {
+
+    container.innerHTML =
+      errorHTML(getReadableError(error));
+
     return;
+
+  }
+
+
+  if (!data || data.length === 0) {
+
+    container.innerHTML =
+      emptyHTML("No reviews found.");
+
+    return;
+
   }
 
 
   container.innerHTML =
-    loadingHTML();
+    data.map(createReviewCard).join("");
 
 
-  try {
+  document
+    .querySelectorAll("[data-delete-review]")
+    .forEach((button) => {
 
-    const {
-      data,
-      error
-    } = await supabase
-      .from("reviews")
-      .select(
-        "id,name,country,rating,review,photo_url,photo_path,created_at"
-      )
-      .order(
-        "created_at",
-        {
-          ascending: false
-        }
-      );
+      button.addEventListener("click", () => {
 
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (!data || data.length === 0) {
-
-      container.innerHTML =
-        emptyHTML(
-          "No reviews found."
+        deleteReview(
+          button.dataset.deleteReview
         );
 
-      return;
-    }
+      });
 
-
-    container.innerHTML =
-      data
-        .map(createReviewCard)
-        .join("");
-
-
-    bindReviewActions();
-
-  } catch (error) {
-
-    console.error(
-      "Review loading error:",
-      error
-    );
-
-
-    container.innerHTML =
-      errorHTML(
-        error.message
-      );
-
-  }
+    });
 
 }
 
-
-/* =========================================================
-   REVIEW CARD
-========================================================= */
 
 function createReviewCard(review) {
 
@@ -3417,141 +3298,386 @@ function createReviewCard(review) {
     "★".repeat(
       Math.max(
         0,
-        Math.min(
-          5,
-          Number(review.rating) || 0
-        )
+        Math.min(5, Number(review.rating) || 0)
       )
     );
 
 
-  const date =
-    review.created_at
-      ? new Date(
-          review.created_at
-        ).toLocaleString()
-      : "";
-
-
   return `
 
-    <article class="admin-item-card">
+    <div class="admin-card admin-review-
+
+card">
 
       ${
         review.photo_url
           ? `
             <img
               class="admin-review-photo"
-              src="${escapeAttribute(
-                safeImageUrl(
-                  review.photo_url
-                )
-              )}"
-              alt="${escapeAttribute(
-                review.name
-              )}"
-              loading="lazy"
-            >
+              src="${escapeAttribute(review.photo_url)}"
+              alt="${escapeAttribute(review.name || "")}"
+            />
           `
           : ""
       }
 
 
-      <div class="admin-item-content">
+      <div class="admin-card-info">
 
         <h3>
-          ${escapeHTML(
-            review.name ||
-            "Anonymous"
-          )}
+          ${escapeHTML(review.name || "Anonymous")}
         </h3>
 
 
-        <div
-          style="
-            margin-bottom:8px;
-          "
-        >
-
-          <span class="admin-stars">
-            ${escapeHTML(stars)}
-          </span>
-
-          <span
-            style="
-              color:#69736e;
-              font-size:13px;
-            "
-          >
-            ${escapeHTML(
-              review.rating ?? ""
-            )}/5
-          </span>
-
+        <div class="admin-review-rating">
+          ${stars}
         </div>
-
-
-        <div
-          style="
-            color:#69736e;
-            font-size:13px;
-            margin-bottom:10px;
-          "
-        >
-          ${escapeHTML(
-            review.country || ""
-          )}
-
-          ${
-            date
-              ? ` · ${escapeHTML(date)}`
-              : ""
-          }
-        </div>
-
 
         <p>
-          ${escapeHTML(
-            review.review
-          )}
+          ${escapeHTML(review.review || "")}
         </p>
 
+        <div class="admin-card-meta">
 
-        <div class="admin-item-actions">
+          ${escapeHTML(review.country || "")}
 
-          <button
-            class="admin-danger-btn"
-            type="button"
-            data-delete-review="${escapeAttribute(review.id)}"
-          >
-            Delete Review
-          </button>
+          ·
+
+          ${formatDate(review.created_at)}
 
         </div>
 
       </div>
 
-    </article>
+      <div class="admin-card-actions">
+
+        <button
+          class="admin-danger-btn"
+          data-delete-review="${escapeAttribute(review.id)}"
+          type="button"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
 
   `;
 
 }
 
 
-function bindReviewActions() {
+async function deleteReview(id) {
+
+  if (
+    !confirm(
+      "Delete this review?"
+    )
+  ) {
+    return;
+  }
+
+
+  const {
+    data: review
+  } = await supabase
+    .from("reviews")
+    .select("photo_path")
+    .eq("id", id)
+    .maybeSingle();
+
+
+  if (review?.photo_path) {
+
+    const {
+      error: storageError
+
+    } = await supabase
+      .storage
+      .from("review-photos")
+      .remove([
+        review.photo_path
+      ]);
+
+
+    if (storageError) {
+
+      console.warn(
+        "Review photo cleanup failed:",
+        storageError
+      );
+
+    }
+
+  }
+
+
+  const {
+    error
+
+  } = await supabase
+    .from("reviews")
+    .delete()
+    .eq("id", id);
+
+
+  if (error) {
+
+    alert(
+      "Delete failed:\n\n" +
+      getReadableError(error)
+    );
+
+    return;
+
+  }
+
+
+  await loadReviewsAdmin();
+
+  await loadDashboard();
+
+}
+
+
+/* =========================================================
+   TOUR GALLERY
+========================================================= */
+
+async function openGalleryModal(
+  tourId,
+  tourTitle
+) {
+
+  currentGalleryTourId =
+    Number(tourId);
+
+  currentGalleryTourTitle =
+    tourTitle || "Tour";
+
+
+  document.getElementById(
+
+    "galleryTourTitle"
+  ).textContent =
+    currentGalleryTourTitle;
+
+
+  document.getElementById(
+    "galleryModal"
+  ).style.display = "block";
+
+
+  document.getElementById(
+    "galleryFileInput"
+  ).value = "";
+
+
+  document.getElementById(
+    "galleryUploadStatus"
+  ).textContent = "";
+
+
+  await loadTourGallery();
+
+}
+
+
+/* =========================================================
+   LOAD TOUR GALLERY
+========================================================= */
+
+async function loadTourGallery() {
+
+  const container =
+    document.getElementById(
+      "galleryPreview"
+    );
+
+
+  if (!container || !currentGalleryTourId) {
+    return;
+  }
+
+
+  container.innerHTML =
+    loadingHTML("Loading gallery...");
+
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from("tour_gallery")
+    .select(`
+      id,
+      tour_id,
+      image_path,
+      image_url,
+      sort_order,
+      created_at,
+      updated_at
+    `)
+    .eq(
+      "tour_id",
+      currentGalleryTourId
+
+    )
+    .order("sort_order", {
+      ascending: true
+    })
+    .order("created_at", {
+      ascending: true
+    });
+
+
+  if (error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      errorHTML(
+        getReadableError(error)
+      );
+
+    return;
+
+  }
+
+
+  if (!data || data.length === 0) {
+
+    container.innerHTML = `
+      <div class="gallery-empty">
+
+        <div style="font-size:32px;">
+          📷
+        </div>
+
+        <p>
+          No gallery images yet.
+        </p>
+
+        <small>
+          Select images above and upload them.
+        </small>
+
+      </div>
+    `;
+
+    return;
+
+
+  }
+
+
+  container.innerHTML =
+    data.map(
+      createGalleryAdminItem
+    ).join("");
+
+
+  bindGalleryDeleteActions();
+
+}
+
+
+/* =========================================================
+   GALLERY ITEM
+========================================================= */
+
+function createGalleryAdminItem(
+  image,
+  index
+) {
+
+  const imageUrl =
+    image.image_url ||
+    getTourGalleryPublicUrl(
+      image.image_path
+    );
+
+
+  return `
+
+    <div
+      class="gallery-admin-item"
+      data-gallery-item="${image.id}"
+    >
+
+      <div class="gallery-admin-image-wrap">
+
+        <img
+
+          src="${escapeAttribute(imageUrl)}"
+          alt="Tour gallery image ${index + 1}"
+          loading="lazy"
+        />
+
+        <span class="gallery-admin-number">
+          #${index + 1}
+        </span>
+
+      </div>
+
+
+      <div class="gallery-admin-item-bottom">
+
+        <small>
+          Order ${image.sort_order ?? index}
+        </small>
+
+
+        <button
+          class="gallery-delete-btn"
+          data-delete-gallery="${image.id}"
+
+          data-gallery-path="${escapeAttribute(
+            image.image_path || ""
+          )}"
+          type="button"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   GALLERY DELETE BIND
+===================================
+
+====================== */
+
+function bindGalleryDeleteActions() {
 
   document
-    .querySelectorAll(
-      "[data-delete-review]"
-    )
-    .forEach(button => {
+    .querySelectorAll("[data-delete-gallery]")
+    .forEach((button) => {
 
       button.addEventListener(
         "click",
-        () => {
+        async () => {
 
-          deleteReview(
-            button.dataset.deleteReview
+          const id =
+            Number(
+              button.dataset.deleteGallery
+            );
+
+
+          const path =
+            button.dataset.galleryPath || "";
+
+          await deleteGalleryImage(
+            id,
+            path
           );
 
         }
@@ -3563,84 +3689,426 @@ function bindReviewActions() {
 
 
 /* =========================================================
-   DELETE REVIEW
+   UPLOAD PREVIEW
 ========================================================= */
 
-async function deleteReview(id) {
+function previewSelectedGalleryFiles() {
 
-  if (!confirm(
-    "Delete this review?"
-  )) {
+  const input =
+
+    document.getElementById(
+      "galleryFileInput"
+    );
+
+
+  const status =
+    document.getElementById(
+      "galleryUploadStatus"
+    );
+
+
+  const files =
+    Array.from(input.files || []);
+
+
+  if (!files.length) {
+
+    status.textContent = "";
+
     return;
+
+  }
+
+
+
+  const invalid =
+    files.filter(
+      file =>
+        !isValidGalleryFile(file)
+    );
+
+
+  if (invalid.length) {
+
+    status.textContent =
+      `${invalid.length} invalid file(s). ` +
+      "Only JPG, PNG, WEBP and GIF up to 5MB are allowed.";
+
+    status.style.color = "#c53d3d";
+
+    return;
+
+  }
+
+
+  status.textContent =
+    `${files.length} image(s) selected. Ready to upload.`;
+
+  status.style.color = "#1e5c3f";
+
+}
+
+
+/* =========================================================
+   VALIDATE GALLERY FILE
+========================================================= */
+
+function isValidGalleryFile(file) {
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+
+    "image/webp",
+    "image/gif"
+  ];
+
+
+  const maxSize =
+    5 * 1024 * 1024;
+
+
+  return (
+    allowedTypes.includes(file.type) &&
+    file.size <= maxSize
+  );
+
+}
+
+
+/* =========================================================
+   UPLOAD GALLERY IMAGES
+===================================
+
+====================== */
+
+async function uploadGalleryImages() {
+
+  if (!currentGalleryTourId) {
+
+    alert("No tour selected.");
+
+    return;
+
+  }
+
+
+  const input =
+    document.getElementById(
+      "galleryFileInput"
+    );
+
+
+  const status =
+    document.getElementById(
+      "galleryUploadStatus"
+    );
+
+
+
+  const button =
+    document.getElementById(
+      "uploadGalleryBtn"
+    );
+
+
+  const files =
+    Array.from(input.files || []);
+
+
+  if (!files.length) {
+
+    alert(
+      "Please select at least one image."
+    );
+
+    return;
+
+  }
+
+
+  const invalidFiles =
+    files.filter(
+      file =>
+        !isValidGalleryFile(file)
+    );
+
+
+  if (invalidFiles.length > 0) {
+
+    alert(
+      "Some files are invalid.\n\n" +
+      "Allowed: JPG, PNG, WEBP, GIF\n" +
+      "Maximum: 5MB per image."
+    );
+
+    return;
+
+  }
+
+
+  button.disabled = true;
+
+
+  input.disabled = true;
+
+  status.textContent =
+    "Preparing upload...";
+
+
+  try {
+
+    const {
+      data: existingRows,
+      error: existingError
+    } = await supabase
+      .from("tour_gallery")
+      .select("sort_order")
+      .eq(
+        "tour_id",
+        currentGalleryTourId
+      )
+      .order("sort_order", {
+        ascending: false
+      })
+
+      .limit(1);
+
+
+    if (existingError) {
+      throw existingError;
+    }
+
+
+    let nextSortOrder =
+      existingRows?.length
+        ? Number(
+            existingRows[0].sort_order
+          ) + 1
+        : 0;
+
+
+    let uploadedCount = 0;
+
+
+    for (const file of files) {
+
+      uploadedCount++;
+
+
+
+      status.textContent =
+        `Uploading ${uploadedCount} of ${files.length}...`;
+
+
+      const extension =
+        getFileExtension(file);
+
+
+      const randomPart =
+        crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()
+              .toString(36)
+              .slice(2)}`;
+
+
+      const storagePath =
+        `tours/${currentGalleryTourId}/${Date.now()}-${randomPart}.${extension}`;
+
+
+
+      /*
+        Upload to Supabase Storage
+      */
+
+      const {
+        error: uploadError
+      } = await supabase
+        .storage
+        .from("tour-gallery")
+        .upload(
+          storagePath,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.type
+          }
+        );
+
+
+      if (uploadError) {
+
+        throw uploadError;
+      }
+
+
+      const publicUrl =
+        getTourGalleryPublicUrl(
+          storagePath
+        );
+
+
+      /*
+        Insert DB record
+      */
+
+      const {
+        error: insertError
+      } = await supabase
+        .from("tour_gallery")
+        .insert({
+          tour_id:
+            currentGalleryTourId,
+
+          image_path:
+            storagePath,
+
+          image_url:
+            publicUrl,
+
+          sort_order:
+            nextSortOrder
+        });
+
+
+      if (insertError) {
+
+        /*
+          Important:
+          If DB insertion fails after storage upload,
+          remove the uploaded Storage file.
+        */
+
+        await supabase
+          .storage
+
+          .from("tour-gallery")
+          .remove([
+            storagePath
+          ]);
+
+
+        throw insertError;
+
+      }
+
+
+      nextSortOrder++;
+
+    }
+
+
+    status.textContent =
+      `${uploadedCount} image(s) uploaded successfully.`;
+
+    status.style.color =
+      "#1e5c3f";
+
+
+
+    input.value = "";
+
+
+    await loadTourGallery();
+
+    await loadDashboard();
+
+
+  } catch (error) {
+
+    console.error(
+      "Gallery upload error:",
+      error
+    );
+
+
+    status.textContent =
+      "Upload failed.";
+
+    status.style.color =
+
+      "#c53d3d";
+
+
+    alert(
+      "Gallery upload failed:\n\n" +
+      getReadableError(error)
+    );
+
+  } finally {
+
+    button.disabled = false;
+
+    input.disabled = false;
+
+  }
+
+}
+
+
+/* =========================================================
+   DELETE GALLERY IMAGE
+
+========================================================= */
+
+async function deleteGalleryImage(
+  id,
+  imagePath
+) {
+
+  if (
+    !confirm(
+      "Delete this gallery image?"
+    )
+  ) {
+    return;
+
   }
 
 
   try {
 
     /*
-     * Get photo path before deleting
-     * the database row.
-     */
+      Delete database row first.
+
+    */
 
     const {
-      data: review,
-      error: fetchError
+      error: dbError
     } = await supabase
-      .from("reviews")
-      .select(
-        "photo_path"
-      )
-      .eq("id", id)
-      .maybeSingle();
-
-
-    if (fetchError) {
-      throw fetchError;
-    }
-
-
-    /*
-     * Delete database record.
-     */
-
-    const {
-      error
-    } = await supabase
-      .from("reviews")
+      .from("tour_gallery")
       .delete()
       .eq("id", id);
 
 
-    if (error) {
-      throw error;
+    if (dbError) {
+      throw dbError;
     }
 
 
     /*
-     * Try deleting storage file if
-     * a photo path exists.
-     *
-     * If storage deletion is blocked by
-     * policy, the review itself is still
-     * deleted.
-     */
+      Delete physical Storage object.
+    */
 
-    if (review?.photo_path) {
+    if (imagePath) {
 
       const {
+
         error: storageError
       } = await supabase
         .storage
-        .from("review-photos")
+        .from("tour-gallery")
         .remove([
-          review.photo_path
+          imagePath
         ]);
 
 
       if (storageError) {
 
         console.warn(
-          "Storage photo deletion failed:",
+          "Storage delete failed:",
           storageError
         );
 
@@ -3649,29 +4117,141 @@ async function deleteReview(id) {
     }
 
 
-    showMessage(
-      "Review deleted successfully.",
-      "success"
-    );
+    await loadTourGallery();
 
 
-    await loadReviews();
+    await loadDashboard();
 
 
   } catch (error) {
 
-    console.error(
-      "Delete review error:",
-      error
-    );
+    console.error(error);
 
-
-    showMessage(
-      error.message,
-      "error"
+    alert(
+      "Gallery image delete failed:\n\n" +
+      getReadableError(error)
     );
 
   }
+
+}
+
+
+/* =========================================================
+   GALLERY PUBLIC URL
+
+========================================================= */
+
+function getTourGalleryPublicUrl(
+  path
+) {
+
+  if (!path) {
+    return "";
+  }
+
+
+  const {
+    data
+  } = supabase
+    .storage
+    .from("tour-gallery")
+    .getPublicUrl(path);
+
+
+  return data?.publicUrl || "";
+
+}
+
+
+/* =========================================================
+   FILE EXTENSION
+========================================================= */
+
+function getFileExtension(file) {
+
+  const originalName =
+    file.name || "";
+
+
+  const parts =
+    originalName
+      .split(".");
+
+
+  if (parts.length > 1) {
+
+    return parts
+      .pop()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+  }
+
+
+  if (file.type === "image/jpeg") {
+    return "jpg";
+  }
+
+  if (file.type === "image/png") {
+    return "png";
+  }
+
+  if (file.type === "image/webp") {
+    return "webp";
+  }
+
+  if (file.type === "image/gif") {
+    return "gif";
+
+  }
+
+
+  return "jpg";
+
+}
+
+
+/* =========================================================
+   CLOSE MODALS
+========================================================= */
+
+function closeContentModal() {
+
+  document.getElementById(
+    "contentModal"
+  ).style.display = "none";
+
+  editingDestinationId = null;
+
+  editingTourId = null;
+
+}
+
+
+function closeLocationModal() {
+
+  document.getElementById(
+    "locationModal"
+  ).style.display = "none";
+
+
+  editingLocationId = null;
+
+}
+
+
+function closeGalleryModal() {
+
+  document.getElementById(
+
+    "galleryModal"
+  ).style.display = "none";
+
+
+  currentGalleryTourId = null;
+
+  currentGalleryTourTitle = "";
 
 }
 
@@ -3682,145 +4262,78 @@ async function deleteReview(id) {
 
 async function logout() {
 
-  try {
+  const confirmed =
+    confirm(
 
-    const {
-      error
-    } = await supabase.auth.signOut();
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    window.location.href =
-      "admin.html";
-
-
-  } catch (error) {
-
-    showMessage(
-      error.message,
-      "error"
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   MODAL
-========================================================= */
-
-function closeModal(id) {
-
-  const modal =
-    document.getElementById(id);
-
-
-  if (modal) {
-
-    modal.style.display =
-      "none";
-
-  }
-
-}
-
-
-/* =========================================================
-   MESSAGE
-========================================================= */
-
-function showMessage(
-  message,
-  type = "success"
-) {
-
-  const element =
-    document.getElementById(
-      "adminMessage"
+      "Are you sure you want to logout?"
     );
 
 
-  if (!element) {
+  if (!confirmed) {
     return;
   }
 
 
-  element.style.display =
-    "block";
+  const {
+    error
+  } = await supabase.auth.signOut();
 
 
-  element.textContent =
-    message;
+  if (error) {
 
+    alert(
+      "Logout failed:\n\n" +
+      getReadableError(error)
+    );
 
-  if (type === "error") {
+    return;
 
-    element.style.background =
-      "#fdecec";
-
-    element.style.color =
-      "#b42318";
-
-    element.style.border =
-      "1px solid #f5c2c0";
-
-  } else {
-
-    element.style.background =
-      "#edf7f0";
-
-    element.style.color =
-      "#176b4d";
-
-    element.style.border =
-      "1px solid #c9e4d2";
 
   }
 
 
-  clearTimeout(
-    showMessage.timer
-  );
-
-
-  showMessage.timer =
-    setTimeout(
-      () => {
-
-        element.style.display =
-          "none";
-
-      },
-      5000
-    );
+  window.location.href =
+    "admin.html";
 
 }
 
 
 /* =========================================================
-   UI HELPERS
+   HELPERS
 ========================================================= */
 
-function loadingHTML() {
+function setText(
+  id,
+  value
+) {
+
+  const element =
+
+    document.getElementById(id);
+
+
+  if (element) {
+    element.textContent = String(value);
+  }
+
+}
+
+
+function loadingHTML(
+  text = "Loading..."
+) {
 
   return `
 
     <div
       style="
-        background:#fff;
-        border:1px solid #e4e3db;
-        border-radius:12px;
         padding:35px;
         text-align:center;
-        color:#69736e;
+        color:#718078;
       "
+
     >
-      Loading...
+      ${escapeHTML(text)}
     </div>
 
   `;
@@ -3828,21 +4341,24 @@ function loadingHTML() {
 }
 
 
-function emptyHTML(message) {
+function emptyHTML(
+  text
+) {
 
   return `
 
     <div
       style="
-        background:#fff;
-        border:1px solid #e4e3db;
-        border-radius:12px;
-        padding:35px;
+        padding:40px;
         text-align:center;
-        color:#69736e;
+        background:white;
+        border:1px dashed #cbd8ce;
+        border-radius:12px;
+
+        color:#718078;
       "
     >
-      ${escapeHTML(message)}
+      ${escapeHTML(text)}
     </div>
 
   `;
@@ -3850,30 +4366,130 @@ function emptyHTML(message) {
 }
 
 
-function errorHTML(message) {
+function errorHTML(
+  text
+) {
 
   return `
 
     <div
       style="
-        background:#fff;
-        border:1px solid #f0c7c5;
-        border-radius:12px;
         padding:25px;
-        color:#b42318;
+        text-align:center;
+        background:#fff4f4;
+
+        border:1px solid #efcaca;
+        border-radius:12px;
+        color:#a12e2e;
       "
     >
-
-      <strong>
-        Error
-      </strong>
-
-      <p>
-        ${escapeHTML(message)}
-      </p>
-
+      ${escapeHTML(text)}
     </div>
 
   `;
+
+}
+
+
+function truncate(
+  text,
+  maxLength = 150
+) {
+
+  if (!text) {
+    return "";
+  }
+
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+
+  return (
+    text.slice(0, maxLength).trim() +
+    "..."
+  );
+
+}
+
+
+function escapeHTML(
+  value
+) {
+
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+
+    .replace(/'/g, "&#039;");
+
+}
+
+
+function escapeAttribute(
+  value
+) {
+
+  return escapeHTML(value);
+
+}
+
+
+function formatDate(
+  value
+) {
+
+  if (!value) {
+    return "-";
+  }
+
+
+  try {
+
+    return new Date(value)
+      .toLocaleDateString(
+        undefined,
+        {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        }
+      );
+
+  } catch {
+
+    return value;
+
+  }
+
+}
+
+function getReadableError(
+  error
+) {
+
+  if (!error) {
+    return "Unknown error";
+  }
+
+
+  if (
+    typeof error === "string"
+  ) {
+    return error;
+  }
+
+
+  return (
+    error.message ||
+    error.error_description ||
+    error.details ||
+    error.hint ||
+    "Unknown error"
+
+  );
 
 }
