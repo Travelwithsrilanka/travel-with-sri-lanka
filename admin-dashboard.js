@@ -1,10 +1,4 @@
-import {
-createClient
-} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-/* =========================================================
-SUPABASE
-========================================================= */
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 const SUPABASE_URL =
 "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
@@ -24,57 +18,24 @@ detectSessionInUrl: true
 }
 );
 
-/* =========================================================
-START
-========================================================= */
+let destinations = [];
+let tours = [];
+let currentGalleryId = null;
+let currentLocationId = null;
 
-document.addEventListener(
-"DOMContentLoaded",
-startAdmin
-);
+/* =========================================
+INIT
+========================================= */
 
-/* =========================================================
-SESSION
-========================================================= */
+document.addEventListener("DOMContentLoaded", async () => {
+const { data } = await supabase.auth.getSession();
 
-async function checkSession() {
-
-const {
-data,
-error
-} = await supabase.auth.getSession();
-
-if (error) {
-throw error;
-}
-
-if (!data?.session) {
-
-window.location.replace("admin.html");
-
-return false;
-}
-
-return true;
-}
-
-/* =========================================================
-START ADMIN
-========================================================= */
-
-async function startAdmin() {
-
-try {
-
-const loggedIn =
-await checkSession();
-
-if (!loggedIn) {
+if (!data.session) {
+window.location.href = "admin.html";
 return;
 }
 
 createDashboard();
-
 setupEvents();
 
 await Promise.all([
@@ -83,23 +44,13 @@ loadTours(),
 loadReviews()
 ]);
 
-} catch (error) {
+await loadGallery();
+await loadLocations();
+});
 
-console.error(
-"Admin start error:",
-error
-);
-
-showError(
-error?.message ||
-"Unable to load administrator dashboard."
-);
-}
-}
-
-/* =========================================================
-DASHBOARD HTML
-========================================================= */
+/* =========================================
+DASHBOARD UI
+========================================= */
 
 function createDashboard() {
 
@@ -108,19 +59,7 @@ document.body.innerHTML = `
 
 
 
-
-
-
-
-
-
-TWS
-
-
-
-
-Travel With Sri Lanka
-
+TRAVEL WITH SRI LANKA
 
 
 Website Content Management
@@ -128,19 +67,15 @@ Website Content Management
 
 
 
-
-
-
-
 href="index.html"
 target="_blank"
-class="viewBtn"
+class="adminBtn secondary"
 >
-View Website ↗
+View Website
 
 
 id="logoutBtn"
-class="logoutBtn"
+class="adminBtn danger"
 >
 Logout
 
@@ -149,46 +84,31 @@ Logout
 
 
 
-id="message"
-class="message"
->
 
 
 
 
 
-
-
-
-
-
-
-WEBSITE CONTENT
 
 
 
 Destinations
 
-
-
-Manage destinations and main destination photos.
-
+Manage destination pages.
 
 
 
 
+class="adminBtn primary"
 id="addDestinationBtn"
-class="primaryBtn"
 >
 + Add Destination
 
 
 
-
-id="destinationsList"
-class="contentGrid"
+id="destinationsAdminGrid"
+class="adminGrid"
 >
-
 Loading destinations...
 
 
@@ -200,84 +120,23 @@ Loading destinations...
 
 
 
-
-
-
-
-DESTINATION CONTENT
-
-
-
-📍 Destination Locations
-
-
-
-Manage up to 10 famous locations for every destination.
-
-
-
-
-
-
-
-
-
-
-Select Destination
-
-
-id="locationDestinationSelect"
->
-Select a destination...
-
-
-
-
-id="locationsList"
-class="locationAdminGrid"
->
-
-Select a destination to manage its 10 locations.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-WEBSITE CONTENT
-
-
-
 Tours
 
-
-
-Add, edit, delete and update tour information.
-
+Manage your tour packages.
 
 
 
 
+class="adminBtn primary"
 id="addTourBtn"
-class="primaryBtn"
 >
 + Add Tour
 
 
 
-
-id="toursList"
-class="contentGrid"
+id="toursAdminGrid"
+class="adminGrid"
 >
-
 Loading tours...
 
 
@@ -289,70 +148,54 @@ Loading tours...
 
 
 
+Tour Gallery
+
+
+Add and manage photos for each tour.
 
 
 
 
-TOUR MEDIA
-
-
-
-📸 Tour Gallery
-
-
-
-Upload and manage photos for each tour.
-
-
-
-
-
-
-
-
-
-
-Select Tour
-
-
-id="galleryTourSelect"
+class="adminBtn primary"
+id="addGalleryBtn"
 >
-Select a tour...
++ Add Gallery Photo
 
 
 
-
-class="galleryUploadBox"
+id="galleryAdminGrid"
+class="adminGrid"
 >
-
-
-
-
-Add Tour Photos
-
-
-
-JPG, PNG, WEBP or GIF • Maximum 5 MB each
+Loading gallery...
 
 
 
 
 
-id="addGalleryPhotoBtn"
-class="primaryBtn"
-disabled
+
+
+
+
+
+Destination Locations
+
+
+Manage up to 10 locations for every destination.
+
+
+
+
+class="adminBtn primary"
+id="addLocationBtn"
 >
-+ Add Photo
++ Add Location
 
 
 
-
-id="tourGalleryList"
-class="galleryAdminGrid"
+id="locationsAdminGrid"
+class="adminGrid"
 >
-
-Select a tour to manage its gallery.
-
+Loading locations...
 
 
 
@@ -363,35 +206,23 @@ Select a tour to manage its gallery.
 
 
 
+Reviews
 
-
-
-CUSTOMER CONTENT
-
-
-
-Traveler Reviews
-
-
-
-Customer reviews submitted from the website.
+Customer reviews submitted through the website.
 
 
 
 
-
+class="adminBtn secondary"
 id="refreshReviewsBtn"
-class="secondaryBtn"
 >
-↻ Refresh
+Refresh
 
 
 
-
-id="reviewsList"
-class="reviewAdminGrid"
+id="reviewsAdminGrid"
+class="adminGrid"
 >
-
 Loading reviews...
 
 
@@ -400,25 +231,22 @@ Loading reviews...
 
 
 
+
 id="contentModal"
-class="modal"
+class="adminModal"
 >
 
-
-
-id="closeModal"
-class="closeBtn"
-type="button"
->
-×
-
-
-
-CONTENT EDITOR
 
 
 
 Add Content
+
+
+class="modalClose"
+data-close="contentModal"
+>
+×
+
 
 
 
@@ -431,85 +259,146 @@ type="hidden"
 id="contentType"
 >
 
-
 Name / Title
 
-
-type="text"
 id="contentName"
 required
-maxlength="150"
 >
-
 
 Slug
 
-
-type="text"
 id="contentSlug"
 required
-maxlength="100"
-placeholder="ella"
 >
-
 
 Description
 
-
 id="contentDescription"
 rows="5"
-maxlength="1000"
 >
-
 
 Page URL
 
-
-type="text"
 id="contentPageUrl"
 placeholder="ella.html"
 >
 
+Sort Order
 
-Current Image
-
-
-id="currentImage"
-class="currentImage"
+id="contentSortOrder"
+type="number"
+value="0"
 >
 
-No image selected.
+Cover Image
 
-
-
-
-Upload New Image
-
-
-type="file"
 id="contentImage"
+type="file"
 accept="image/jpeg,image/png,image/webp,image/gif"
 >
 
 
-Maximum size: 5 MB
 
 
+
+type="button"
+class="adminBtn secondary"
+data-close="contentModal"
+>
+Cancel
+
+
+type="submit"
+class="adminBtn primary"
+>
+Save
+
+
+
+
+
+
+
+
+
+
+
+id="galleryModal"
+class="adminModal"
+>
+
+
+
+
+
+
+Add Gallery Photo
+
+
+
+class="modalClose"
+data-close="galleryModal"
+>
+×
+
+
+
+
+
+
+type="hidden"
+id="galleryId"
+>
+
+Tour
+
+id="galleryTour"
+required
+>
+
+Photo Title
+
+id="galleryTitle"
+placeholder="Ella Mountain Tour"
+>
+
+Caption
+
+id="galleryCaption"
+rows="4"
+placeholder="Beautiful view of Ella..."
+>
 
 Sort Order
 
-
+id="gallerySortOrder"
 type="number"
-id="contentSortOrder"
-value="1"
-min="0"
-max="999"
+value="0"
 >
+
+Photo
+
+id="galleryImage"
+type="file"
+accept="image/jpeg,image/png,image/webp,image/gif"
+>
+
+
+
+
+
+type="button"
+class="adminBtn secondary"
+data-close="galleryModal"
+>
+Cancel
+
 
 type="submit"
-class="saveBtn"
+class="adminBtn primary"
 >
-Save Changes
+Save Photo
+
 
 
 
@@ -521,24 +410,24 @@ Save Changes
 
 
 id="locationModal"
-class="modal"
+class="adminModal"
 >
 
 
 
-id="closeLocationModal"
-class="closeBtn"
-type="button"
+
+
+
+Add Destination Location
+
+
+
+class="modalClose"
+data-close="locationModal"
 >
 ×
 
 
-
-DESTINATION LOCATION
-
-
-
-Location 01
 
 
 
@@ -547,79 +436,56 @@ type="hidden"
 id="locationId"
 >
 
-type="hidden"
-id="locationDestinationId"
->
+Destination
 
-type="hidden"
-id="locationNumber"
+id="locationDestination"
+required
 >
-
 
 Location Number
 
-
-type="text"
-id="locationNumberDisplay"
-disabled
+id="locationNumber"
+required
 >
+${Array.from({length: 10}, (_, i) =>
+`${String(i + 1).padStart(2, "0")}`
+).join("")}
 
 
 Location Name
 
-
-type="text"
 id="locationName"
-maxlength="150"
 required
+placeholder="Ella Rock"
 >
-
 
 Description
 
-
 id="locationDescription"
 rows="5"
-maxlength="1000"
+placeholder="Discover the breathtaking..."
 >
 
+Photo
 
-Current Photo
-
-
-id="locationCurrentImage"
-class="currentImage"
->
-
-No image uploaded.
-
-
-
-
-Upload / Replace Photo
-
-
-type="file"
 id="locationImage"
+type="file"
 accept="image/jpeg,image/png,image/webp,image/gif"
 >
 
 
-Maximum size: 5 MB
 
 
 
-Sort Order
-
-
-type="number"
-id="locationSortOrder"
-min="1"
-max="10"
+type="button"
+class="adminBtn secondary"
+data-close="locationModal"
 >
+Cancel
+
 
 type="submit"
-class="saveBtn"
+class="adminBtn primary"
 >
 Save Location
 
@@ -632,422 +498,159 @@ Save Location
 
 
 
-id="galleryModal"
-class="modal"
->
-
-
-
-id="closeGalleryModal"
-class="closeBtn"
-type="button"
->
-×
-
-
-
-TOUR GALLERY
-
-
-
-Add Tour Photo
-
-
-
-
-type="hidden"
-id="galleryTourId"
->
-
-
-Photo Title / Caption
-
-
-type="text"
-id="galleryTitle"
-maxlength="150"
-placeholder="Ella Mountain Experience"
->
-
-
-Select Photo
-
-
-type="file"
-id="galleryImage"
-accept="image/jpeg,image/png,image/webp,image/gif"
-required
->
-
-
-Maximum size: 5 MB
-
-
-
-Sort Order
-
-
-type="number"
-id="gallerySortOrder"
-min="0"
-max="999"
-value="1"
->
-
-type="submit"
-class="saveBtn"
->
-Upload Photo
-
-
-
-
-
-
-
-
-
 
 
 `;
 }
 
-/* =========================================================
+/* =========================================
+EVENTS
+========================================= */
+
+function setupEvents() {
+
+document
+.getElementById("addDestinationBtn")
+.addEventListener("click", () =>
+openAddModal("destination")
+);
+
+document
+.getElementById("addTourBtn")
+.addEventListener("click", () =>
+openAddModal("tour")
+);
+
+document
+.getElementById("addGalleryBtn")
+.addEventListener("click", openGalleryAdd);
+
+document
+.getElementById("addLocationBtn")
+.addEventListener("click", openLocationAdd);
+
+document
+.getElementById("contentForm")
+.addEventListener("submit", saveContent);
+
+document
+.getElementById("galleryForm")
+.addEventListener("submit", saveGallery);
+
+document
+.getElementById("locationForm")
+.addEventListener("submit", saveLocation);
+
+document
+.getElementById("refreshReviewsBtn")
+.addEventListener("click", loadReviews);
+
+document
+.getElementById("logoutBtn")
+.addEventListener("click", logout);
+
+document.querySelectorAll("[data-close]").forEach(btn => {
+
+btn.addEventListener("click", () => {
+
+document
+.getElementById(btn.dataset.close)
+.classList.remove("show");
+
+});
+
+});
+
+}
+
+/* =========================================
 DESTINATIONS
-========================================================= */
+========================================= */
 
 async function loadDestinations() {
 
-const container =
-document.getElementById(
-"destinationsList"
-);
+const grid =
+document.getElementById("destinationsAdminGrid");
 
-if (!container) {
-return;
-}
-
-container.innerHTML =
-"
-Loading destinations...
-
-";
-
-try {
-
-const {
-data,
-error
-} = await supabase
+const { data, error } = await supabase
 .from("destinations")
 .select("*")
-.order(
-"sort_order",
-{
-ascending:true
-}
-);
+.order("sort_order", { ascending: true });
 
 if (error) {
-throw error;
-}
 
-if (!data?.length) {
+grid.innerHTML =
+`
+Could not load destinations.
 
-container.innerHTML =
-"
-No destinations found.
-
-";
-
-return;
-}
-
-container.innerHTML = "";
-
-populateDestinationSelector(data);
-
-data.forEach(
-destination => {
-
-container.appendChild(
-createContentCard(
-destination,
-"destination"
-)
-);
-
-}
-);
-
-} catch (error) {
+`;
 
 console.error(error);
-
-container.innerHTML = `
-
-Failed to load destinations.
-
-
-
-${escapeHTML(error.message)}
-
-`;
-}
-}
-
-/* =========================================================
-DESTINATION SELECTOR
-========================================================= */
-
-function populateDestinationSelector(
-destinations
-) {
-
-const select =
-document.getElementById(
-"locationDestinationSelect"
-);
-
-if (!select) {
 return;
-}
-
-const current =
-select.value;
-
-select.innerHTML = `
-Select a destination...
-`;
-
-destinations.forEach(
-destination => {
-
-const option =
-document.createElement(
-"option"
-);
-
-option.value =
-destination.id;
-
-option.textContent =
-destination.name || "Destination";
-
-select.appendChild(option);
 
 }
-);
 
-if (current) {
-select.value = current;
-}
-}
+destinations = data || [];
 
-/* =========================================================
-TOURS
-========================================================= */
-
-async function loadTours() {
-
-const container =
-document.getElementById(
-"toursList"
-);
-
-if (!container) {
-return;
-}
-
-container.innerHTML =
-"
-Loading tours...
-
-";
-
-try {
-
-const {
-data,
-error
-} = await supabase
-.from("tours")
-.select("*")
-.order(
-"sort_order",
-{
-ascending:true
-}
-);
-
-if (error) {
-throw error;
-}
-
-if (!data?.length) {
-
-container.innerHTML =
-"
-No tours found.
-
-";
-
-populateTourSelector([]);
-
-return;
-}
-
-container.innerHTML = "";
-
-populateTourSelector(data);
-
-data.forEach(
-tour => {
-
-container.appendChild(
-createContentCard(
-tour,
-"tour"
-)
-);
-
-}
-);
-
-} catch (error) {
-
-console.error(error);
-
-container.innerHTML = `
-
-Failed to load tours.
+grid.innerHTML =
+destinations.map(destination => `
 
 
 
-${escapeHTML(error.message)}
-
-`;
-}
-}
-
-/* =========================================================
-TOUR SELECTOR
-========================================================= */
-
-function populateTourSelector(
-tours
-) {
-
-const select =
-document.getElementById(
-"galleryTourSelect"
-);
-
-if (!select) {
-return;
-}
-
-const current =
-select.value;
-
-select.innerHTML = `
-Select a tour...
-`;
-
-tours.forEach(
-tour => {
-
-const option =
-document.createElement(
-"option"
-);
-
-option.value =
-tour.id;
-
-option.textContent =
-tour.title || "Tour";
-
-select.appendChild(option);
-
-}
-);
-
-if (current) {
-select.value = current;
-}
-
-updateGalleryButton();
-}
-
-/* =========================================================
-CONTENT CARD
-========================================================= */
-
-function createContentCard(
-item,
-type
-) {
-
-const card =
-document.createElement(
-"div"
-);
-
-card.className =
-"contentCard";
-
-const image =
-item.image_url
-? ` src="${escapeAttribute(item.image_url)}"
-class="contentImage"
-alt="${escapeAttribute(
-type === "tour"
-? item.title || "Tour"
-: item.name || "Destination"
-)}"
+${
+destination.image_url
+?
+` src="${escapeAttribute(destination.image_url)}"
+alt="${escapeAttribute(destination.name)}"
 >`
-: `
-`;
+:
+`
 
-const title =
-type === "tour"
-? item.title
-: item.name;
-
-card.innerHTML = `
-
-${image}
+No image
+`
+}
 
 
 
 
-${escapeHTML(title || "")}
+${escapeHTML(destination.name)}
 
 
 
-/${escapeHTML(item.slug || "")}
+Slug: ${escapeHTML(destination.slug || "")}
 
 
 
 ${escapeHTML(
-item.description || ""
+destination.description || ""
 )}
 
 
 
 
 
-class="editBtn"
-data-id="${escapeAttribute(item.id)}"
-data-type="${type}"
+class="adminBtn secondary small"
+onclick="window.editContent(
+'${destination.id}',
+'destination'
+)"
 >
 Edit
 
 
-class="deleteBtn"
-data-id="${escapeAttribute(item.id)}"
-data-type="${type}"
+class="adminBtn primary small"
+onclick="window.manageDestinationLocations(
+'${destination.id}'
+)"
+>
+Locations
+
+
+class="adminBtn danger small"
+onclick="window.deleteContent(
+'${destination.id}',
+'destination'
+)"
 >
 Delete
 
@@ -1055,381 +658,101 @@ Delete
 
 
 
-`;
 
-return card;
-}
 
-/* =========================================================
-REVIEWS
-========================================================= */
 
-async function loadReviews() {
-
-const container =
-document.getElementById(
-"reviewsList"
-);
-
-if (!container) {
-return;
-}
-
-container.innerHTML =
-"
-Loading reviews...
-
-";
-
-try {
-
-const {
-data,
-error
-} = await supabase
-.from("reviews")
-.select(
-"id,name,country,rating,review,photo_path"
-);
-
-if (error) {
-throw error;
-}
-
-if (!data?.length) {
-
-container.innerHTML =
-"
-No reviews found.
-
-";
-
-return;
-}
-
-container.innerHTML = "";
-
-data.forEach(
-review => {
-
-container.appendChild(
-createAdminReviewCard(
-review
-)
-);
+`).join("");
 
 }
-);
 
-} catch (error) {
+/* =========================================
+TOURS
+========================================= */
 
-console.error(
-"Review admin error:",
-error
-);
+async function loadTours() {
 
-container.innerHTML = `
+const grid =
+document.getElementById("toursAdminGrid");
 
-Failed to load reviews.
-
-
-
-${escapeHTML(error.message)}
-
-`;
-}
-}
-
-/* =========================================================
-REVIEW CARD
-========================================================= */
-
-function createAdminReviewCard(
-review
-) {
-
-const card =
-document.createElement(
-"article"
-);
-
-card.className =
-"reviewAdminCard";
-
-let photoHTML = "";
-
-if (review.photo_path) {
-
-const {
-data
-} = supabase
-.storage
-.from("review-photos")
-.getPublicUrl(
-review.photo_path
-);
-
-if (data?.publicUrl) {
-
-photoHTML = `
-class="reviewAdminPhoto"
-src="${escapeAttribute(data.publicUrl)}"
-alt="Traveler photo"
->
-`;
-}
-}
-
-const rating =
-Math.max(
-1,
-Math.min(
-5,
-Number(review.rating) || 5
-)
-);
-
-card.innerHTML = `
-
-${photoHTML}
-
-
-
-
-${"★".repeat(rating)}
-${"☆".repeat(5-rating)}
-
-
-
-${escapeHTML(review.review || "")}
-
-
-
-
-
-
-${escapeHTML(
-review.name || "Traveler"
-)}
-
-
-
-${escapeHTML(
-review.country || ""
-)}
-
-
-
-
-
-`;
-
-return card;
-}
-
-/* =========================================================
-LOCATION LOADING
-========================================================= */
-
-async function loadLocations(
-destinationId
-) {
-
-const container =
-document.getElementById(
-"locationsList"
-);
-
-if (!container) {
-return;
-}
-
-if (!destinationId) {
-
-container.innerHTML = `
-
-Select a destination to manage its 10 locations.
-
-`;
-
-return;
-}
-
-container.innerHTML =
-"
-Loading locations...
-
-";
-
-try {
-
-const {
-data,
-error
-} = await supabase
-.from("destination_locations")
+const { data, error } = await supabase
+.from("tours")
 .select("*")
-.eq(
-"destination_id",
-destinationId
-)
-.order(
-"location_number",
-{
-ascending:true
-}
-);
+.order("sort_order", { ascending: true });
 
 if (error) {
-throw error;
-}
 
-const locations =
-Array.isArray(data)
-? data
-: [];
-
-const byNumber =
-new Map(
-locations.map(
-location => [
-Number(location.location_number),
-location
-]
-)
-);
-
-container.innerHTML = "";
-
-for (
-let number = 1;
-number <= 10;
-number++
-) {
-
-const location =
-byNumber.get(number) || {
-id:null,
-destination_id:destinationId,
-location_number:number,
-name:"",
-description:"",
-image_path:"",
-image_url:"",
-sort_order:number
-};
-
-container.appendChild(
-createLocationAdminCard(
-location
-)
-);
-
-}
-
-} catch (error) {
-
-console.error(
-"Location loading error:",
-error
-);
-
-container.innerHTML = `
-
-Failed to load locations.
-
-
-
-${escapeHTML(error.message)}
-
-`;
-}
-}
-
-/* =========================================================
-LOCATION CARD
-========================================================= */
-
-function createLocationAdminCard(
-location
-) {
-
-const card =
-document.createElement(
-"article"
-);
-
-card.className =
-"locationAdminCard";
-
-const number =
-Number(
-location.location_number
-) || 1;
-
-const imageHTML =
-location.image_url
-? `
-class="locationAdminImage"
-src="${escapeAttribute(location.image_url)}"
-alt="${escapeAttribute(
-location.name ||
-`Location ${number}`
-)}"
->
+grid.innerHTML =
 `
-: `
+Could not load tours.
 
 `;
 
-const name =
-location.name ||
-`Location ${String(number).padStart(2,"0")}`;
+console.error(error);
+return;
 
-card.innerHTML = `
+}
 
-${imageHTML}
+tours = data || [];
 
-
-
-
-LOCATION ${String(number).padStart(2,"0")}
+grid.innerHTML =
+tours.map(tour => `
 
 
 
-${escapeHTML(name)}
+${
+tour.image_url
+?
+` src="${escapeAttribute(tour.image_url)}"
+alt="${escapeAttribute(tour.title)}"
+>`
+:
+`
+
+No image
+`
+}
+
+
+
+
+${escapeHTML(tour.title)}
+
+
+
+Slug: ${escapeHTML(tour.slug || "")}
 
 
 
 ${escapeHTML(
-location.description ||
-"No description added yet."
+tour.description || ""
 )}
 
 
 
 
 
-class="locationEdit"
-data-location-id="${escapeAttribute(
-location.id || ""
-)}"
-data-destination-id="${escapeAttribute(
-location.destination_id
-)}"
-data-location-number="${number}"
+class="adminBtn secondary small"
+onclick="window.editContent(
+'${tour.id}',
+'tour'
+)"
 >
-${location.id ? "Edit" : "Add"}
+Edit
 
 
-class="locationDelete"
-data-location-id="${escapeAttribute(
-location.id || ""
-)}"
-data-image-path="${escapeAttribute(
-location.image_path || ""
-)}"
-${location.id ? "" : "disabled"}
+class="adminBtn primary small"
+onclick="window.manageTourGallery(
+'${tour.id}'
+)"
+>
+Gallery
+
+
+class="adminBtn danger small"
+onclick="window.deleteContent(
+'${tour.id}',
+'tour'
+)"
 >
 Delete
 
@@ -1437,139 +760,856 @@ Delete
 
 
 
-`;
 
-return card;
+
+
+`).join("");
+
 }
 
-/* =========================================================
-OPEN LOCATION MODAL
-========================================================= */
+/* =========================================
+CONTENT MODAL
+========================================= */
 
-async function openLocationModal(
-locationId,
-destinationId,
-locationNumber
-) {
+function openAddModal(type) {
 
-let data = null;
+document.getElementById("contentForm").reset();
 
-if (locationId) {
+document.getElementById("contentId").value = "";
+document.getElementById("contentType").value = type;
 
-const {
-data: row,
-error
-} = await supabase
-.from("destination_locations")
+document.getElementById("contentModalTitle").textContent =
+type === "destination"
+? "Add Destination"
+: "Add Tour";
+
+document.getElementById("contentCurrentImage").innerHTML = "";
+
+document
+.getElementById("contentModal")
+.classList.add("show");
+
+}
+
+async function editContent(id, type) {
+
+const table =
+type === "destination"
+? "destinations"
+: "tours";
+
+const { data, error } = await supabase
+.from(table)
 .select("*")
-.eq("id", locationId)
+.eq("id", id)
 .single();
 
 if (error) {
 
-alert(
-"Failed to load location:\n\n" +
-error.message
-);
-
+showMessage(error.message);
 return;
+
 }
 
-data = row;
+document.getElementById("contentId").value =
+data.id;
+
+document.getElementById("contentType").value =
+type;
+
+document.getElementById("contentName").value =
+type === "tour"
+? data.title || ""
+: data.name || "";
+
+document.getElementById("contentSlug").value =
+data.slug || "";
+
+document.getElementById("contentDescription").value =
+data.description || "";
+
+document.getElementById("contentPageUrl").value =
+data.page_url || "";
+
+document.getElementById("contentSortOrder").value =
+data.sort_order || 0;
+
+document.getElementById("contentModalTitle").textContent =
+type === "tour"
+? "Edit Tour"
+: "Edit Destination";
+
+document.getElementById("contentCurrentImage").innerHTML =
+data.image_url
+?
+`
+
+Current image:
+
+
+
+
+`
+:
+"";
+
+document
+.getElementById("contentModal")
+.classList.add("show");
+
 }
 
-const number =
-Number(locationNumber) || 1;
-
-document.getElementById(
-"locationModal"
-).style.display = "block";
-
-document.getElementById(
-"locationModalTitle"
-).textContent =
-`Location ${String(number).padStart(2,"0")}`;
-
-document.getElementById(
-"locationId"
-).value =
-data?.id || "";
-
-document.getElementById(
-"locationDestinationId"
-).value =
-destinationId;
-
-document.getElementById(
-"locationNumber"
-).value =
-number;
-
-document.getElementById(
-"locationNumberDisplay"
-).value =
-`Location ${String(number).padStart(2,"0")}`;
-
-document.getElementById(
-"locationName"
-).value =
-data?.name || "";
-
-document.getElementById(
-"locationDescription"
-).value =
-data?.description || "";
-
-document.getElementById(
-"locationSortOrder"
-).value =
-data?.sort_order ?? number;
-
-document.getElementById(
-"locationImage"
-).value = "";
-
-const currentImage =
-document.getElementById(
-"locationCurrentImage"
-);
-
-if (data?.image_url) {
-
-currentImage.innerHTML = `
-src="${escapeAttribute(data.image_url)}"
-alt="Current location image"
->
-`;
-
-} else {
-
-currentImage.innerHTML =
-"
-No image uploaded.
-
-";
-}
-}
-
-/* =========================================================
-SAVE LOCATION
-========================================================= */
-
-async function saveLocation(
-event
-) {
+async function saveContent(event) {
 
 event.preventDefault();
 
 const id =
+document.getElementById("contentId").value;
+
+const type =
+document.getElementById("contentType").value;
+
+const name =
+document.getElementById("contentName").value.trim();
+
+let slug =
+document.getElementById("contentSlug").value.trim();
+
+const description =
+document
+.getElementById("contentDescription")
+.value
+.trim();
+
+const pageUrl =
+document
+.getElementById("contentPageUrl")
+.value
+.trim();
+
+const sortOrder =
+Number(
+document.getElementById("contentSortOrder").value
+) || 0;
+
+const file =
+document.getElementById("contentImage").files[0];
+
+slug = createSafeSlug(slug || name);
+
+const table =
+type === "destination"
+? "destinations"
+: "tours";
+
+let existing = null;
+
+if (id) {
+
+const result = await supabase
+.from(table)
+.select("*")
+.eq("id", id)
+.single();
+
+existing = result.data;
+
+}
+
+let imageUrl =
+existing?.image_url || null;
+
+if (file) {
+
+const result =
+await uploadImage(
+file,
+type,
+slug
+);
+
+if (!result) return;
+
+imageUrl = result.url;
+
+}
+
+const payload =
+type === "destination"
+?
+{
+name,
+slug,
+description,
+image_url: imageUrl,
+page_url: pageUrl,
+sort_order: sortOrder
+}
+:
+{
+title: name,
+slug,
+description,
+image_url: imageUrl,
+page_url: pageUrl,
+sort_order: sortOrder
+};
+
+let result;
+
+if (id) {
+
+result = await supabase
+.from(table)
+.update(payload)
+.eq("id", id);
+
+} else {
+
+result = await supabase
+.from(table)
+.insert(payload);
+
+}
+
+if (result.error) {
+
+showMessage(result.error.message);
+return;
+
+}
+
+closeModal("contentModal");
+
+showMessage("Content saved successfully.");
+
+if (type === "destination") {
+await loadDestinations();
+await loadLocations();
+} else {
+await loadTours();
+await loadGallery();
+}
+
+}
+
+/* =========================================
+GALLERY
+========================================= */
+
+async function loadGallery() {
+
+const grid =
+document.getElementById("galleryAdminGrid");
+
+const { data, error } = await supabase
+.from("tour_gallery")
+.select(`
+*,
+tours (
+id,
+title,
+slug
+)
+`)
+.order("sort_order", { ascending: true });
+
+if (error) {
+
+grid.innerHTML =
+`
+Could not load gallery.
+
+`;
+
+console.error(error);
+return;
+
+}
+
+if (!data?.length) {
+
+grid.innerHTML =
+`
+No gallery photos yet.
+
+`;
+
+return;
+
+}
+
+grid.innerHTML =
+data.map(photo => `
+
+
+
+${
+photo.image_url
+?
+` src="${escapeAttribute(photo.image_url)}"
+alt="${escapeAttribute(photo.title || "")}"
+>`
+:
+""
+}
+
+
+
+
+${escapeHTML(photo.title || "Gallery Photo")}
+
+
+
+
+Tour:
+${escapeHTML(
+photo.tours?.title || "Unknown"
+)}
+
+
+
+
+Order:
+${photo.sort_order}
+
+
+
+
+${escapeHTML(photo.caption || "")}
+
+
+
+
+
+class="adminBtn secondary small"
+onclick="window.editGallery(
+'${photo.id}'
+)"
+>
+Edit
+
+
+class="adminBtn danger small"
+onclick="window.deleteGallery(
+'${photo.id}'
+)"
+>
+Delete
+
+
+
+
+
+
+
+
+`).join("");
+
+}
+
+function populateGalleryTours(selectedId = "") {
+
+const select =
+document.getElementById("galleryTour");
+
+select.innerHTML =
+tours.map(tour => `
+
+value="${tour.id}"
+${tour.id === selectedId ? "selected" : ""}
+>
+${escapeHTML(tour.title)}
+
+
+`).join("");
+
+}
+
+function openGalleryAdd() {
+
+currentGalleryId = null;
+
+document.getElementById("galleryForm").reset();
+
+document.getElementById("galleryId").value = "";
+
+document.getElementById("galleryModalTitle").textContent =
+"Add Gallery Photo";
+
+document.getElementById("galleryCurrentImage").innerHTML =
+"";
+
+populateGalleryTours();
+
+document
+.getElementById("galleryModal")
+.classList.add("show");
+
+}
+
+async function editGallery(id) {
+
+const { data, error } = await supabase
+.from("tour_gallery")
+.select("*")
+.eq("id", id)
+.single();
+
+if (error) {
+
+showMessage(error.message);
+return;
+
+}
+
+currentGalleryId = id;
+
+document.getElementById("galleryId").value =
+id;
+
+populateGalleryTours(data.tour_id);
+
+document.getElementById("galleryTitle").value =
+data.title || "";
+
+document.getElementById("galleryCaption").value =
+data.caption || "";
+
+document.getElementById("gallerySortOrder").value =
+data.sort_order || 0;
+
+document.getElementById("galleryModalTitle").textContent =
+"Edit Gallery Photo";
+
+document.getElementById("galleryCurrentImage").innerHTML =
+data.image_url
+?
+`
+
+Current photo:
+
+
+
+
+`
+:
+"";
+
+document
+.getElementById("galleryModal")
+.classList.add("show");
+
+}
+
+async function saveGallery(event) {
+
+event.preventDefault();
+
+const id =
+document.getElementById("galleryId").value;
+
+const tourId =
+document.getElementById("galleryTour").value;
+
+const title =
+document.getElementById("galleryTitle").value.trim();
+
+const caption =
+document.getElementById("galleryCaption").value.trim();
+
+const sortOrder =
+Number(
+document.getElementById("gallerySortOrder").value
+) || 0;
+
+const file =
+document.getElementById("galleryImage").files[0];
+
+let existing = null;
+
+if (id) {
+
+const result = await supabase
+.from("tour_gallery")
+.select("*")
+.eq("id", id)
+.single();
+
+existing = result.data;
+
+}
+
+let imagePath =
+existing?.image_path || null;
+
+let imageUrl =
+existing?.image_url || null;
+
+if (file) {
+
+const tour =
+tours.find(t => t.id === tourId);
+
+const slug =
+createSafeSlug(
+tour?.slug || tour?.title || "tour"
+);
+
+const uploaded =
+await uploadGalleryImage(
+file,
+slug
+);
+
+if (!uploaded) return;
+
+imagePath = uploaded.path;
+imageUrl = uploaded.url;
+
+if (
+existing?.image_path &&
+existing.image_path !== imagePath
+) {
+
+await deleteStorageFile(
+existing.image_path
+);
+
+}
+
+}
+
+if (!imageUrl) {
+
+showMessage(
+"Please select a gallery photo."
+);
+
+return;
+
+}
+
+const payload = {
+tour_id: tourId,
+title,
+caption,
+image_path: imagePath,
+image_url: imageUrl,
+sort_order: sortOrder,
+updated_at: new Date().toISOString()
+};
+
+let result;
+
+if (id) {
+
+result = await supabase
+.from("tour_gallery")
+.update(payload)
+.eq("id", id);
+
+} else {
+
+result = await supabase
+.from("tour_gallery")
+.insert(payload);
+
+}
+
+if (result.error) {
+
+showMessage(result.error.message);
+return;
+
+}
+
+closeModal("galleryModal");
+
+showMessage("Gallery photo saved.");
+
+await loadGallery();
+
+}
+
+async function deleteGallery(id) {
+
+if (
+!confirm(
+"Delete this gallery photo?"
+)
+) return;
+
+const { data, error } = await supabase
+.from("tour_gallery")
+.select("image_path")
+.eq("id", id)
+.single();
+
+if (error) {
+
+showMessage(error.message);
+return;
+
+}
+
+const result = await supabase
+.from("tour_gallery")
+.delete()
+.eq("id", id);
+
+if (result.error) {
+
+showMessage(result.error.message);
+return;
+
+}
+
+if (data?.image_path) {
+
+await deleteStorageFile(
+data.image_path
+);
+
+}
+
+showMessage("Gallery photo deleted.");
+
+await loadGallery();
+
+}
+
+/* =========================================
+DESTINATION LOCATIONS
+========================================= */
+
+async function loadLocations() {
+
+const grid =
+document.getElementById("locationsAdminGrid");
+
+const { data, error } = await supabase
+.from("destination_locations")
+.select(`
+*,
+destinations (
+id,
+name,
+slug
+)
+`)
+.order("location_number", {
+ascending: true
+});
+
+if (error) {
+
+grid.innerHTML =
+`
+Could not load locations.
+
+`;
+
+console.error(error);
+return;
+
+}
+
+if (!data?.length) {
+
+grid.innerHTML =
+`
+No destination locations added yet.
+
+`;
+
+return;
+
+}
+
+grid.innerHTML =
+data.map(location => `
+
+
+
+${
+location.image_url
+?
+` src="${escapeAttribute(location.image_url)}"
+alt="${escapeAttribute(location.name)}"
+>`
+:
+`
+
+No image
+`
+}
+
+
+
+
+${
+String(
+location.location_number
+).padStart(2, "0")
+}
+•
+${escapeHTML(
+location.destinations?.name || ""
+)}
+
+
+
+${escapeHTML(location.name)}
+
+
+
+${escapeHTML(
+location.description || ""
+)}
+
+
+
+
+
+class="adminBtn secondary small"
+onclick="window.editLocation(
+'${location.id}'
+)"
+>
+Edit
+
+
+class="adminBtn danger small"
+onclick="window.deleteLocation(
+'${location.id}'
+)"
+>
+Delete
+
+
+
+
+
+
+
+
+`).join("");
+
+}
+
+function populateLocationDestinations(
+selectedId = ""
+) {
+
+const select =
 document.getElementById(
-"locationId"
-).value.trim();
+"locationDestination"
+);
+
+select.innerHTML =
+destinations.map(destination => `
+
+value="${destination.id}"
+${destination.id === selectedId
+? "selected"
+: ""}
+>
+${escapeHTML(destination.name)}
+
+
+`).join("");
+
+}
+
+function openLocationAdd() {
+
+currentLocationId = null;
+
+document.getElementById("locationForm").reset();
+
+document.getElementById("locationId").value = "";
+
+document.getElementById("locationModalTitle").textContent =
+"Add Destination Location";
+
+document.getElementById("locationCurrentImage").innerHTML =
+"";
+
+populateLocationDestinations();
+
+document
+.getElementById("locationModal")
+.classList.add("show");
+
+}
+
+async function editLocation(id) {
+
+const { data, error } = await supabase
+.from("destination_locations")
+.select("*")
+.eq("id", id)
+.single();
+
+if (error) {
+
+showMessage(error.message);
+return;
+
+}
+
+currentLocationId = id;
+
+document.getElementById("locationId").value =
+id;
+
+populateLocationDestinations(
+data.destination_id
+);
+
+document.getElementById("locationNumber").value =
+data.location_number;
+
+document.getElementById("locationName").value =
+data.name || "";
+
+document.getElementById("locationDescription").value =
+data.description || "";
+
+document.getElementById("locationModalTitle").textContent =
+"Edit Destination Location";
+
+document.getElementById("locationCurrentImage").innerHTML =
+data.image_url
+?
+`
+
+Current photo:
+
+
+
+
+`
+:
+"";
+
+document
+.getElementById("locationModal")
+.classList.add("show");
+
+}
+
+async function saveLocation(event) {
+
+event.preventDefault();
+
+const id =
+document.getElementById("locationId").value;
 
 const destinationId =
 document.getElementById(
-"locationDestinationId"
+"locationDestination"
 ).value;
 
 const locationNumber =
@@ -1589,1132 +1629,323 @@ document.getElementById(
 "locationDescription"
 ).value.trim();
 
-const sortOrder =
-Number(
-document.getElementById(
-"locationSortOrder"
-).value
-) || locationNumber;
-
 const file =
 document.getElementById(
 "locationImage"
-).files?.[0] || null;
+).files[0];
 
-const button =
-document.querySelector(
-"#locationForm .saveBtn"
-);
+let existing = null;
 
-if (
-!destinationId ||
-!locationNumber ||
-!name
-) {
+if (id) {
 
-alert(
-"Destination, location number and name are required."
-);
+const result = await supabase
+.from("destination_locations")
+.select("*")
+.eq("id", id)
+.single();
 
-return;
+existing = result.data;
+
 }
 
-button.disabled = true;
-button.textContent =
-"Saving...";
+let imagePath =
+existing?.image_path || null;
 
-try {
-
-let imagePath = null;
-let imageUrl = null;
+let imageUrl =
+existing?.image_url || null;
 
 if (file) {
 
+const destination =
+destinations.find(
+d => d.id === destinationId
+);
+
+const slug =
+createSafeSlug(
+destination?.slug ||
+destination?.name ||
+"destination"
+);
+
 const uploaded =
-await uploadManagedImage(
+await uploadLocationImage(
 file,
-"location",
-destinationId,
+slug,
 locationNumber
 );
 
-imagePath =
-uploaded.path;
+if (!uploaded) return;
 
-imageUrl =
-uploaded.url;
+imagePath = uploaded.path;
+imageUrl = uploaded.url;
+
+if (
+existing?.image_path &&
+existing.image_path !== imagePath
+) {
+
+await deleteStorageFile(
+existing.image_path
+);
+
+}
+
 }
 
 const payload = {
-
-destination_id:
-destinationId,
-
-location_number:
-locationNumber,
-
+destination_id: destinationId,
+location_number: locationNumber,
 name,
-
 description,
-
-sort_order:
-sortOrder
-
+image_path: imagePath,
+image_url: imageUrl,
+sort_order: locationNumber,
+updated_at: new Date().toISOString()
 };
-
-if (imagePath && imageUrl) {
-
-payload.image_path =
-imagePath;
-
-payload.image_url =
-imageUrl;
-}
 
 let result;
 
 if (id) {
 
-result =
-await supabase
-.from(
-"destination_locations"
-)
+result = await supabase
+.from("destination_locations")
 .update(payload)
-.eq(
-"id",
-id
-);
+.eq("id", id);
 
 } else {
 
-result =
-await supabase
-.from(
-"destination_locations"
-)
+result = await supabase
+.from("destination_locations")
 .insert(payload);
+
 }
 
 if (result.error) {
-throw result.error;
-}
 
-showMessage(
-id
-? "Location updated successfully."
-: "Location added successfully."
-);
-
-closeLocationModal();
-
-await loadLocations(
-destinationId
-);
-
-} catch (error) {
-
-console.error(
-"Save location error:",
-error
-);
-
-alert(
-"Location save failed:\n\n" +
-error.message
-);
-
-} finally {
-
-button.disabled = false;
-button.textContent =
-"Save Location";
-}
-}
-
-/* =========================================================
-DELETE LOCATION
-========================================================= */
-
-async function deleteLocation(
-id,
-imagePath,
-destinationId
-) {
-
-if (!id) {
+showMessage(result.error.message);
 return;
-}
-
-const confirmed =
-confirm(
-"Delete this location and its photo?"
-);
-
-if (!confirmed) {
-return;
-}
-
-try {
-
-const {
-error
-} = await supabase
-.from(
-"destination_locations"
-)
-.delete()
-.eq(
-"id",
-id
-);
-
-if (error) {
-throw error;
-}
-
-if (imagePath) {
-
-await supabase
-.storage
-.from("site-images")
-.remove([
-imagePath
-]);
 
 }
 
-showMessage(
-"Location deleted successfully."
-);
+closeModal("locationModal");
 
-await loadLocations(
-destinationId
-);
+showMessage("Destination location saved.");
 
-} catch (error) {
-
-console.error(
-"Delete location error:",
-error
-);
-
-alert(
-"Location delete failed:\n\n" +
-error.message
-);
-}
-}
-
-/* =========================================================
-TOUR GALLERY LOADING
-========================================================= */
-
-async function loadTourGallery(
-tourId
-) {
-
-const container =
-document.getElementById(
-"tourGalleryList"
-);
-
-if (!container) {
-return;
-}
-
-if (!tourId) {
-
-container.innerHTML = `
-
-Select a tour to manage its gallery.
-
-`;
-
-return;
-}
-
-container.innerHTML =
-"
-Loading gallery...
-
-";
-
-try {
-
-const {
-data,
-error
-} = await supabase
-.from("tour_gallery")
-.select("*")
-.eq(
-"tour_id",
-tourId
-)
-.order(
-"sort_order",
-{
-ascending:true
-}
-);
-
-if (error) {
-throw error;
-}
-
-if (!data?.length) {
-
-container.innerHTML = `
-
-No gallery photos yet.
-
-
-
-Click "Add Photo" to upload the first photo.
-
-`;
-
-return;
-}
-
-container.innerHTML = "";
-
-data.forEach(
-photo => {
-
-container.appendChild(
-createGalleryCard(
-photo
-)
-);
+await loadLocations();
 
 }
-);
 
-} catch (error) {
-
-console.error(
-"Gallery loading error:",
-error
-);
-
-container.innerHTML = `
-
-Failed to load gallery.
-
-
-
-${escapeHTML(error.message)}
-
-`;
-}
-}
-
-/* =========================================================
-GALLERY CARD
-========================================================= */
-
-function createGalleryCard(
-photo
-) {
-
-const card =
-document.createElement(
-"article"
-);
-
-card.className =
-"galleryAdminCard";
-
-card.innerHTML = `
-
-src="${escapeAttribute(photo.image_url)}"
-alt="${escapeAttribute(
-photo.title || "Tour Gallery"
-)}"
->
-
-
-
-
-${escapeHTML(
-photo.title ||
-"Tour Photo"
-)}
-
-
-
-Sort Order:
-${escapeHTML(
-photo.sort_order ?? 0
-)}
-
-
-
-class="galleryDeleteBtn"
-data-gallery-id="${escapeAttribute(
-photo.id
-)}"
-data-image-path="${escapeAttribute(
-photo.image_path || ""
-)}"
-data-tour-id="${escapeAttribute(
-photo.tour_id
-)}"
->
-Delete Photo
-
-
-
-`;
-
-return card;
-}
-
-/* =========================================================
-GALLERY BUTTON
-========================================================= */
-
-function updateGalleryButton() {
-
-const select =
-document.getElementById(
-"galleryTourSelect"
-);
-
-const button =
-document.getElementById(
-"addGalleryPhotoBtn"
-);
-
-if (!select || !button) {
-return;
-}
-
-button.disabled =
-!select.value;
-}
-
-/* =========================================================
-OPEN GALLERY MODAL
-========================================================= */
-
-function openGalleryModal() {
-
-const select =
-document.getElementById(
-"galleryTourSelect"
-);
-
-if (!select?.value) {
-
-alert(
-"Please select a tour first."
-);
-
-return;
-}
-
-document.getElementById(
-"galleryModal"
-).style.display =
-"block";
-
-document.getElementById(
-"galleryTourId"
-).value =
-select.value;
-
-document.getElementById(
-"galleryTitle"
-).value = "";
-
-document.getElementById(
-"galleryImage"
-).value = "";
-
-document.getElementById(
-"gallerySortOrder"
-).value = "1";
-}
-
-/* =========================================================
-SAVE GALLERY PHOTO
-========================================================= */
-
-async function saveGalleryPhoto(
-event
-) {
-
-event.preventDefault();
-
-const tourId =
-document.getElementById(
-"galleryTourId"
-).value;
-
-const title =
-document.getElementById(
-"galleryTitle"
-).value.trim();
-
-const sortOrder =
-Number(
-document.getElementById(
-"gallerySortOrder"
-).value
-) || 0;
-
-const file =
-document.getElementById(
-"galleryImage"
-).files?.[0] || null;
-
-const button =
-document.querySelector(
-"#galleryForm .saveBtn"
-);
-
-if (!tourId || !file) {
-
-alert(
-"Please select a tour and photo."
-);
-
-return;
-}
-
-button.disabled = true;
-button.textContent =
-"Uploading...";
-
-try {
-
-const uploaded =
-await uploadManagedImage(
-file,
-"gallery",
-tourId,
-Date.now()
-);
-
-const {
-error
-} = await supabase
-.from("tour_gallery")
-.insert({
-
-tour_id:
-tourId,
-
-title:
-title || null,
-
-image_path:
-uploaded.path,
-
-image_url:
-uploaded.url,
-
-sort_order:
-sortOrder
-
-});
-
-if (error) {
-throw error;
-}
-
-showMessage(
-"Tour gallery photo uploaded successfully."
-);
-
-closeGalleryModal();
-
-await loadTourGallery(
-tourId
-);
-
-} catch (error) {
-
-console.error(
-"Gallery upload error:",
-error
-);
-
-alert(
-"Gallery upload failed:\n\n" +
-error.message
-);
-
-} finally {
-
-button.disabled = false;
-button.textContent =
-"Upload Photo";
-}
-}
-
-/* =========================================================
-DELETE GALLERY PHOTO
-========================================================= */
-
-async function deleteGalleryPhoto(
-id,
-imagePath,
-tourId
-) {
-
-if (!id) {
-return;
-}
-
-const confirmed =
-confirm(
-"Delete this gallery photo?"
-);
-
-if (!confirmed) {
-return;
-}
-
-try {
-
-const {
-error
-} = await supabase
-.from("tour_gallery")
-.delete()
-.eq(
-"id",
-id
-);
-
-if (error) {
-throw error;
-}
-
-if (imagePath) {
-
-await supabase
-.storage
-.from("site-images")
-.remove([
-imagePath
-]);
-
-}
-
-showMessage(
-"Gallery photo deleted successfully."
-);
-
-await loadTourGallery(
-tourId
-);
-
-} catch (error) {
-
-console.error(
-"Gallery delete error:",
-error
-);
-
-alert(
-"Gallery delete failed:\n\n" +
-error.message
-);
-}
-}
-
-/* =========================================================
-MANAGED IMAGE UPLOAD
-========================================================= */
-
-async function uploadManagedImage(
-file,
-type,
-parentId,
-number
-) {
-
-validateImageFile(file);
-
-const extension =
-getSafeExtension(
-file.name
-);
-
-const random =
-Math.random()
-.toString(36)
-.slice(2,8);
-
-let folder;
-
-if (type === "location") {
-
-folder =
-`destinations/${parentId}/locations/${String(number).padStart(2,"0")}`;
-
-} else {
-
-folder =
-`tours/${parentId}/gallery`;
-}
-
-const fileName =
-`${Date.now()}-${random}.${extension}`;
-
-const filePath =
-`${folder}/${fileName}`;
-
-const {
-error
-} = await supabase
-.storage
-.from("site-images")
-.upload(
-filePath,
-file,
-{
-cacheControl:"3600",
-upsert:false,
-contentType:file.type
-}
-);
-
-if (error) {
-
-throw new Error(
-"Image upload failed: " +
-error.message
-);
-}
-
-const {
-data
-} = supabase
-.storage
-.from("site-images")
-.getPublicUrl(
-filePath
-);
-
-if (!data?.publicUrl) {
-
-throw new Error(
-"Could not create public image URL."
-);
-}
-
-return {
-path:filePath,
-url:data.publicUrl
-};
-}
-
-/* =========================================================
-IMAGE VALIDATION
-========================================================= */
-
-function validateImageFile(
-file
-) {
-
-const allowedTypes = [
-"image/jpeg",
-"image/png",
-"image/webp",
-"image/gif"
-];
+async function deleteLocation(id) {
 
 if (
-!allowedTypes.includes(
-file.type
+!confirm(
+"Delete this destination location?"
 )
-) {
+) return;
 
-throw new Error(
-"Please upload JPG, PNG, WEBP or GIF images only."
-);
-}
-
-if (
-file.size >
-5 * 1024 * 1024
-) {
-
-throw new Error(
-"Image must be smaller than 5 MB."
-);
-}
-}
-
-/* =========================================================
-ADD CONTENT MODAL
-========================================================= */
-
-function openAddModal(
-type
-) {
-
-const modal =
-document.getElementById(
-"contentModal"
-);
-
-modal.style.display =
-"block";
-
-document.getElementById(
-"modalTitle"
-).textContent =
-type === "destination"
-? "Add Destination"
-: "Add Tour";
-
-document.getElementById(
-"contentId"
-).value = "";
-
-document.getElementById(
-"contentType"
-).value =
-type;
-
-document.getElementById(
-"contentName"
-).value = "";
-
-document.getElementById(
-"contentSlug"
-).value = "";
-
-document.getElementById(
-"contentDescription"
-).value = "";
-
-document.getElementById(
-"contentPageUrl"
-).value = "";
-
-document.getElementById(
-"contentSortOrder"
-).value = "1";
-
-document.getElementById(
-"contentImage"
-).value = "";
-
-document.getElementById(
-"currentImage"
-).innerHTML =
-"
-No image selected.
-
-";
-}
-
-/* =========================================================
-EDIT CONTENT MODAL
-========================================================= */
-
-async function openEditModal(
-id,
-type
-) {
-
-try {
-
-const table =
-type === "destination"
-? "destinations"
-: "tours";
-
-const {
-data,
-error
-} = await supabase
-.from(table)
-.select("*")
+const { data, error } = await supabase
+.from("destination_locations")
+.select("image_path")
 .eq("id", id)
 .single();
 
 if (error) {
-throw error;
+
+showMessage(error.message);
+return;
+
 }
 
-document.getElementById(
-"contentModal"
-).style.display =
-"block";
+const result = await supabase
+.from("destination_locations")
+.delete()
+.eq("id", id);
 
-document.getElementById(
-"modalTitle"
-).textContent =
-type === "destination"
-? "Edit Destination"
-: "Edit Tour";
+if (result.error) {
 
-document.getElementById(
-"contentId"
-).value =
-data.id;
+showMessage(result.error.message);
+return;
 
-document.getElementById(
-"contentType"
-).value =
-type;
+}
 
-document.getElementById(
-"contentName"
-).value =
-type === "destination"
-? data.name || ""
-: data.title || "";
+if (data?.image_path) {
 
-document.getElementById(
-"contentSlug"
-).value =
-data.slug || "";
-
-document.getElementById(
-"contentDescription"
-).value =
-data.description || "";
-
-document.getElementById(
-"contentPageUrl"
-).value =
-data.page_url || "";
-
-document.getElementById(
-"contentSortOrder"
-).value =
-data.sort_order ?? 0;
-
-document.getElementById(
-"contentImage"
-).value = "";
-
-const currentImage =
-document.getElementById(
-"currentImage"
+await deleteStorageFile(
+data.image_path
 );
 
-if (data.image_url) {
+}
 
-currentImage.innerHTML = `
-src="${escapeAttribute(data.image_url)}"
-alt="Current image"
->
+showMessage("Location deleted.");
+
+await loadLocations();
+
+}
+
+/* =========================================
+REVIEWS
+========================================= */
+
+async function loadReviews() {
+
+const grid =
+document.getElementById("reviewsAdminGrid");
+
+if (!grid) return;
+
+const { data, error } = await supabase
+.from("reviews")
+.select(`
+id,
+name,
+country,
+rating,
+review,
+photo_path
+`)
+.order("id", {
+ascending: false
+});
+
+if (error) {
+
+grid.innerHTML =
+`
+Could not load reviews.
+
 `;
 
-} else {
-
-currentImage.innerHTML =
-"
-No image uploaded.
-
-";
-}
-
-} catch (error) {
-
 console.error(error);
+return;
 
-alert(
-"Failed to load content:\n\n" +
-error.message
-);
-}
 }
 
-/* =========================================================
-SAVE CONTENT
-========================================================= */
+if (!data?.length) {
 
-async function saveContent(
-event
-) {
+grid.innerHTML =
+`
+No reviews yet.
 
-event.preventDefault();
+`;
 
-const id =
-document.getElementById(
-"contentId"
-).value.trim();
+return;
 
-const type =
-document.getElementById(
-"contentType"
-).value;
+}
 
-const name =
-document.getElementById(
-"contentName"
-).value.trim();
+grid.innerHTML =
+data.map(review => {
 
-const slug =
-document.getElementById(
-"contentSlug"
-).value.trim();
+let photo = "";
 
-const description =
-document.getElementById(
-"contentDescription"
-).value.trim();
+if (review.photo_path) {
 
-const pageUrl =
-document.getElementById(
-"contentPageUrl"
-).value.trim();
+photo =
+supabase
+.storage
+.from("review-photos")
+.getPublicUrl(
+review.photo_path
+)
+.data
+.publicUrl;
 
-const sortOrder =
-Number(
-document.getElementById(
-"contentSortOrder"
-).value
-) || 0;
+}
 
-const file =
-document.getElementById(
-"contentImage"
-).files?.[0] || null;
+return `
 
-const saveBtn =
-document.querySelector(
-"#contentForm .saveBtn"
-);
 
-if (!name || !slug) {
 
-alert(
-"Name and slug are required."
+${
+photo
+?
+` src="${escapeAttribute(photo)}"
+alt="${escapeAttribute(review.name)}"
+>`
+:
+""
+}
+
+
+
+
+${escapeHTML(review.name)}
+
+
+
+${escapeHTML(review.country || "")}
+
+
+
+${"★".repeat(
+Math.max(
+0,
+Math.min(
+5,
+Number(review.rating) || 0
+)
+)
+)}
+
+
+
+${escapeHTML(review.review || "")}
+
+
+
+
+
+class="adminBtn danger small"
+onclick="window.deleteReview(
+'${review.id}'
+)"
+>
+Delete
+
+
+
+
+
+
+
+
+`;
+
+}).join("");
+
+}
+
+async function deleteReview(id) {
+
+if (
+!confirm("Delete this review?")
+) return;
+
+const result =
+await supabase
+.from("reviews")
+.delete()
+.eq("id", id);
+
+if (result.error) {
+
+showMessage(
+result.error.message
 );
 
 return;
+
 }
 
-saveBtn.disabled = true;
-saveBtn.textContent =
-"Saving...";
+showMessage("Review deleted.");
 
-try {
+await loadReviews();
 
-let imageUrl = null;
-
-if (file) {
-
-imageUrl =
-await uploadImage(
-file,
-type,
-slug
-);
 }
 
-const table =
-type === "destination"
-? "destinations"
-: "tours";
-
-const dataToSave =
-type === "destination"
-? {
-name,
-slug,
-description,
-page_url:
-pageUrl || null,
-sort_order:
-sortOrder
-}
-: {
-title:name,
-slug,
-description,
-page_url:
-pageUrl || null,
-sort_order:
-sortOrder
-};
-
-if (imageUrl) {
-
-dataToSave.image_url =
-imageUrl;
-}
-
-if (id) {
-
-const {
-error
-} = await supabase
-.from(table)
-.update(dataToSave)
-.eq(
-"id",
-id
-);
-
-if (error) {
-throw error;
-}
-
-showMessage(
-"Content updated successfully."
-);
-
-} else {
-
-const {
-error
-} = await supabase
-.from(table)
-.insert(dataToSave);
-
-if (error) {
-throw error;
-}
-
-showMessage(
-"Content added successfully."
-);
-}
-
-closeModal();
-
-await Promise.all([
-loadDestinations(),
-loadTours()
-]);
-
-} catch (error) {
-
-console.error(
-"Save error:",
-error
-);
-
-alert(
-"Save failed:\n\n" +
-error.message
-);
-
-} finally {
-
-saveBtn.disabled = false;
-saveBtn.textContent =
-"Save Changes";
-}
-}
-
-/* =========================================================
-EXISTING MAIN IMAGE UPLOAD
-========================================================= */
+/* =========================================
+STORAGE UPLOADS
+========================================= */
 
 async function uploadImage(
 file,
@@ -2722,576 +1953,293 @@ type,
 slug
 ) {
 
-validateImageFile(file);
+if (!validateImage(file)) {
+return null;
+}
 
 const extension =
-getSafeExtension(
-file.name
-);
+getSafeExtension(file.name);
 
-const safeSlug =
-createSafeSlug(
-slug
-);
-
-const fileName =
-`${safeSlug || type}-${Date.now()}-${Math.random()
-.toString(36)
-.slice(2,8)}.${extension}`;
+const filename =
+`${Date.now()}-${crypto.randomUUID()}.${extension}`;
 
 const folder =
 type === "destination"
-? `destinations/${safeSlug}`
-: `tours/${safeSlug}`;
+? "destinations"
+: "tours";
 
-const filePath =
-`${folder}/${fileName}`;
+const path =
+`${folder}/${slug}/${filename}`;
 
-const {
-error
-} = await supabase
+const { error } =
+await supabase
 .storage
 .from("site-images")
 .upload(
-filePath,
+path,
 file,
 {
-cacheControl:"3600",
-upsert:false,
-contentType:file.type
+cacheControl: "3600",
+upsert: false
 }
 );
 
 if (error) {
 
-throw new Error(
-"Image upload failed: " +
-error.message
-);
+showMessage(error.message);
+return null;
+
 }
 
-const {
-data
-} = supabase
+const publicUrl =
+supabase
 .storage
 .from("site-images")
-.getPublicUrl(
-filePath
-);
+.getPublicUrl(path)
+.data
+.publicUrl;
 
-return data?.publicUrl || null;
+return {
+path,
+url: publicUrl
+};
+
 }
 
-/* =========================================================
-DELETE CONTENT
-========================================================= */
+async function uploadGalleryImage(
+file,
+slug
+) {
+
+if (!validateImage(file)) {
+return null;
+}
+
+const extension =
+getSafeExtension(file.name);
+
+const filename =
+`${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+const path =
+`gallery/${slug}/${filename}`;
+
+const { error } =
+await supabase
+.storage
+.from("site-images")
+.upload(
+path,
+file,
+{
+cacheControl: "3600",
+upsert: false
+}
+);
+
+if (error) {
+
+showMessage(error.message);
+return null;
+
+}
+
+const publicUrl =
+supabase
+.storage
+.from("site-images")
+.getPublicUrl(path)
+.data
+.publicUrl;
+
+return {
+path,
+url: publicUrl
+};
+
+}
+
+async function uploadLocationImage(
+file,
+slug,
+number
+) {
+
+if (!validateImage(file)) {
+return null;
+}
+
+const extension =
+getSafeExtension(file.name);
+
+const filename =
+`${String(number).padStart(2, "0")}-${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+const path =
+`locations/${slug}/${filename}`;
+
+const { error } =
+await supabase
+.storage
+.from("site-images")
+.upload(
+path,
+file,
+{
+cacheControl: "3600",
+upsert: false
+}
+);
+
+if (error) {
+
+showMessage(error.message);
+return null;
+
+}
+
+const publicUrl =
+supabase
+.storage
+.from("site-images")
+.getPublicUrl(path)
+.data
+.publicUrl;
+
+return {
+path,
+url: publicUrl
+};
+
+}
+
+async function deleteStorageFile(path) {
+
+if (!path) return;
+
+const { error } =
+await supabase
+.storage
+.from("site-images")
+.remove([path]);
+
+if (error) {
+console.warn(
+"Storage delete failed:",
+error
+);
+}
+
+}
+
+/* =========================================
+DELETE DESTINATION / TOUR
+========================================= */
 
 async function deleteContent(
 id,
 type
 ) {
 
-const confirmed =
-confirm(
-"Are you sure you want to delete this content?"
-);
+const label =
+type === "destination"
+? "destination"
+: "tour";
 
-if (!confirmed) {
-return;
-}
-
-try {
+if (
+!confirm(
+`Delete this ${label}?`
+)
+) return;
 
 const table =
 type === "destination"
 ? "destinations"
 : "tours";
 
-const {
-error
-} = await supabase
+const { data } =
+await supabase
+.from(table)
+.select("image_url")
+.eq("id", id)
+.single();
+
+const result =
+await supabase
 .from(table)
 .delete()
-.eq(
-"id",
-id
+.eq("id", id);
+
+if (result.error) {
+
+showMessage(
+result.error.message
 );
 
-if (error) {
-throw error;
+return;
+
 }
 
 showMessage(
-"Content deleted successfully."
+`${label} deleted.`
 );
 
-await Promise.all([
-loadDestinations(),
-loadTours()
-]);
-
-} catch (error) {
-
-console.error(
-"Delete error:",
-error
-);
-
-alert(
-"Delete failed:\n\n" +
-error.message
-);
-}
-}
-
-/* =========================================================
-CLOSE MODALS
-========================================================= */
-
-function closeModal() {
-
-const modal =
-document.getElementById(
-"contentModal"
-);
-
-if (modal) {
-modal.style.display =
-"none";
-}
-}
-
-function closeLocationModal() {
-
-const modal =
-document.getElementById(
-"locationModal"
-);
-
-if (modal) {
-modal.style.display =
-"none";
-}
-}
-
-function closeGalleryModal() {
-
-const modal =
-document.getElementById(
-"galleryModal"
-);
-
-if (modal) {
-modal.style.display =
-"none";
-}
-}
-
-/* =========================================================
-EVENTS
-========================================================= */
-
-function setupEvents() {
-
-document
-.getElementById(
-"closeModal"
-)
-?.addEventListener(
-"click",
-closeModal
-);
-
-document
-.getElementById(
-"closeLocationModal"
-)
-?.addEventListener(
-"click",
-closeLocationModal
-);
-
-document
-.getElementById(
-"closeGalleryModal"
-)
-?.addEventListener(
-"click",
-closeGalleryModal
-);
-
-document
-.getElementById(
-"contentForm"
-)
-?.addEventListener(
-"submit",
-saveContent
-);
-
-document
-.getElementById(
-"locationForm"
-)
-?.addEventListener(
-"submit",
-saveLocation
-);
-
-document
-.getElementById(
-"galleryForm"
-)
-?.addEventListener(
-"submit",
-saveGalleryPhoto
-);
-
-document
-.getElementById(
-"addDestinationBtn"
-)
-?.addEventListener(
-"click",
-() =>
-openAddModal(
-"destination"
-)
-);
-
-document
-.getElementById(
-"addTourBtn"
-)
-?.addEventListener(
-"click",
-() =>
-openAddModal(
-"tour"
-)
-);
-
-document
-.getElementById(
-"refreshReviewsBtn"
-)
-?.addEventListener(
-"click",
-loadReviews
-);
-
-document
-.getElementById(
-"logoutBtn"
-)
-?.addEventListener(
-"click",
-logout
-);
-
-document
-.getElementById(
-"locationDestinationSelect"
-)
-?.addEventListener(
-"change",
-event => {
-
-loadLocations(
-event.target.value
-);
-
-}
-);
-
-document
-.getElementById(
-"galleryTourSelect"
-)
-?.addEventListener(
-"change",
-event => {
-
-updateGalleryButton();
-
-loadTourGallery(
-event.target.value
-);
-
-}
-);
-
-document
-.getElementById(
-"addGalleryPhotoBtn"
-)
-?.addEventListener(
-"click",
-openGalleryModal
-);
-
-document.addEventListener(
-"click",
-event => {
-
-const edit =
-event.target.closest(
-".editBtn"
-);
-
-const del =
-event.target.closest(
-".deleteBtn"
-);
-
-const locationEdit =
-event.target.closest(
-".locationEdit"
-);
-
-const locationDelete =
-event.target.closest(
-".locationDelete"
-);
-
-const galleryDelete =
-event.target.closest(
-".galleryDeleteBtn"
-);
-
-if (edit) {
-
-openEditModal(
-edit.dataset.id,
-edit.dataset.type
-);
-
-return;
-}
-
-if (del) {
-
-deleteContent(
-del.dataset.id,
-del.dataset.type
-);
-
-return;
-}
-
-if (locationEdit) {
-
-openLocationModal(
-locationEdit.dataset.locationId,
-locationEdit.dataset.destinationId,
-locationEdit.dataset.locationNumber
-);
-
-return;
-}
-
-if (
-locationDelete &&
-!locationDelete.disabled
-) {
-
-deleteLocation(
-locationDelete.dataset.locationId,
-locationDelete.dataset.imagePath,
-document.getElementById(
-"locationDestinationSelect"
-).value
-);
-
-return;
-}
-
-if (galleryDelete) {
-
-deleteGalleryPhoto(
-galleryDelete.dataset.galleryId,
-galleryDelete.dataset.imagePath,
-galleryDelete.dataset.tourId
-);
-
+if (type === "destination") {
+await loadDestinations();
+await loadLocations();
+} else {
+await loadTours();
+await loadGallery();
 }
 
 }
-);
 
-window.addEventListener(
-"click",
-event => {
-
-const contentModal =
-document.getElementById(
-"contentModal"
-);
-
-const locationModal =
-document.getElementById(
-"locationModal"
-);
-
-const galleryModal =
-document.getElementById(
-"galleryModal"
-);
-
-if (
-event.target ===
-contentModal
-) {
-
-closeModal();
-}
-
-if (
-event.target ===
-locationModal
-) {
-
-closeLocationModal();
-}
-
-if (
-event.target ===
-galleryModal
-) {
-
-closeGalleryModal();
-}
-
-}
-);
-
-}
-
-/* =========================================================
-LOGOUT
-========================================================= */
-
-async function logout() {
-
-try {
-
-await supabase.auth.signOut();
-
-} finally {
-
-window.location.replace(
-"admin.html"
-);
-}
-}
-
-/* =========================================================
-MESSAGE
-========================================================= */
-
-function showMessage(
-text
-) {
-
-const message =
-document.getElementById(
-"message"
-);
-
-if (!message) {
-return;
-}
-
-message.textContent =
-text;
-
-message.style.display =
-"block";
-
-setTimeout(
-() => {
-
-message.style.display =
-"none";
-
-},
-3500
-);
-}
-
-/* =========================================================
-ERROR SCREEN
-========================================================= */
-
-function showError(
-message
-) {
-
-document.body.innerHTML = `
-
-
-
-
-
-
-Admin Panel Error
-
-
-
-${escapeHTML(message)}
-
-
-
-onclick="window.location.href='admin.html'"
-style="
-border:0;
-background:#176b4d;
-color:white;
-padding:12px 20px;
-border-radius:7px;
-cursor:pointer;
-"
->
-Back to Login
-
-
-
-
-
-`;
-}
-
-/* =========================================================
+/* =========================================
 HELPERS
-========================================================= */
+========================================= */
 
-function createSafeSlug(
-value
-) {
+function validateImage(file) {
 
-return String(value)
-.toLowerCase()
-.normalize("NFKD")
-.replace(
-/[^a-z0-9]+/g,
-"-"
-)
-.replace(
-/^-+|-+$/g,
-""
-)
-.slice(
-0,
-80
+if (!file) return false;
+
+const allowed = [
+"image/jpeg",
+"image/png",
+"image/webp",
+"image/gif"
+];
+
+if (!allowed.includes(file.type)) {
+
+showMessage(
+"Only JPG, PNG, WEBP and GIF images are allowed."
 );
+
+return false;
+
 }
 
-function getSafeExtension(
-filename
+if (
+file.size >
+5 * 1024 * 1024
 ) {
 
-const ext =
-String(filename)
+showMessage(
+"Maximum image size is 5 MB."
+);
+
+return false;
+
+}
+
+return true;
+
+}
+
+function getSafeExtension(filename) {
+
+const parts =
+filename
 .split(".")
 .pop()
 .toLowerCase();
@@ -3302,42 +2250,122 @@ return [
 "png",
 "webp",
 "gif"
-].includes(ext)
-? ext
+].includes(parts)
+? parts
 : "jpg";
+
 }
 
-function escapeHTML(
-value
-) {
+function createSafeSlug(value) {
 
-return String(
-value ?? ""
-)
-.replace(
-/&/g,
-"&"
-)
-.replace(
-/ "<"
-)
-.replace(
-/>/g,
-">"
-)
-.replace(
-/"/g,
-"""
-)
-.replace(
-/'/g,
-"'"
-);
+return String(value || "")
+.toLowerCase()
+.trim()
+.replace(/[^a-z0-9]+/g, "-")
+.replace(/^-+|-+$/g, "");
+
 }
 
-function escapeAttribute(
-value
-) {
+function escapeHTML(value) {
+
+return String(value ?? "")
+.replace(/&/g, "&")
+.replace(/ .replace(/>/g, ">")
+.replace(/"/g, """)
+.replace(/'/g, "'");
+
+}
+
+function escapeAttribute(value) {
 
 return escapeHTML(value);
+
 }
+
+function showMessage(message) {
+
+const box =
+document.getElementById(
+"adminMessage"
+);
+
+if (!box) return;
+
+box.innerHTML =
+`
+
+${escapeHTML(message)}
+`;
+
+setTimeout(() => {
+
+box.innerHTML = "";
+
+}, 4000);
+
+}
+
+function closeModal(id) {
+
+document
+.getElementById(id)
+.classList.remove("show");
+
+}
+
+/* =========================================
+QUICK MANAGERS
+========================================= */
+
+function manageTourGallery(id) {
+
+openGalleryAdd();
+
+document.getElementById("galleryTour").value =
+id;
+
+}
+
+function manageDestinationLocations(id) {
+
+openLocationAdd();
+
+document.getElementById(
+"locationDestination"
+).value = id;
+
+}
+
+/* =========================================
+LOGOUT
+========================================= */
+
+async function logout() {
+
+await supabase.auth.signOut();
+
+window.location.href =
+"admin.html";
+
+}
+
+/* =========================================
+GLOBAL FUNCTIONS
+========================================= */
+
+window.editContent = editContent;
+window.deleteContent = deleteContent;
+
+window.editGallery = editGallery;
+window.deleteGallery = deleteGallery;
+
+window.editLocation = editLocation;
+window.deleteLocation = deleteLocation;
+
+window.deleteReview = deleteReview;
+
+window.manageTourGallery =
+manageTourGallery;
+
+window.manageDestinationLocations =
+manageDestinationLocations;
