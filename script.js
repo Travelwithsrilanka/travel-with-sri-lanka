@@ -13,26 +13,29 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
 
-const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
+const supabase =
+  createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
     }
-  }
-);
+  );
 
 
 /* =========================================================
    STATE
 ========================================================= */
 
-let currentRating = 0;
+let currentRating = 5;
 
 let currentReviewPhotoFile = null;
+
+let currentReviewPhotoObjectUrl = null;
 
 let currentPublicGalleryTourId = null;
 
@@ -44,6 +47,10 @@ let currentPublicGalleryTourId = null;
 document.addEventListener(
   "DOMContentLoaded",
   () => {
+
+    document.documentElement.classList.add(
+      "js-ready"
+    );
 
     initMobileMenu();
 
@@ -78,17 +85,20 @@ document.addEventListener(
 function initMobileMenu() {
 
   const menuButton =
-    document.querySelector(
-      ".menuToggle"
+    document.getElementById(
+      "menuBtn"
     );
 
   const nav =
-    document.querySelector(
-      ".mainNav"
+    document.getElementById(
+      "mainNav"
     );
 
 
-  if (!menuButton || !nav) {
+  if (
+    !menuButton ||
+    !nav
+  ) {
     return;
   }
 
@@ -97,37 +107,94 @@ function initMobileMenu() {
     "click",
     () => {
 
-      nav.classList.toggle(
-        "open"
-      );
+      const isOpen =
+        nav.classList.toggle(
+          "open"
+        );
 
       menuButton.classList.toggle(
-        "active"
+        "open",
+        isOpen
+      );
+
+      menuButton.setAttribute(
+        "aria-expanded",
+        String(isOpen)
+      );
+
+      document.body.classList.toggle(
+        "menuOpen",
+        isOpen
       );
 
     }
   );
 
 
-  nav.querySelectorAll("a").forEach(
-    (link) => {
+  nav
+    .querySelectorAll("a")
+    .forEach(
+      (link) => {
 
-      link.addEventListener(
-        "click",
-        () => {
+        link.addEventListener(
+          "click",
+          () => {
 
-          nav.classList.remove(
-            "open"
-          );
+            closeMobileMenu();
 
-          menuButton.classList.remove(
-            "active"
-          );
+          }
+        );
 
-        }
-      );
+      }
+    );
+
+
+  window.addEventListener(
+    "resize",
+    () => {
+
+      if (
+        window.innerWidth > 850
+      ) {
+
+        closeMobileMenu();
+
+      }
 
     }
+  );
+
+}
+
+
+function closeMobileMenu() {
+
+  const menuButton =
+    document.getElementById(
+      "menuBtn"
+    );
+
+  const nav =
+    document.getElementById(
+      "mainNav"
+    );
+
+
+  nav?.classList.remove(
+    "open"
+  );
+
+  menuButton?.classList.remove(
+    "open"
+  );
+
+  menuButton?.setAttribute(
+    "aria-expanded",
+    "false"
+  );
+
+  document.body.classList.remove(
+    "menuOpen"
   );
 
 }
@@ -140,6 +207,9 @@ function initMobileMenu() {
 function initHeader() {
 
   const header =
+    document.getElementById(
+      "siteHeader"
+    ) ||
     document.querySelector(
       "header"
     );
@@ -152,21 +222,10 @@ function initHeader() {
 
   function updateHeader() {
 
-    if (
+    header.classList.toggle(
+      "scrolled",
       window.scrollY > 30
-    ) {
-
-      header.classList.add(
-        "scrolled"
-      );
-
-    } else {
-
-      header.classList.remove(
-        "scrolled"
-      );
-
-    }
+    );
 
   }
 
@@ -214,52 +273,42 @@ function initTripForm() {
 
 
       const name =
-        formData.get("name") ||
-        formData.get("fullName") ||
-        "";
+        String(
+          formData.get("name") ||
+          ""
+        ).trim();
 
 
-      const email =
-        formData.get("email") ||
-        "";
+      const country =
+        String(
+          formData.get("country") ||
+          ""
+        ).trim();
 
 
-      const destination =
-        formData.get("destination") ||
-        "";
+      const date =
+        String(
+          formData.get("date") ||
+          ""
+        ).trim();
 
 
-      const travelers =
-        formData.get("travelers") ||
-        formData.get("guests") ||
-        "";
+      const guests =
+        String(
+          formData.get("guests") ||
+          ""
+        ).trim();
 
 
-      const startDate =
-        formData.get("startDate") ||
-        formData.get("date") ||
-        "";
-
-
-      const duration =
-        formData.get("duration") ||
-        "";
-
-
-      const budget =
-        formData.get("budget") ||
-        "";
-
-
-      const interests =
-        formData.get("interests") ||
-        formData.get("message") ||
-        "";
+      const messageText =
+        String(
+          formData.get("message") ||
+          ""
+        ).trim();
 
 
       let message =
         "Hello Travel With Sri Lanka!%0A%0A";
-
 
       message +=
         "*Trip Planning Request*%0A%0A";
@@ -275,71 +324,43 @@ function initTripForm() {
       }
 
 
-      if (email) {
+      if (country) {
 
         message +=
-          "*Email:* " +
-          encodeURIComponent(email) +
+          "*Country:* " +
+          encodeURIComponent(country) +
           "%0A";
 
       }
 
 
-      if (destination) {
+      if (date) {
 
         message +=
-          "*Destination:* " +
-          encodeURIComponent(destination) +
+          "*Travel Date:* " +
+          encodeURIComponent(date) +
           "%0A";
 
       }
 
 
-      if (travelers) {
+      if (guests) {
 
         message +=
-          "*Travelers:* " +
-          encodeURIComponent(travelers) +
+          "*Guests:* " +
+          encodeURIComponent(guests) +
           "%0A";
 
       }
 
 
-      if (startDate) {
+      if (messageText) {
 
         message +=
-          "*Start Date:* " +
-          encodeURIComponent(startDate) +
-          "%0A";
-
-      }
-
-
-      if (duration) {
-
-        message +=
-          "*Duration:* " +
-          encodeURIComponent(duration) +
-          "%0A";
-
-      }
-
-
-      if (budget) {
-
-        message +=
-          "*Budget:* " +
-          encodeURIComponent(budget) +
-          "%0A";
-
-      }
-
-
-      if (interests) {
-
-        message +=
-          "*Interests / Requirements:*%0A" +
-          encodeURIComponent(interests) +
+          "%0A*Trip Details:*%0A" +
+          encodeURIComponent(
+            messageText
+          ) +
           "%0A";
 
       }
@@ -376,13 +397,18 @@ function initStarRating() {
 
   const stars =
     document.querySelectorAll(
-      "[data-rating]"
+      "#starRating [data-rating]"
     );
 
 
   if (!stars.length) {
     return;
   }
+
+
+  updateStarRating(
+    currentRating
+  );
 
 
   stars.forEach(
@@ -399,11 +425,17 @@ function initStarRating() {
 
 
           currentRating =
-            rating;
+            Math.min(
+              5,
+              Math.max(
+                1,
+                rating
+              )
+            );
 
 
           updateStarRating(
-            rating
+            currentRating
           );
 
         }
@@ -421,7 +453,8 @@ function initStarRating() {
 
 
           updateStarRating(
-            rating
+            rating,
+            true
           );
 
         }
@@ -432,7 +465,9 @@ function initStarRating() {
 
 
   const container =
-    stars[0].parentElement;
+    document.getElementById(
+      "starRating"
+    );
 
 
   container?.addEventListener(
@@ -454,40 +489,73 @@ function initStarRating() {
 ========================================================= */
 
 function updateStarRating(
-  rating
+  rating,
+  preview = false
 ) {
 
-  document
-    .querySelectorAll(
-      "[data-rating]"
-    )
-    .forEach(
-      (star) => {
-
-        const starRating =
-          Number(
-            star.dataset.rating
-          );
-
-
-        if (
-          starRating <= rating
-        ) {
-
-          star.classList.add(
-            "active"
-          );
-
-        } else {
-
-          star.classList.remove(
-            "active"
-          );
-
-        }
-
-      }
+  const stars =
+    document.querySelectorAll(
+      "#starRating [data-rating]"
     );
+
+
+  stars.forEach(
+    (star) => {
+
+      const value =
+        Number(
+          star.dataset.rating
+        );
+
+
+      star.classList.toggle(
+        "active",
+        value <= rating
+      );
+
+    }
+  );
+
+
+  const hiddenInput =
+    document.getElementById(
+      "reviewRating"
+    );
+
+
+  if (
+    hiddenInput &&
+    !preview
+  ) {
+
+    hiddenInput.value =
+      String(rating);
+
+  }
+
+
+  const label =
+    document.getElementById(
+      "ratingLabel"
+    );
+
+
+  if (label) {
+
+    const labels = {
+      1: "Poor",
+      2: "Fair",
+      3: "Good",
+      4: "Very Good",
+      5: "Excellent"
+    };
+
+
+    label.textContent =
+      labels[rating] ||
+      "Select a rating";
+
+  }
 
 }
 
@@ -506,7 +574,7 @@ function initReviewPhotoPreview() {
 
   const preview =
     document.getElementById(
-      "reviewPhotoPreview"
+      "photoPreview"
     );
 
 
@@ -523,18 +591,15 @@ function initReviewPhotoPreview() {
         input.files?.[0];
 
 
+      clearReviewPhotoPreview();
+
+
       currentReviewPhotoFile =
         file || null;
 
 
       if (!file) {
-
-        if (preview) {
-          preview.innerHTML = "";
-        }
-
         return;
-
       }
 
 
@@ -549,12 +614,8 @@ function initReviewPhotoPreview() {
         currentReviewPhotoFile =
           null;
 
-        if (preview) {
-          preview.innerHTML = "";
-        }
-
         alert(
-          "Please select an image file."
+          "Please select a valid image file."
         );
 
         return;
@@ -572,12 +633,8 @@ function initReviewPhotoPreview() {
         currentReviewPhotoFile =
           null;
 
-        if (preview) {
-          preview.innerHTML = "";
-        }
-
         alert(
-          "Image must be smaller than 5MB."
+          "Image must be smaller than 5 MB."
         );
 
         return;
@@ -585,61 +642,100 @@ function initReviewPhotoPreview() {
       }
 
 
-      if (preview) {
-
-        const objectUrl =
-          URL.createObjectURL(
-            file
-          );
+      currentReviewPhotoObjectUrl =
+        URL.createObjectURL(
+          file
+        );
 
 
-        preview.innerHTML = `
-
-          <div class="review-photo-preview-inner">
-
-            <img
-              src="${escapeAttribute(objectUrl)}"
-              alt="Review photo preview"
-            />
-
-            <button
-              type="button"
-              id="removeReviewPhoto"
-            >
-              Remove
-            </button>
-
-          </div>
-
-        `;
-
-
-        document
-          .getElementById(
-            "removeReviewPhoto"
-          )
-          ?.addEventListener(
-            "click",
-            () => {
-
-              input.value = "";
-
-              currentReviewPhotoFile =
-                null;
-
-              preview.innerHTML = "";
-
-              URL.revokeObjectURL(
-                objectUrl
-              );
-
-            }
-          );
-
+      if (!preview) {
+        return;
       }
+
+
+      preview.style.display =
+        "block";
+
+
+      preview.innerHTML = `
+
+        <div class="review-photo-preview-inner">
+
+          <img
+            src="${escapeAttribute(
+              currentReviewPhotoObjectUrl
+            )}"
+            alt="Review photo preview"
+          />
+
+          <button
+            type="button"
+            id="removeReviewPhoto"
+          >
+            Remove
+          </button>
+
+        </div>
+
+      `;
+
+
+      document
+        .getElementById(
+          "removeReviewPhoto"
+        )
+        ?.addEventListener(
+          "click",
+          () => {
+
+            input.value = "";
+
+            currentReviewPhotoFile =
+              null;
+
+            clearReviewPhotoPreview();
+
+          }
+        );
 
     }
   );
+
+}
+
+
+/* =========================================================
+   CLEAR REVIEW PHOTO PREVIEW
+========================================================= */
+
+function clearReviewPhotoPreview() {
+
+  const preview =
+    document.getElementById(
+      "photoPreview"
+    );
+
+
+  if (currentReviewPhotoObjectUrl) {
+
+    URL.revokeObjectURL(
+      currentReviewPhotoObjectUrl
+    );
+
+    currentReviewPhotoObjectUrl =
+      null;
+
+  }
+
+
+  if (preview) {
+
+    preview.innerHTML = "";
+
+    preview.style.display =
+      "none";
+
+  }
 
 }
 
@@ -669,35 +765,53 @@ function initReviewForm() {
 
 
       const submitButton =
-        form.querySelector(
-          'button[type="submit"]'
+        document.getElementById(
+          "reviewSubmit"
         );
 
 
-      const formData =
-        new FormData(form);
-
+      /*
+        IMPORTANT:
+        These fields don't have
+        name="" attributes in the HTML,
+        so we read them directly
+        by ID.
+      */
 
       const name =
         String(
-          formData.get("name") ||
+          document.getElementById(
+            "reviewName"
+          )?.value ||
           ""
         ).trim();
 
 
       const country =
         String(
-          formData.get("country") ||
+          document.getElementById(
+            "reviewCountry"
+          )?.value ||
           ""
         ).trim();
 
 
       const review =
         String(
-          formData.get("review") ||
-          formData.get("message") ||
+          document.getElementById(
+            "reviewText"
+          )?.value ||
           ""
         ).trim();
+
+
+      const rating =
+        Number(
+          document.getElementById(
+            "reviewRating"
+          )?.value ||
+          currentRating
+        );
 
 
       if (!name) {
@@ -722,7 +836,10 @@ function initReviewForm() {
       }
 
 
-      if (!currentRating) {
+      if (
+        rating < 1 ||
+        rating > 5
+      ) {
 
         alert(
           "Please select a rating."
@@ -744,6 +861,26 @@ function initReviewForm() {
       }
 
 
+      if (review.length > 1000) {
+
+        alert(
+          "Your review is too long. Maximum 1000 characters."
+        );
+
+        return;
+
+      }
+
+
+      currentRating =
+        rating;
+
+
+      updateStarRating(
+        currentRating
+      );
+
+
       if (submitButton) {
 
         submitButton.disabled =
@@ -758,9 +895,21 @@ function initReviewForm() {
       }
 
 
+      const status =
+        document.getElementById(
+          "reviewStatus"
+        );
+
+
+      setReviewStatus(
+        status,
+        "Submitting your review...",
+        "loading"
+      );
+
+
       let photoUrl =
         null;
-
 
       let photoPath =
         null;
@@ -769,7 +918,9 @@ function initReviewForm() {
       try {
 
         /*
-          Upload review photo
+          ==============================================
+          UPLOAD PHOTO
+          ==============================================
         */
 
         if (
@@ -800,14 +951,19 @@ function initReviewForm() {
           } =
             await supabase
               .storage
-              .from("review-photos")
+              .from(
+                "review-photos"
+              )
               .upload(
                 photoPath,
                 file,
                 {
                   cacheControl:
                     "3600",
-                  upsert: false,
+
+                  upsert:
+                    false,
+
                   contentType:
                     file.type
                 }
@@ -825,7 +981,9 @@ function initReviewForm() {
           } =
             supabase
               .storage
-              .from("review-photos")
+              .from(
+                "review-photos"
+              )
               .getPublicUrl(
                 photoPath
               );
@@ -839,11 +997,14 @@ function initReviewForm() {
 
 
         /*
-          Insert review
+          ==============================================
+          INSERT REVIEW
+          ==============================================
         */
 
         const {
-          error
+          error:
+          insertError
         } =
           await supabase
             .from("reviews")
@@ -860,18 +1021,20 @@ function initReviewForm() {
             });
 
 
-        if (error) {
+        if (insertError) {
 
           /*
-            If DB insert fails,
-            remove uploaded photo.
+            If database insert fails,
+            delete uploaded photo.
           */
 
           if (photoPath) {
 
             await supabase
               .storage
-              .from("review-photos")
+              .from(
+                "review-photos"
+              )
               .remove([
                 photoPath
               ]);
@@ -879,13 +1042,19 @@ function initReviewForm() {
           }
 
 
-          throw error;
+          throw insertError;
 
         }
 
 
-        alert(
-          "Thank you! Your review has been submitted."
+        /*
+          SUCCESS
+        */
+
+        setReviewStatus(
+          status,
+          "Review submitted successfully. Thank you!",
+          "success"
         );
 
 
@@ -893,27 +1062,19 @@ function initReviewForm() {
 
 
         currentRating =
-          0;
+          5;
 
 
         currentReviewPhotoFile =
           null;
 
 
+        clearReviewPhotoPreview();
+
+
         updateStarRating(
-          0
+          5
         );
-
-
-        const preview =
-          document.getElementById(
-            "reviewPhotoPreview"
-          );
-
-
-        if (preview) {
-          preview.innerHTML = "";
-        }
 
 
         await loadReviews();
@@ -927,12 +1088,15 @@ function initReviewForm() {
         );
 
 
-        alert(
+        setReviewStatus(
+          status,
           getReadableError(
             error,
             "Unable to submit your review. Please try again."
-          )
+          ),
+          "error"
         );
+
 
       } finally {
 
@@ -956,6 +1120,40 @@ function initReviewForm() {
 
 
 /* =========================================================
+   REVIEW STATUS
+========================================================= */
+
+function setReviewStatus(
+  element,
+  message,
+  type
+) {
+
+  if (!element) {
+    return;
+  }
+
+
+  element.textContent =
+    message;
+
+
+  element.className =
+    "reviewStatus";
+
+
+  if (type) {
+
+    element.classList.add(
+      type
+    );
+
+  }
+
+}
+
+
+/* =========================================================
    LOAD DESTINATIONS
 ========================================================= */
 
@@ -972,12 +1170,12 @@ async function loadDestinations() {
   }
 
 
-  container.innerHTML =
-    `
-      <div class="loading-state">
-        Loading destinations...
-      </div>
-    `;
+  container.innerHTML = `
+    <div class="loadingCard">
+      <div class="loadingSpinner"></div>
+      <p>Discovering destinations...</p>
+    </div>
+  `;
 
 
   try {
@@ -1015,12 +1213,12 @@ async function loadDestinations() {
       data.length === 0
     ) {
 
-      container.innerHTML =
-        `
-          <div class="empty-state">
-            No destinations available yet.
-          </div>
-        `;
+      container.innerHTML = `
+        <div class="empty-state">
+          <strong>No destinations available yet.</strong>
+          <span>New destinations will appear here soon.</span>
+        </div>
+      `;
 
       return;
 
@@ -1035,6 +1233,11 @@ async function loadDestinations() {
         .join("");
 
 
+    initImageFallbacks(
+      container
+    );
+
+
   } catch (error) {
 
     console.error(
@@ -1043,12 +1246,12 @@ async function loadDestinations() {
     );
 
 
-    container.innerHTML =
-      `
-        <div class="error-state">
-          Unable to load destinations.
-        </div>
-      `;
+    container.innerHTML = `
+      <div class="error-state">
+        <strong>Unable to load destinations.</strong>
+        <span>Please refresh the page and try again.</span>
+      </div>
+    `;
 
   }
 
@@ -1065,7 +1268,7 @@ function createDestinationCard(
 
   const image =
     destination.image_url ||
-    "https://placehold.co/800x600?text=Destination";
+    "https://placehold.co/800x600?text=Sri+Lanka";
 
 
   const name =
@@ -1119,7 +1322,11 @@ function createDestinationCard(
                 )}
               </p>
             `
-            : ""
+            : `
+              <p>
+                Discover the beauty of ${escapeHTML(name)}.
+              </p>
+            `
         }
 
 
@@ -1163,18 +1370,18 @@ async function loadTours() {
   }
 
 
-  container.innerHTML =
-    `
-      <div class="loading-state">
-        Loading journeys...
-      </div>
-    `;
+  container.innerHTML = `
+    <div class="loadingCard darkLoading">
+      <div class="loadingSpinner"></div>
+      <p>Loading journeys...</p>
+    </div>
+  `;
 
 
   try {
 
     /*
-      Load tours
+      LOAD TOURS
     */
 
     const {
@@ -1210,12 +1417,12 @@ async function loadTours() {
       tours.length === 0
     ) {
 
-      container.innerHTML =
-        `
-          <div class="empty-state">
-            No tours available yet.
-          </div>
-        `;
+      container.innerHTML = `
+        <div class="empty-state darkLoading">
+          <strong>No tours available yet.</strong>
+          <span>New journeys will appear here soon.</span>
+        </div>
+      `;
 
       return;
 
@@ -1223,22 +1430,15 @@ async function loadTours() {
 
 
     /*
-      Load ALL gallery records
-      in one query.
-
-      This avoids making
-      a separate request for
-      every tour.
+      LOAD ALL TOUR GALLERY
     */
 
     let galleryRows = [];
 
 
     const {
-      data:
-      galleryData,
-      error:
-      galleryError
+      data: galleryData,
+      error: galleryError
     } =
       await supabase
         .from("tour_gallery")
@@ -1265,8 +1465,8 @@ async function loadTours() {
 
 
     /*
-      If gallery table doesn't exist yet,
-      tours should still load.
+      Gallery failure should NOT
+      break tour loading.
     */
 
     if (galleryError) {
@@ -1285,8 +1485,7 @@ async function loadTours() {
 
 
     /*
-      Group gallery records
-      by tour ID.
+      GROUP GALLERY BY TOUR ID
     */
 
     const galleryMap =
@@ -1325,8 +1524,7 @@ async function loadTours() {
 
 
     /*
-      Add gallery information
-      to each tour.
+      ATTACH GALLERY
     */
 
     const toursWithGallery =
@@ -1352,6 +1550,11 @@ async function loadTours() {
         .join("");
 
 
+    initImageFallbacks(
+      container
+    );
+
+
   } catch (error) {
 
     console.error(
@@ -1360,12 +1563,12 @@ async function loadTours() {
     );
 
 
-    container.innerHTML =
-      `
-        <div class="error-state">
-          Unable to load tours.
-        </div>
-      `;
+    container.innerHTML = `
+      <div class="error-state darkLoading">
+        <strong>Unable to load tours.</strong>
+        <span>Please refresh the page and try again.</span>
+      </div>
+    `;
 
   }
 
@@ -1382,7 +1585,7 @@ function createTourCard(
 
   const image =
     tour.image_url ||
-    "https://placehold.co/800x600?text=Tour";
+    "https://placehold.co/800x600?text=Sri+Lanka+Tour";
 
 
   const title =
@@ -1448,46 +1651,59 @@ function createTourCard(
                 )}
               </p>
             `
-            : ""
+            : `
+              <p class="tourCardDescription">
+                Discover an unforgettable Sri Lankan journey.
+              </p>
+            `
         }
 
 
-        <div class="tourCardActions">
+        ${
+          galleryCount > 0 ||
+          pageUrl
+            ? `
+              <div class="tourCardActions">
 
-          ${
-            galleryCount > 0
-              ? `
-                <button
-                  type="button"
-                  class="tourGalleryButton"
-                  data-tour-gallery="${Number(tour.id)}"
-                  data-tour-title="${escapeAttribute(title)}"
-                >
-                  📷 View Gallery
-                  <span class="tour-gallery-count">
-                    ${galleryCount}
-                  </span>
-                </button>
-              `
-              : ""
-          }
+                ${
+                  galleryCount > 0
+                    ? `
+                      <button
+                        type="button"
+                        class="tourGalleryButton"
+                        data-tour-gallery="${Number(tour.id)}"
+                        data-tour-title="${escapeAttribute(title)}"
+                      >
+                        📷 View Gallery
+
+                        <span class="tour-gallery-count">
+                          ${galleryCount}
+                        </span>
+
+                      </button>
+                    `
+                    : ""
+                }
 
 
-          ${
-            pageUrl
-              ? `
-                <a
-                  class="tourExploreButton"
-                  href="${escapeAttribute(pageUrl)}"
-                >
-                  Explore Journey
-                  <span>→</span>
-                </a>
-              `
-              : ""
-          }
+                ${
+                  pageUrl
+                    ? `
+                      <a
+                        class="tourExploreButton"
+                        href="${escapeAttribute(pageUrl)}"
+                      >
+                        Explore Journey
+                        <span>→</span>
+                      </a>
+                    `
+                    : ""
+                }
 
-        </div>
+              </div>
+            `
+            : ""
+        }
 
       </div>
 
@@ -1528,8 +1744,9 @@ function initTourGallery() {
 
 
   /*
-    Event delegation because
-    tour cards are dynamically created.
+    Event delegation.
+    Works with dynamically
+    generated tour buttons.
   */
 
   document.addEventListener(
@@ -1589,37 +1806,39 @@ function initTourGallery() {
     (event) => {
 
       if (
-        event.key === "Escape"
+        event.key !==
+        "Escape"
+      ) {
+        return;
+      }
+
+
+      const lightbox =
+        document.getElementById(
+          "tourGalleryLightbox"
+        );
+
+
+      if (
+        lightbox?.classList.contains(
+          "active"
+        )
       ) {
 
-        const lightbox =
-          document.getElementById(
-            "tourGalleryLightbox"
-          );
+        closeGalleryLightbox();
+
+        return;
+
+      }
 
 
-        if (
-          lightbox?.classList.contains(
-            "active"
-          )
-        ) {
+      if (
+        modal.classList.contains(
+          "active"
+        )
+      ) {
 
-          closeGalleryLightbox();
-
-          return;
-
-        }
-
-
-        if (
-          modal.classList.contains(
-            "active"
-          )
-        ) {
-
-          closePublicTourGallery();
-
-        }
+        closePublicTourGallery();
 
       }
 
@@ -1693,6 +1912,9 @@ async function openPublicTourGallery(
 
     loading.style.display =
       "block";
+
+    loading.textContent =
+      "Loading gallery...";
 
   }
 
@@ -1789,7 +2011,7 @@ async function openPublicTourGallery(
     }
 
 
-    grid.innerHTML =
+    const galleryHtml =
       data
         .map(
           createPublicGalleryImage
@@ -1797,7 +2019,30 @@ async function openPublicTourGallery(
         .join("");
 
 
+    if (!galleryHtml) {
+
+      if (empty) {
+
+        empty.style.display =
+          "block";
+
+      }
+
+      return;
+
+    }
+
+
+    grid.innerHTML =
+      galleryHtml;
+
+
     initPublicGalleryLightbox();
+
+
+    initImageFallbacks(
+      grid
+    );
 
 
   } catch (error) {
@@ -1820,7 +2065,6 @@ async function openPublicTourGallery(
 
       empty.style.display =
         "block";
-
 
       empty.innerHTML = `
 
@@ -1855,12 +2099,13 @@ function createPublicGalleryImage(
 ) {
 
   let imageUrl =
-    image.image_url;
+    image.image_url ||
+    "";
 
 
   /*
-    If image_url is empty,
-    get public Storage URL.
+    Fallback to Storage
+    public URL.
   */
 
   if (
@@ -1873,7 +2118,9 @@ function createPublicGalleryImage(
     } =
       supabase
         .storage
-        .from("tour-gallery")
+        .from(
+          "tour-gallery"
+        )
         .getPublicUrl(
           image.image_path
         );
@@ -1925,7 +2172,7 @@ function createPublicGalleryImage(
 
 
 /* =========================================================
-   GALLERY LIGHTBOX INITIALIZATION
+   GALLERY LIGHTBOX
 ========================================================= */
 
 function initPublicGalleryLightbox() {
@@ -1936,6 +2183,23 @@ function initPublicGalleryLightbox() {
     )
     .forEach(
       (button) => {
+
+        /*
+          Prevent duplicate event
+          listeners.
+        */
+
+        if (
+          button.dataset.lightboxReady ===
+          "true"
+        ) {
+          return;
+        }
+
+
+        button.dataset.lightboxReady =
+          "true";
+
 
         button.addEventListener(
           "click",
@@ -2103,6 +2367,21 @@ function closeGalleryLightbox() {
     "tour-lightbox-open"
   );
 
+
+  const image =
+    document.getElementById(
+      "tourGalleryLightboxImage"
+    );
+
+
+  if (image) {
+
+    image.removeAttribute(
+      "src"
+    );
+
+  }
+
 }
 
 
@@ -2121,6 +2400,9 @@ function closePublicTourGallery() {
   if (!modal) {
     return;
   }
+
+
+  closeGalleryLightbox();
 
 
   modal.classList.remove(
@@ -2232,6 +2514,411 @@ function initRevealAnimations() {
 
 
 /* =========================================================
+   LOAD REVIEWS
+========================================================= */
+
+async function loadReviews() {
+
+  const container =
+    document.getElementById(
+      "reviewsContainer"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML = `
+    <div class="loadingCard">
+      <div class="loadingSpinner"></div>
+      <p>Loading traveler reviews...</p>
+    </div>
+  `;
+
+
+  try {
+
+    /*
+      IMPORTANT:
+      photo_path is included.
+
+      This fixes old reviews
+      where photo_url is empty
+      but photo_path exists.
+    */
+
+    const {
+      data,
+      error
+    } =
+      await supabase
+        .from("reviews")
+        .select(`
+          id,
+          name,
+          country,
+          rating,
+          review,
+          photo_url,
+          photo_path,
+          created_at
+        `)
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+
+      container.innerHTML = `
+        <div class="empty-state">
+          <strong>Be the first to share your experience.</strong>
+          <span>Your review will appear here.</span>
+        </div>
+      `;
+
+      return;
+
+    }
+
+
+    container.innerHTML =
+      data
+        .map(
+          createReviewCard
+        )
+        .join("");
+
+
+    initImageFallbacks(
+      container
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Review loading error:",
+      error
+    );
+
+
+    container.innerHTML = `
+      <div class="error-state">
+        <strong>Unable to load reviews.</strong>
+        <span>Please refresh the page and try again.</span>
+      </div>
+    `;
+
+  }
+
+}
+
+
+/* =========================================================
+   CREATE REVIEW CARD
+========================================================= */
+
+function createReviewCard(
+  review
+) {
+
+  const name =
+    review.name ||
+    "Traveler";
+
+
+  const country =
+    review.country ||
+    "";
+
+
+  const text =
+    review.review ||
+    "";
+
+
+  const rating =
+    Math.min(
+      5,
+      Math.max(
+        0,
+        Number(
+          review.rating
+        ) || 0
+      )
+    );
+
+
+  const stars =
+    "★".repeat(
+      rating
+    ) +
+    "☆".repeat(
+      5 - rating
+    );
+
+
+  /*
+    FIRST:
+    Use photo_url.
+
+    SECOND:
+    If photo_url is empty,
+    generate public URL from
+    photo_path.
+  */
+
+  let photo =
+    review.photo_url ||
+    "";
+
+
+  if (
+    !photo &&
+    review.photo_path
+  ) {
+
+    const {
+      data
+    } =
+      supabase
+        .storage
+        .from(
+          "review-photos"
+        )
+        .getPublicUrl(
+          review.photo_path
+        );
+
+
+    photo =
+      data?.publicUrl ||
+      "";
+
+  }
+
+
+  const date =
+    review.created_at
+      ? formatReviewDate(
+          review.created_at
+        )
+      : "";
+
+
+  return `
+
+    <article class="reviewCard">
+
+      ${
+        photo
+          ? `
+            <div class="reviewCardPhoto">
+
+              <img
+                src="${escapeAttribute(photo)}"
+                alt="${escapeAttribute(name)}"
+                loading="lazy"
+              />
+
+            </div>
+          `
+          : ""
+      }
+
+
+      <div class="reviewCardBody">
+
+        <div
+          class="reviewRating"
+          aria-label="${rating} out of 5 stars"
+        >
+          ${stars}
+        </div>
+
+
+        <p class="reviewText">
+          “${escapeHTML(text)}”
+        </p>
+
+
+        <div class="reviewAuthor">
+
+          <strong>
+            ${escapeHTML(name)}
+          </strong>
+
+
+          ${
+            country
+              ? `
+                <span class="reviewCountry">
+                  ${escapeHTML(country)}
+                </span>
+              `
+              : ""
+          }
+
+
+          ${
+            date
+              ? `
+                <small class="reviewDate">
+                  ${escapeHTML(date)}
+                </small>
+              `
+              : ""
+          }
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+/* =========================================================
+   IMAGE FALLBACKS
+========================================================= */
+
+function initImageFallbacks(
+  container
+) {
+
+  if (!container) {
+    return;
+  }
+
+
+  container
+    .querySelectorAll(
+      "img"
+    )
+    .forEach(
+      (image) => {
+
+        if (
+          image.dataset.fallbackReady ===
+          "true"
+        ) {
+          return;
+        }
+
+
+        image.dataset.fallbackReady =
+          "true";
+
+
+        image.addEventListener(
+          "error",
+          () => {
+
+            /*
+              Review photos:
+              remove only the photo
+              area if broken.
+            */
+
+            if (
+              image.closest(
+                ".reviewCardPhoto"
+              )
+            ) {
+
+              image
+                .closest(
+                  ".reviewCardPhoto"
+                )
+                ?.remove();
+
+              return;
+
+            }
+
+
+            /*
+              Gallery image:
+              hide broken image button.
+            */
+
+            if (
+              image.closest(
+                ".tour-gallery-item"
+              )
+            ) {
+
+              image
+                .closest(
+                  ".tour-gallery-item"
+                )
+                ?.remove();
+
+              return;
+
+            }
+
+
+            /*
+              Destination / tour:
+              use placeholder.
+            */
+
+            if (
+              image.classList.contains(
+                "destinationCardImage"
+              )
+            ) {
+
+              image.src =
+                "https://placehold.co/800x600?text=Destination";
+
+              return;
+
+            }
+
+
+            if (
+              image.classList.contains(
+                "tourCardImage"
+              )
+            ) {
+
+              image.src =
+                "https://placehold.co/800x600?text=Tour";
+
+            }
+
+          },
+          {
+            once: true
+          }
+        );
+
+      }
+    );
+
+}
+
+
+/* =========================================================
    SAFE PAGE URL
 ========================================================= */
 
@@ -2253,18 +2940,10 @@ function safePageUrl(
   }
 
 
-  /*
-    Allow normal relative URLs
-    and HTTPS URLs.
-  */
-
   if (
-    value.startsWith("/")
-    ||
-    value.startsWith("./")
-    ||
-    value.startsWith("../")
-    ||
+    value.startsWith("/") ||
+    value.startsWith("./") ||
+    value.startsWith("../") ||
     value.startsWith("#")
   ) {
 
@@ -2283,10 +2962,8 @@ function safePageUrl(
 
 
     if (
-      parsed.protocol ===
-        "https:" ||
-      parsed.protocol ===
-        "http:"
+      parsed.protocol === "https:" ||
+      parsed.protocol === "http:"
     ) {
 
       return parsed.href;
@@ -2392,235 +3069,6 @@ function truncate(
 
 
 /* =========================================================
-   LOAD REVIEWS
-========================================================= */
-
-async function loadReviews() {
-
-  const container =
-    document.getElementById(
-      "reviewsContainer"
-    );
-
-
-  if (!container) {
-    return;
-  }
-
-
-  container.innerHTML =
-    `
-      <div class="loading-state">
-        Loading reviews...
-      </div>
-    `;
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabase
-        .from("reviews")
-        .select(`
-          id,
-          name,
-          country,
-          rating,
-          review,
-          photo_url,
-          created_at
-        `)
-        .order(
-          "created_at",
-          {
-            ascending: false
-          }
-        );
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    if (
-      !data ||
-      data.length === 0
-    ) {
-
-      container.innerHTML =
-        `
-          <div class="empty-state">
-            Be the first to share your experience.
-          </div>
-        `;
-
-      return;
-
-    }
-
-
-    container.innerHTML =
-      data
-        .map(
-          createReviewCard
-        )
-        .join("");
-
-
-  } catch (error) {
-
-    console.error(
-      "Review loading error:",
-      error
-    );
-
-
-    container.innerHTML =
-      `
-        <div class="error-state">
-          Unable to load reviews.
-        </div>
-      `;
-
-  }
-
-}
-
-
-/* =========================================================
-   CREATE REVIEW CARD
-========================================================= */
-
-function createReviewCard(
-  review
-) {
-
-  const name =
-    review.name ||
-    "Traveler";
-
-
-  const country =
-    review.country ||
-    "";
-
-
-  const text =
-    review.review ||
-    "";
-
-
-  const rating =
-    Math.min(
-      5,
-      Math.max(
-        0,
-        Number(
-          review.rating
-        ) || 0
-      )
-    );
-
-
-  const stars =
-    "★".repeat(
-      rating
-    ) +
-    "☆".repeat(
-      5 - rating
-    );
-
-
-  const photo =
-    review.photo_url ||
-    "";
-
-
-  const date =
-    review.created_at
-      ? formatReviewDate(
-          review.created_at
-        )
-      : "";
-
-
-  return `
-
-    <article class="reviewCard">
-
-      ${
-        photo
-          ? `
-            <div class="reviewCardPhoto">
-
-              <img
-                src="${escapeAttribute(photo)}"
-                alt="${escapeAttribute(name)}"
-                loading="lazy"
-              />
-
-            </div>
-          `
-          : ""
-      }
-
-
-      <div class="reviewCardBody">
-
-        <div class="reviewRating">
-          ${stars}
-        </div>
-
-
-        <p class="reviewText">
-          “${escapeHTML(text)}”
-        </p>
-
-
-        <div class="reviewAuthor">
-
-          <strong>
-            ${escapeHTML(name)}
-          </strong>
-
-
-          ${
-            country
-              ? `
-                <span>
-                  ${escapeHTML(country)}
-                </span>
-              `
-              : ""
-          }
-
-
-          ${
-            date
-              ? `
-                <small>
-                  ${escapeHTML(date)}
-                </small>
-              `
-              : ""
-          }
-
-        </div>
-
-      </div>
-
-    </article>
-
-  `;
-
-}
-
-
-/* =========================================================
    FORMAT REVIEW DATE
 ========================================================= */
 
@@ -2657,7 +3105,9 @@ function formatReviewDate(
     );
 
   } catch {
+
     return "";
+
   }
 
 }
