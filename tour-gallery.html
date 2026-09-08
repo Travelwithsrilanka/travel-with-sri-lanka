@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>
+    Tour Gallery | Travel With Sri Lanka
+  </title>
+
+  <meta
+    name="description"
+    content="Explore unforgettable Sri Lanka tour experiences through the Travel With Sri Lanka photo gallery."
+  >
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+  <style>
+
+    .galleryHero {
+      min-height: 55vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 100px 20px;
+      background:
+        linear-gradient(
+          rgba(16,37,29,.72),
+          rgba(16,37,29,.72)
+        ),
+        url("images/hero.jpg")
+        center/cover no-repeat;
+      color: white;
+    }
+
+    .galleryHero h1 {
+      font-size: clamp(40px, 7vw, 76px);
+      margin: 0 0 15px;
+      color: #e1c779;
+    }
+
+    .galleryHero p {
+      max-width: 700px;
+      margin: auto;
+      line-height: 1.8;
+      color: #f8f6ef;
+    }
+
+    .gallerySection {
+      padding: 80px 5%;
+    }
+
+    .galleryFilters {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 40px;
+    }
+
+    .galleryFilter {
+      border: 1px solid #c9a85b;
+      background: transparent;
+      color: #10251d;
+      padding: 10px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .galleryFilter.active,
+    .galleryFilter:hover {
+      background: #c9a85b;
+    }
+
+    .galleryGrid {
+      max-width: 1300px;
+      margin: auto;
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .galleryItem {
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      background: white;
+      box-shadow:
+        0 20px 55px
+        rgba(16,37,29,.10);
+      cursor: pointer;
+    }
+
+    .galleryItem img {
+      width: 100%;
+      height: 320px;
+      object-fit: cover;
+      display: block;
+      transition: transform .5s ease;
+    }
+
+    .galleryItem:hover img {
+      transform: scale(1.06);
+    }
+
+    .galleryInfo {
+      padding: 20px;
+    }
+
+    .galleryInfo span {
+      display: block;
+      color: #c9a85b;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 7px;
+    }
+
+    .galleryInfo h3 {
+      margin: 0 0 8px;
+      color: #10251d;
+    }
+
+    .galleryInfo p {
+      color: #69736e;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 25px;
+      z-index: 9999;
+    }
+
+    .lightbox.show {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-width: 95%;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+
+    .lightboxClose {
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      color: white;
+      font-size: 40px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    @media(max-width:600px) {
+
+      .gallerySection {
+        padding: 55px 20px;
+      }
+
+      .galleryItem img {
+        height: 250px;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+  <header class="siteHeader">
+
+    <div class="container headerInner">
+
+      <a
+        href="index.html"
+        class="logo"
+      >
+        Travel With Sri Lanka
+      </a>
+
+      <button
+        class="menuBtn"
+        onclick="toggleMenu()"
+      >
+        ☰
+      </button>
+
+      <nav id="mainNav">
+
+        <a href="index.html#about">
+          About
+        </a>
+
+        <a href="index.html#destinations">
+          Destinations
+        </a>
+
+        <a href="index.html#tours">
+          Tours
+        </a>
+
+        <a href="tour-gallery.html">
+          Tour Gallery
+        </a>
+
+        <a href="index.html#experiences">
+          Experiences
+        </a>
+
+        <a href="index.html#reviews">
+          Reviews
+        </a>
+
+        <a href="index.html#faq">
+          FAQ
+        </a>
+
+      </nav>
+
+    </div>
+
+  </header>
+
+
+  <section class="galleryHero">
+
+    <div>
+
+      <h1>
+        Tour Gallery
+      </h1>
+
+      <p>
+        Explore the beauty, culture, adventure and
+        unforgettable moments of Sri Lanka through
+        our tour experiences.
+      </p>
+
+    </div>
+
+  </section>
+
+
+  <section class="gallerySection">
+
+    <div
+      id="galleryFilters"
+      class="galleryFilters"
+    >
+    </div>
+
+    <div
+      id="tourGallery"
+      class="galleryGrid"
+    >
+      Loading gallery...
+    </div>
+
+  </section>
+
+
+  <div
+    id="lightbox"
+    class="lightbox"
+  >
+
+    <button
+      class="lightboxClose"
+      onclick="closeLightbox()"
+    >
+      ×
+    </button>
+
+    <img
+      id="lightboxImage"
+      src=""
+      alt=""
+    >
+
+  </div>
+
+
+  <script type="module">
+
+    import { createClient }
+      from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+
+    const SUPABASE_URL =
+      "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
+
+
+    const supabase =
+      createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+      );
+
+
+    let allPhotos = [];
+
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      loadGallery
+    );
+
+
+    async function loadGallery() {
+
+      const gallery =
+        document.getElementById(
+          "tourGallery"
+        );
+
+      const { data, error } =
+        await supabase
+          .from("tour_gallery")
+          .select(`
+            *,
+            tours (
+              id,
+              title,
+              slug
+            )
+          `)
+          .order("sort_order", {
+            ascending: true
+          });
+
+      if (error) {
+
+        gallery.innerHTML =
+          "<p>Gallery could not be loaded.</p>";
+
+        console.error(error);
+        return;
+
+      }
+
+      allPhotos = data || [];
+
+      createFilters();
+
+      renderGallery(allPhotos);
+
+    }
+
+
+    function createFilters() {
+
+      const container =
+        document.getElementById(
+          "galleryFilters"
+        );
+
+      const tourMap = new Map();
+
+      allPhotos.forEach(photo => {
+
+        if (photo.tours) {
+
+          tourMap.set(
+            photo.tours.id,
+            photo.tours.title
+          );
+
+        }
+
+      });
+
+
+      container.innerHTML = `
+        <button
+          class="galleryFilter active"
+          data-tour="all"
+        >
+          All Tours
+        </button>
+
+        ${
+          [...tourMap.entries()]
+            .map(
+              ([id, title]) => `
+                <button
+                  class="galleryFilter"
+                  data-tour="${id}"
+                >
+                  ${escapeHTML(title)}
+                </button>
+              `
+            )
+            .join("")
+        }
+      `;
+
+
+      container
+        .querySelectorAll(".galleryFilter")
+        .forEach(button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              container
+                .querySelectorAll(
+                  ".galleryFilter"
+                )
+                .forEach(btn =>
+                  btn.classList.remove(
+                    "active"
+                  )
+                );
+
+              button.classList.add(
+                "active"
+              );
+
+              const tourId =
+                button.dataset.tour;
+
+              if (tourId === "all") {
+
+                renderGallery(
+                  allPhotos
+                );
+
+              } else {
+
+                renderGallery(
+                  allPhotos.filter(
+                    photo =>
+                      photo.tour_id === tourId
+                  )
+                );
+
+              }
+
+            }
+          );
+
+        });
+
+    }
+
+
+    function renderGallery(photos) {
+
+      const gallery =
+        document.getElementById(
+          "tourGallery"
+        );
+
+      if (!photos.length) {
+
+        gallery.innerHTML =
+          "<p>No gallery photos available.</p>";
+
+        return;
+
+      }
+
+
+      gallery.innerHTML =
+        photos.map(
+          photo => `
+
+            <article
+              class="galleryItem"
+              onclick="openLightbox(
+                '${escapeAttribute(photo.image_url)}',
+                '${escapeAttribute(photo.title || "")}'
+              )"
+            >
+
+              <img
+                src="${escapeAttribute(photo.image_url)}"
+                alt="${escapeAttribute(photo.title || "")}"
+                loading="lazy"
+              >
+
+              <div class="galleryInfo">
+
+                <span>
+                  ${escapeHTML(
+                    photo.tours?.title || "Sri Lanka Tour"
+                  )}
+                </span>
+
+                <h3>
+                  ${escapeHTML(
+                    photo.title || "Sri Lanka"
+                  )}
+                </h3>
+
+                ${
+                  photo.caption
+                  ?
+                  `<p>
+                    ${escapeHTML(photo.caption)}
+                  </p>`
+                  :
+                  ""
+                }
+
+              </div>
+
+            </article>
+
+          `
+        ).join("");
+
+    }
+
+
+    function escapeHTML(value) {
+
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    }
+
+
+    function escapeAttribute(value) {
+
+      return escapeHTML(value);
+
+    }
+
+
+    window.openLightbox =
+      function(url, title) {
+
+        document
+          .getElementById(
+            "lightboxImage"
+          )
+          .src = url;
+
+        document
+          .getElementById(
+            "lightboxImage"
+          )
+          .alt = title;
+
+        document
+          .getElementById(
+            "lightbox"
+          )
+          .classList.add("show");
+
+      };
+
+
+    window.closeLightbox =
+      function() {
+
+        document
+          .getElementById(
+            "lightbox"
+          )
+          .classList.remove("show");
+
+      };
+
+
+    window.toggleMenu =
+      function() {
+
+        document
+          .getElementById(
+            "mainNav"
+          )
+          .classList.toggle("open");
+
+      };
+
+  </script>
+
+</body>
+
+</html>
