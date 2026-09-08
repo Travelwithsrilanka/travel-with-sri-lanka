@@ -2167,27 +2167,19 @@ function bindTourActions() {
 
         openContentModal(
           "destination",
-          Number(button.dataset.editDestination)
-        );
+         document
+  .querySelectorAll("[data-delete-destination]")
+  .forEach((button) => {
 
-      });
+    button.addEventListener("click", () => {
+
+      deleteDestination(
+        Number(button.dataset.deleteDestination)
+      );
 
     });
 
-
-  document
-    .querySelectorAll("[data-delete-
-
-destination]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        deleteDestination(
-          Number(button.dataset.deleteDestination)
-        );
-
-      });
+  });
 
     });
 
