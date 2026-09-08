@@ -1,1 +1,2769 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"; /* ========================================================= SUPABASE ========================================================= */ const SUPABASE_URL = "https://vbbmnzqrvoceqbwwwsrc.supabase.co"; const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3"; const supabase = createClient( SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } } ); /* ========================================================= DOM READY ========================================================= */ document.addEventListener( "DOMContentLoaded", () => { document.documentElement.classList.add( "js-ready" ); initMobileMenu(); initHeader(); initTripForm(); initStarRating(); initReviewPhotoPreview(); initReviewForm(); initRevealAnimations(); loadDestinations(); loadTours(); loadReviews(); } ); /* ========================================================= MOBILE MENU ========================================================= */ function initMobileMenu() { const menuButton = document.getElementById( "menuBtn" ); const mainNav = document.getElementById( "mainNav" ); if (!menuButton || !mainNav) { return; } menuButton.addEventListener( "click", () => { const isOpen = mainNav.classList.toggle( "open" ); menuButton.classList.toggle( "open", isOpen ); menuButton.setAttribute( "aria-expanded", String(isOpen) ); menuButton.setAttribute( "aria-label", isOpen ? "Close navigation menu" : "Open navigation menu" ); } ); mainNav .querySelectorAll("a") .forEach(link => { link.addEventListener( "click", () => { mainNav.classList.remove( "open" ); menuButton.classList.remove( "open" ); menuButton.setAttribute( "aria-expanded", "false" ); menuButton.setAttribute( "aria-label", "Open navigation menu" ); } ); }); document.addEventListener( "click", event => { if ( !mainNav.contains(event.target) && !menuButton.contains(event.target) ) { mainNav.classList.remove( "open" ); menuButton.classList.remove( "open" ); menuButton.setAttribute( "aria-expanded", "false" ); } } ); } /* ========================================================= HEADER ========================================================= */ function initHeader() { const header = document.getElementById( "siteHeader" ); if (!header) { return; } const updateHeader = () => { header.classList.toggle( "scrolled", window.scrollY > 25 ); }; updateHeader(); window.addEventListener( "scroll", updateHeader, { passive: true } ); } /* ========================================================= TRIP PLANNER ========================================================= */ function initTripForm() { const form = document.getElementById( "tripForm" ); if (!form) { return; } form.addEventListener( "submit", event => { event.preventDefault(); const name = document.getElementById( "name" )?.value.trim() || ""; const country = document.getElementById( "country" )?.value.trim() || ""; const date = document.getElementById( "date" )?.value || ""; const guests = document.getElementById( "guests" )?.value || ""; const message = document.getElementById( "message" )?.value.trim() || ""; if (!name || !country) { alert( "Please enter your name and country." ); return; } if ( name.length > 100 || country.length > 100 || message.length > 2000 ) { alert( "Please keep your trip details within the allowed length." ); return; } const whatsappNumber = "94758453391"; const lines = [ "Hello Travel With Sri Lanka! 🇱🇰", "", `Name: ${name}`, `Country: ${country}`, date ? `Travel Date: ${date}` : "", guests ? `Guests: ${guests}` : "", "", message ? `Trip Details: ${message}` : "" ] .filter(Boolean) .join("\n"); const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines)}`; window.open( url, "_blank", "noopener,noreferrer" ); } ); } /* ========================================================= STAR RATING ========================================================= */ function initStarRating() { const container = document.getElementById( "starRating" ); const hiddenInput = document.getElementById( "reviewRating" ); const label = document.getElementById( "ratingLabel" ); if ( !container || !hiddenInput ) { return; } const labels = { 1: "Poor", 2: "Fair", 3: "Good", 4: "Very Good", 5: "Excellent" }; let currentRating = Number( hiddenInput.value ) || 5; const buttons = Array.from( container.querySelectorAll( "[data-rating]" ) ); function updateStars( rating ) { buttons.forEach( button => { const value = Number( button.dataset.rating ); button.classList.toggle( "active", value <= rating ); button.setAttribute( "aria-pressed", String( value === rating ) ); } ); hiddenInput.value = String(rating); if (label) { label.textContent = labels[rating] || ""; } } buttons.forEach( button => { button.addEventListener( "click", () => { const rating = Number( button.dataset.rating ); if ( rating < 1 || rating > 5 ) { return; } currentRating = rating; updateStars( currentRating ); } ); button.addEventListener( "keydown", event => { if ( event.key !== "ArrowLeft" && event.key !== "ArrowRight" ) { return; } event.preventDefault(); let next = currentRating + ( event.key === "ArrowRight" ? 1 : -1 ); next = Math.max( 1, Math.min( 5, next ) ); currentRating = next; updateStars( currentRating ); buttons[next - 1]?.focus(); } ); } ); updateStars( currentRating ); } /* ========================================================= REVIEW PHOTO PREVIEW ========================================================= */ function initReviewPhotoPreview() { const input = document.getElementById( "reviewPhoto" ); const preview = document.getElementById( "photoPreview" ); if ( !input || !preview ) { return; } input.addEventListener( "change", () => { preview.innerHTML = ""; const file = input.files?.[0]; if (!file) { return; } try { validateReviewPhoto( file ); } catch (error) { input.value = ""; showReviewStatus( error.message, "error" ); return; } const image = document.createElement( "img" ); image.alt = "Selected travel photo"; image.className = "reviewPreviewImage"; image.src = URL.createObjectURL( file ); image.onload = () => { URL.revokeObjectURL( image.src ); }; preview.appendChild( image ); } ); } /* ========================================================= REVIEW FORM ========================================================= */ function initReviewForm() { const form = document.getElementById( "reviewForm" ); if (!form) { return; } form.addEventListener( "submit", handleReviewSubmit ); } /* ========================================================= SUBMIT REVIEW ========================================================= */ async function handleReviewSubmit( event ) { event.preventDefault(); const submitButton = document.getElementById( "reviewSubmit" ); const name = document.getElementById( "reviewName" )?.value.trim() || ""; const country = document.getElementById( "reviewCountry" )?.value.trim() || ""; const rating = Number( document.getElementById( "reviewRating" )?.value ); const review = document.getElementById( "reviewText" )?.value.trim() || ""; const photoInput = document.getElementById( "reviewPhoto" ); const file = photoInput?.files?.[0] || null; if (!name) { showReviewStatus( "Please enter your name.", "error" ); return; } if (!country) { showReviewStatus( "Please enter your country.", "error" ); return; } if ( !Number.isInteger(rating) || rating < 1 || rating > 5 ) { showReviewStatus( "Please select a rating from 1 to 5 stars.", "error" ); return; } if (!review) { showReviewStatus( "Please write your review.", "error" ); return; } if (name.length > 80) { showReviewStatus( "Name must be 80 characters or fewer.", "error" ); return; } if (country.length > 80) { showReviewStatus( "Country must be 80 characters or fewer.", "error" ); return; } if (review.length > 1000) { showReviewStatus( "Review must be 1000 characters or fewer.", "error" ); return; } if (file) { try { validateReviewPhoto( file ); } catch (error) { showReviewStatus( error.message, "error" ); return; } } submitButton.disabled = true; submitButton.textContent = "Submitting..."; showReviewStatus( "Submitting your review...", "info" ); let uploadedPath = null; try { /* Upload photo first, if provided. */ if (file) { uploadedPath = await uploadReviewPhoto( file, name ); } /* Save the review. */ const { error } = await supabase .from("reviews") .insert({ name, country, rating, review, photo_path: uploadedPath ? uploadedPath : null, photo_url: uploadedPath ? getStoragePublicUrl( uploadedPath ) : null }); if (error) { throw error; } showReviewStatus( "Thank you! Your review has been submitted.", "success" ); formResetReviewForm( event.currentTarget ); await loadReviews(); } catch (error) { console.error( "Review submission error:", error ); /* If database insertion fails after image upload, remove the uploaded file so orphaned storage files are avoided. */ if (uploadedPath) { const { error: cleanupError } = await supabase .storage .from("review-photos") .remove([ uploadedPath ]); if (cleanupError) { console.warn( "Uploaded photo cleanup failed:", cleanupError.message ); } } showReviewStatus( getReadableError(error), "error" ); } finally { submitButton.disabled = false; submitButton.textContent = "Submit Review"; } } /* ========================================================= UPLOAD REVIEW PHOTO ========================================================= */ async function uploadReviewPhoto( file, name ) { const extension = getFileExtension( file.name, file.type ); const safeName = String(name) .toLowerCase() .normalize("NFKD") .replace( /[\u0300-\u036f]/g, "" ) .replace( /[^a-z0-9]+/g, "-" ) .replace( /^-+|-+$/g, "" ) .slice( 0, 60 ) || "traveler"; const path = `reviews/${safeName}-${Date.now()}-${randomId()}${extension}`; const { error } = await supabase .storage .from("review-photos") .upload( path, file, { cacheControl: "3600", upsert: false, contentType: file.type } ); if (error) { throw error; } return path; } /* ========================================================= LOAD DESTINATIONS ========================================================= */ async function loadDestinations() { const container = document.getElementById( "destinationsGrid" ); if (!container) { return; } try { const { data, error } = await supabase .from("destinations") .select(` id, name, slug, description, image_url, page_url, sort_order `) .order( "sort_order", { ascending: true, nullsFirst: false } ); if (error) { throw error; } const items = data || []; if (!items.length) { container.innerHTML = ` <div class="loadingCard"> <p>No destinations are available yet.</p> </div> `; return; } container.innerHTML = items .map( destination => createDestinationCard( destination ) ) .join(""); } catch (error) { console.error( "Destination loading error:", error ); container.innerHTML = ` <div class="loadingCard"> <p> Destinations could not be loaded right now. </p> </div> `; } } /* ========================================================= DESTINATION CARD ========================================================= */ function createDestinationCard( destination ) { const name = escapeHTML( destination.name ); const description = escapeHTML( truncate( destination.description, 135 ) ); const image = safePageUrl( destination.image_url, "" ); const pageUrl = safePageUrl( destination.page_url, destination.slug ? `destination.html?slug=${encodeURIComponent( destination.slug )}` : "#destinations" ); return ` <article class="card reveal"> <div class="photo"> ${ image ? ` <img src="${escapeAttribute(image)}" alt="${escapeAttribute( destination.name )}" loading="lazy" > ` : ` <div style=" width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#e9eee9; color:#69736e; " > Sri Lanka </div> ` } </div> <div class="cardContent"> <h3> ${name} </h3> <p> ${description} </p> <a href="${escapeAttribute(pageUrl)}" class="textLink" > Discover ${name} → </a> </div> </article> `; } /* ========================================================= LOAD TOURS ========================================================= */ async function loadTours() { const container = document.getElementById( "toursGrid" ); if (!container) { return; } try { const { data, error } = await supabase .from("tours") .select(` id, title, slug, description, image_url, page_url, sort_order `) .order( "sort_order", { ascending: true, nullsFirst: false } ); if (error) { throw error; } const items = data || []; if (!items.length) { container.innerHTML = ` <div class="loadingCard darkLoading"> <p>No journeys are available yet.</p> </div> `; return; } container.innerHTML = items .map( tour => createTourCard( tour ) ) .join(""); } catch (error) { console.error( "Tour loading error:", error ); container.innerHTML = ` <div class="loadingCard darkLoading"> <p> Journeys could not be loaded right now. </p> </div> `; } } /* ========================================================= TOUR CARD ========================================================= */ function createTourCard( tour ) { const image = safePageUrl( tour.image_url, "" ); const pageUrl = safePageUrl( tour.page_url, "#planner" ); return ` <article class="tourCard reveal"> <div class="tourPic"> ${ image ? ` <img src="${escapeAttribute(image)}" alt="${escapeAttribute( tour.title )}" loading="lazy" > ` : "" } </div> <div class="tourBody"> <h3> ${escapeHTML(tour.title)} </h3> <p> ${escapeHTML( truncate( tour.description, 160 ) )} </p> <a href="${escapeAttribute(pageUrl)}" class="textLink" > Explore Journey → </a> </div> </article> `; } /* ========================================================= LOAD REVIEWS ========================================================= */ async function loadReviews() { const container = document.getElementById( "reviewsContainer" ); if (!container) { return; } try { const { data, error } = await supabase .from("reviews") .select(` id, name, country, rating, review, photo_url, photo_path, created_at `) .order( "created_at", { ascending: false } ); if (error) { throw error; } const items = data || []; if (!items.length) { container.innerHTML = ` <div class="noReviews"> <p> No traveler reviews yet. </p> </div> `; return; } container.innerHTML = items .map( review => createReviewCard( review ) ) .join(""); } catch (error) { console.error( "Review loading error:", error ); container.innerHTML = ` <div class="noReviews"> <p> Traveler reviews could not be loaded right now. </p> </div> `; } } /* ========================================================= REVIEW CARD ========================================================= */ function createReviewCard( review ) { const rating = Math.max( 1, Math.min( 5, Number( review.rating ) || 5 ) ); const photo = getReviewPhotoUrl( review ); return ` <article class="reviewCard reveal"> ${ photo ? ` <img class="reviewPhoto" src="${escapeAttribute(photo)}" alt="${escapeAttribute( review.name )}" loading="lazy" > ` : "" } <div class="reviewContent"> <div class="reviewStars" aria-label="${rating} out of 5 stars" > ${"★".repeat(rating)} ${"☆".repeat(5 - rating)} </div> <p class="reviewText"> “${escapeHTML( review.review )}” </p> <div class="reviewAuthor"> <strong> ${escapeHTML( review.name )} </strong> <span> ${escapeHTML( review.country )} </span> </div> </div> </article> `; } /* ========================================================= REVIEW PHOTO URL ========================================================= */ function getReviewPhotoUrl( review ) { if ( review?.photo_url ) { const url = safePageUrl( review.photo_url, "" ); if (url) { return url; } } if ( review?.photo_path ) { return getStoragePublicUrl( review.photo_path ); } return ""; } /* ========================================================= STORAGE PUBLIC URL ========================================================= */ function getStoragePublicUrl( path ) { if (!path) { return ""; } const { data } = supabase .storage .from("review-photos") .getPublicUrl( path ); return safePageUrl( data?.publicUrl, "" ); } /* ========================================================= RESET REVIEW FORM ========================================================= */ function formResetReviewForm( form ) { if (!form) { return; } form.reset(); const rating = document.getElementById( "reviewRating" ); if (rating) { rating.value = "5"; } const label = document.getElementById( "ratingLabel" ); if (label) { label.textContent = "Excellent"; } const starButtons = document.querySelectorAll( "#starRating [data-rating]" ); starButtons.forEach( button => { const value = Number( button.dataset.rating ); button.classList.toggle( "active", value <= 5 ); button.setAttribute( "aria-pressed", String( value === 5 ) ); } ); const preview = document.getElementById( "photoPreview" ); if (preview) { preview.innerHTML = ""; } } /* ========================================================= REVIEW STATUS ========================================================= */ function showReviewStatus( message, type = "info" ) { const status = document.getElementById( "reviewStatus" ); if (!status) { return; } status.textContent = String( message || "" ); status.dataset.type = type; status.classList.remove( "success", "error", "info" ); status.classList.add( type ); } /* ========================================================= IMAGE VALIDATION ========================================================= */ function validateReviewPhoto( file ) { const allowed = [ "image/jpeg", "image/png", "image/webp", "image/gif" ]; if ( !allowed.includes( file.type ) ) { throw new Error( "Only JPG, PNG, WEBP or GIF images are allowed." ); } if ( file.size > 5 * 1024 * 1024 ) { throw new Error( "The photo must be 5 MB or smaller." ); } } /* ========================================================= FILE EXTENSION ========================================================= */ function getFileExtension( filename, mimeType ) { const match = String( filename || "" ) .match( /\.(jpg|jpeg|png|webp|gif)$/i ); if (match) { return `.${match[1].toLowerCase()}`; } const mimeMap = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif" }; return ( mimeMap[mimeType] || ".jpg" ); } /* ========================================================= RANDOM ID ========================================================= */ function randomId() { if ( typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ) { return crypto .randomUUID() .replace( /-/g, "" ) .slice( 0, 12 ); } return Math.random() .toString(36) .slice( 2, 14 ); } /* ========================================================= SAFE PAGE URL ========================================================= */ function safePageUrl( value, fallback = "#" ) { const raw = String( value ?? "" ) .trim(); if (!raw) { return fallback; } /* Allow same-site relative links, hash links and normal HTTPS/HTTP URLs. */ if ( raw.startsWith("#") || raw.startsWith("./") || raw.startsWith("../") || raw.startsWith("/") ) { return raw; } try { const parsed = new URL( raw, window.location.href ); if ( parsed.protocol === "http:" || parsed.protocol === "https:" ) { return parsed.href; } } catch { // Ignore invalid URL. } return fallback; } /* ========================================================= HTML ESCAPING ========================================================= */ function escapeHTML( value ) { return String( value ?? "" ) .replace( /&/g, "&amp;" ) .replace( /</g, "&lt;" ) .replace( />/g, "&gt;" ) .replace( /"/g, "&quot;" ) .replace( /'/g, "&#039;" ); } function escapeAttribute( value ) { return escapeHTML( value ); } /* ========================================================= TRUNCATE ========================================================= */ function truncate( value, maxLength ) { const text = String( value ?? "" ) .trim(); if ( text.length <= maxLength ) { return text; } return ( text .slice( 0, maxLength ) .trim() + "..." ); } /* ========================================================= READABLE ERROR ========================================================= */ function getReadableError( error ) { const message = String( error?.message || error?.error_description || error || "Something went wrong." ); const lower = message.toLowerCase(); if ( lower.includes( "row-level security" ) ) { return ( "The request was blocked by Supabase security policies." ); } if ( lower.includes( "permission denied" ) ) { return ( "Permission denied by Supabase." ); } if ( lower.includes( "duplicate key" ) ) { return ( "This information already exists." ); } return message; } /* ========================================================= REVEAL ANIMATIONS ========================================================= */ function initRevealAnimations() { const elements = document.querySelectorAll( ".reveal" ); if (!elements.length) { return; } if ( !("IntersectionObserver" in window) ) { elements.forEach( element => { element.classList.add( "visible" ); } ); return; } const observer = new IntersectionObserver( entries => { entries.forEach( entry => { if ( entry.isIntersecting ) { entry.target.classList.add( "visible" ); observer.unobserve( entry.target ); } } ); }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" } ); elements.forEach( element => { observer.observe( element ); } ); }
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+const SUPABASE_URL =
+  "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentRating = 0;
+
+let currentReviewPhotoFile = null;
+
+let currentPublicGalleryTourId = null;
+
+
+/* =========================================================
+   DOM READY
+========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    initMobileMenu();
+
+    initHeader();
+
+    initTripForm();
+
+    initStarRating();
+
+    initReviewPhotoPreview();
+
+    initReviewForm();
+
+    initRevealAnimations();
+
+    initTourGallery();
+
+    loadDestinations();
+
+    loadTours();
+
+    loadReviews();
+
+  }
+);
+
+
+/* =========================================================
+   MOBILE MENU
+========================================================= */
+
+function initMobileMenu() {
+
+  const menuButton =
+    document.querySelector(
+      ".menuToggle"
+    );
+
+  const nav =
+    document.querySelector(
+      ".mainNav"
+    );
+
+
+  if (!menuButton || !nav) {
+    return;
+  }
+
+
+  menuButton.addEventListener(
+    "click",
+    () => {
+
+      nav.classList.toggle(
+        "open"
+      );
+
+      menuButton.classList.toggle(
+        "active"
+      );
+
+    }
+  );
+
+
+  nav.querySelectorAll("a").forEach(
+    (link) => {
+
+      link.addEventListener(
+        "click",
+        () => {
+
+          nav.classList.remove(
+            "open"
+          );
+
+          menuButton.classList.remove(
+            "active"
+          );
+
+        }
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+function initHeader() {
+
+  const header =
+    document.querySelector(
+      "header"
+    );
+
+
+  if (!header) {
+    return;
+  }
+
+
+  function updateHeader() {
+
+    if (
+      window.scrollY > 30
+    ) {
+
+      header.classList.add(
+        "scrolled"
+      );
+
+    } else {
+
+      header.classList.remove(
+        "scrolled"
+      );
+
+    }
+
+  }
+
+
+  updateHeader();
+
+
+  window.addEventListener(
+    "scroll",
+    updateHeader,
+    {
+      passive: true
+    }
+  );
+
+}
+
+
+/* =========================================================
+   TRIP PLANNER
+========================================================= */
+
+function initTripForm() {
+
+  const form =
+    document.getElementById(
+      "tripForm"
+    );
+
+
+  if (!form) {
+    return;
+  }
+
+
+  form.addEventListener(
+    "submit",
+    (event) => {
+
+      event.preventDefault();
+
+
+      const formData =
+        new FormData(form);
+
+
+      const name =
+        formData.get("name") ||
+        formData.get("fullName") ||
+        "";
+
+
+      const email =
+        formData.get("email") ||
+        "";
+
+
+      const destination =
+        formData.get("destination") ||
+        "";
+
+
+      const travelers =
+        formData.get("travelers") ||
+        formData.get("guests") ||
+        "";
+
+
+      const startDate =
+        formData.get("startDate") ||
+        formData.get("date") ||
+        "";
+
+
+      const duration =
+        formData.get("duration") ||
+        "";
+
+
+      const budget =
+        formData.get("budget") ||
+        "";
+
+
+      const interests =
+        formData.get("interests") ||
+        formData.get("message") ||
+        "";
+
+
+      let message =
+        "Hello Travel With Sri Lanka!%0A%0A";
+
+
+      message +=
+        "*Trip Planning Request*%0A%0A";
+
+
+      if (name) {
+
+        message +=
+          "*Name:* " +
+          encodeURIComponent(name) +
+          "%0A";
+
+      }
+
+
+      if (email) {
+
+        message +=
+          "*Email:* " +
+          encodeURIComponent(email) +
+          "%0A";
+
+      }
+
+
+      if (destination) {
+
+        message +=
+          "*Destination:* " +
+          encodeURIComponent(destination) +
+          "%0A";
+
+      }
+
+
+      if (travelers) {
+
+        message +=
+          "*Travelers:* " +
+          encodeURIComponent(travelers) +
+          "%0A";
+
+      }
+
+
+      if (startDate) {
+
+        message +=
+          "*Start Date:* " +
+          encodeURIComponent(startDate) +
+          "%0A";
+
+      }
+
+
+      if (duration) {
+
+        message +=
+          "*Duration:* " +
+          encodeURIComponent(duration) +
+          "%0A";
+
+      }
+
+
+      if (budget) {
+
+        message +=
+          "*Budget:* " +
+          encodeURIComponent(budget) +
+          "%0A";
+
+      }
+
+
+      if (interests) {
+
+        message +=
+          "*Interests / Requirements:*%0A" +
+          encodeURIComponent(interests) +
+          "%0A";
+
+      }
+
+
+      const whatsappNumber =
+        "94758453391";
+
+
+      const whatsappUrl =
+        "https://wa.me/" +
+        whatsappNumber +
+        "?text=" +
+        message;
+
+
+      window.open(
+        whatsappUrl,
+        "_blank",
+        "noopener,noreferrer"
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   STAR RATING
+========================================================= */
+
+function initStarRating() {
+
+  const stars =
+    document.querySelectorAll(
+      "[data-rating]"
+    );
+
+
+  if (!stars.length) {
+    return;
+  }
+
+
+  stars.forEach(
+    (star) => {
+
+      star.addEventListener(
+        "click",
+        () => {
+
+          const rating =
+            Number(
+              star.dataset.rating
+            );
+
+
+          currentRating =
+            rating;
+
+
+          updateStarRating(
+            rating
+          );
+
+        }
+      );
+
+
+      star.addEventListener(
+        "mouseenter",
+        () => {
+
+          const rating =
+            Number(
+              star.dataset.rating
+            );
+
+
+          updateStarRating(
+            rating
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+  const container =
+    stars[0].parentElement;
+
+
+  container?.addEventListener(
+    "mouseleave",
+    () => {
+
+      updateStarRating(
+        currentRating
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   UPDATE STAR RATING
+========================================================= */
+
+function updateStarRating(
+  rating
+) {
+
+  document
+    .querySelectorAll(
+      "[data-rating]"
+    )
+    .forEach(
+      (star) => {
+
+        const starRating =
+          Number(
+            star.dataset.rating
+          );
+
+
+        if (
+          starRating <= rating
+        ) {
+
+          star.classList.add(
+            "active"
+          );
+
+        } else {
+
+          star.classList.remove(
+            "active"
+          );
+
+        }
+
+      }
+    );
+
+}
+
+
+/* =========================================================
+   REVIEW PHOTO PREVIEW
+========================================================= */
+
+function initReviewPhotoPreview() {
+
+  const input =
+    document.getElementById(
+      "reviewPhoto"
+    );
+
+
+  const preview =
+    document.getElementById(
+      "reviewPhotoPreview"
+    );
+
+
+  if (!input) {
+    return;
+  }
+
+
+  input.addEventListener(
+    "change",
+    () => {
+
+      const file =
+        input.files?.[0];
+
+
+      currentReviewPhotoFile =
+        file || null;
+
+
+      if (!file) {
+
+        if (preview) {
+          preview.innerHTML = "";
+        }
+
+        return;
+
+      }
+
+
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
+
+        input.value = "";
+
+        currentReviewPhotoFile =
+          null;
+
+        if (preview) {
+          preview.innerHTML = "";
+        }
+
+        alert(
+          "Please select an image file."
+        );
+
+        return;
+
+      }
+
+
+      if (
+        file.size >
+        5 * 1024 * 1024
+      ) {
+
+        input.value = "";
+
+        currentReviewPhotoFile =
+          null;
+
+        if (preview) {
+          preview.innerHTML = "";
+        }
+
+        alert(
+          "Image must be smaller than 5MB."
+        );
+
+        return;
+
+      }
+
+
+      if (preview) {
+
+        const objectUrl =
+          URL.createObjectURL(
+            file
+          );
+
+
+        preview.innerHTML = `
+
+          <div class="review-photo-preview-inner">
+
+            <img
+              src="${escapeAttribute(objectUrl)}"
+              alt="Review photo preview"
+            />
+
+            <button
+              type="button"
+              id="removeReviewPhoto"
+            >
+              Remove
+            </button>
+
+          </div>
+
+        `;
+
+
+        document
+          .getElementById(
+            "removeReviewPhoto"
+          )
+          ?.addEventListener(
+            "click",
+            () => {
+
+              input.value = "";
+
+              currentReviewPhotoFile =
+                null;
+
+              preview.innerHTML = "";
+
+              URL.revokeObjectURL(
+                objectUrl
+              );
+
+            }
+          );
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   REVIEW FORM
+========================================================= */
+
+function initReviewForm() {
+
+  const form =
+    document.getElementById(
+      "reviewForm"
+    );
+
+
+  if (!form) {
+    return;
+  }
+
+
+  form.addEventListener(
+    "submit",
+    async (event) => {
+
+      event.preventDefault();
+
+
+      const submitButton =
+        form.querySelector(
+          'button[type="submit"]'
+        );
+
+
+      const formData =
+        new FormData(form);
+
+
+      const name =
+        String(
+          formData.get("name") ||
+          ""
+        ).trim();
+
+
+      const country =
+        String(
+          formData.get("country") ||
+          ""
+        ).trim();
+
+
+      const review =
+        String(
+          formData.get("review") ||
+          formData.get("message") ||
+          ""
+        ).trim();
+
+
+      if (!name) {
+
+        alert(
+          "Please enter your name."
+        );
+
+        return;
+
+      }
+
+
+      if (!country) {
+
+        alert(
+          "Please enter your country."
+        );
+
+        return;
+
+      }
+
+
+      if (!currentRating) {
+
+        alert(
+          "Please select a rating."
+        );
+
+        return;
+
+      }
+
+
+      if (!review) {
+
+        alert(
+          "Please write your review."
+        );
+
+        return;
+
+      }
+
+
+      if (submitButton) {
+
+        submitButton.disabled =
+          true;
+
+        submitButton.dataset.originalText =
+          submitButton.textContent;
+
+        submitButton.textContent =
+          "Submitting...";
+
+      }
+
+
+      let photoUrl =
+        null;
+
+
+      let photoPath =
+        null;
+
+
+      try {
+
+        /*
+          Upload review photo
+        */
+
+        if (
+          currentReviewPhotoFile
+        ) {
+
+          const file =
+            currentReviewPhotoFile;
+
+
+          const extension =
+            getFileExtension(
+              file.name
+            );
+
+
+          const randomId =
+            generateRandomId();
+
+
+          photoPath =
+            `reviews/${Date.now()}-${randomId}.${extension}`;
+
+
+          const {
+            error:
+            uploadError
+          } =
+            await supabase
+              .storage
+              .from("review-photos")
+              .upload(
+                photoPath,
+                file,
+                {
+                  cacheControl:
+                    "3600",
+                  upsert: false,
+                  contentType:
+                    file.type
+                }
+              );
+
+
+          if (uploadError) {
+            throw uploadError;
+          }
+
+
+          const {
+            data:
+            publicData
+          } =
+            supabase
+              .storage
+              .from("review-photos")
+              .getPublicUrl(
+                photoPath
+              );
+
+
+          photoUrl =
+            publicData?.publicUrl ||
+            null;
+
+        }
+
+
+        /*
+          Insert review
+        */
+
+        const {
+          error
+        } =
+          await supabase
+            .from("reviews")
+            .insert({
+              name,
+              country,
+              rating:
+                currentRating,
+              review,
+              photo_url:
+                photoUrl,
+              photo_path:
+                photoPath
+            });
+
+
+        if (error) {
+
+          /*
+            If DB insert fails,
+            remove uploaded photo.
+          */
+
+          if (photoPath) {
+
+            await supabase
+              .storage
+              .from("review-photos")
+              .remove([
+                photoPath
+              ]);
+
+          }
+
+
+          throw error;
+
+        }
+
+
+        alert(
+          "Thank you! Your review has been submitted."
+        );
+
+
+        form.reset();
+
+
+        currentRating =
+          0;
+
+
+        currentReviewPhotoFile =
+          null;
+
+
+        updateStarRating(
+          0
+        );
+
+
+        const preview =
+          document.getElementById(
+            "reviewPhotoPreview"
+          );
+
+
+        if (preview) {
+          preview.innerHTML = "";
+        }
+
+
+        await loadReviews();
+
+
+      } catch (error) {
+
+        console.error(
+          "Review submission error:",
+          error
+        );
+
+
+        alert(
+          getReadableError(
+            error,
+            "Unable to submit your review. Please try again."
+          )
+        );
+
+      } finally {
+
+        if (submitButton) {
+
+          submitButton.disabled =
+            false;
+
+          submitButton.textContent =
+            submitButton.dataset.originalText ||
+            "Submit Review";
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   LOAD DESTINATIONS
+========================================================= */
+
+async function loadDestinations() {
+
+  const container =
+    document.getElementById(
+      "destinationsGrid"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    `
+      <div class="loading-state">
+        Loading destinations...
+      </div>
+    `;
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabase
+        .from("destinations")
+        .select(`
+          id,
+          slug,
+          name,
+          description,
+          image_url,
+          page_url,
+          sort_order
+        `)
+        .order(
+          "sort_order",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+
+      container.innerHTML =
+        `
+          <div class="empty-state">
+            No destinations available yet.
+          </div>
+        `;
+
+      return;
+
+    }
+
+
+    container.innerHTML =
+      data
+        .map(
+          createDestinationCard
+        )
+        .join("");
+
+
+  } catch (error) {
+
+    console.error(
+      "Destination loading error:",
+      error
+    );
+
+
+    container.innerHTML =
+      `
+        <div class="error-state">
+          Unable to load destinations.
+        </div>
+      `;
+
+  }
+
+}
+
+
+/* =========================================================
+   CREATE DESTINATION CARD
+========================================================= */
+
+function createDestinationCard(
+  destination
+) {
+
+  const image =
+    destination.image_url ||
+    "https://placehold.co/800x600?text=Destination";
+
+
+  const name =
+    destination.name ||
+    "Sri Lanka Destination";
+
+
+  const description =
+    destination.description ||
+    "";
+
+
+  const pageUrl =
+    safePageUrl(
+      destination.page_url
+    );
+
+
+  return `
+
+    <article class="destinationCard">
+
+      <div class="destinationCardImageWrap">
+
+        <img
+          class="destinationCardImage"
+          src="${escapeAttribute(image)}"
+          alt="${escapeAttribute(name)}"
+          loading="lazy"
+        />
+
+      </div>
+
+
+      <div class="destinationCardBody">
+
+        <h3>
+          ${escapeHTML(name)}
+        </h3>
+
+
+        ${
+          description
+            ? `
+              <p>
+                ${escapeHTML(
+                  truncate(
+                    description,
+                    150
+                  )
+                )}
+              </p>
+            `
+            : ""
+        }
+
+
+        ${
+          pageUrl
+            ? `
+              <a
+                href="${escapeAttribute(pageUrl)}"
+                class="destinationExploreButton"
+              >
+                Explore
+                <span>→</span>
+              </a>
+            `
+            : ""
+        }
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+/* =========================================================
+   LOAD TOURS
+========================================================= */
+
+async function loadTours() {
+
+  const container =
+    document.getElementById(
+      "toursGrid"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    `
+      <div class="loading-state">
+        Loading journeys...
+      </div>
+    `;
+
+
+  try {
+
+    /*
+      Load tours
+    */
+
+    const {
+      data: tours,
+      error: toursError
+    } =
+      await supabase
+        .from("tours")
+        .select(`
+          id,
+          slug,
+          title,
+          description,
+          image_url,
+          page_url,
+          sort_order
+        `)
+        .order(
+          "sort_order",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (toursError) {
+      throw toursError;
+    }
+
+
+    if (
+      !tours ||
+      tours.length === 0
+    ) {
+
+      container.innerHTML =
+        `
+          <div class="empty-state">
+            No tours available yet.
+          </div>
+        `;
+
+      return;
+
+    }
+
+
+    /*
+      Load ALL gallery records
+      in one query.
+
+      This avoids making
+      a separate request for
+      every tour.
+    */
+
+    let galleryRows = [];
+
+
+    const {
+      data:
+      galleryData,
+      error:
+      galleryError
+    } =
+      await supabase
+        .from("tour_gallery")
+        .select(`
+          id,
+          tour_id,
+          image_path,
+          image_url,
+          sort_order,
+          created_at
+        `)
+        .order(
+          "sort_order",
+          {
+            ascending: true
+          }
+        )
+        .order(
+          "created_at",
+          {
+            ascending: true
+          }
+        );
+
+
+    /*
+      If gallery table doesn't exist yet,
+      tours should still load.
+    */
+
+    if (galleryError) {
+
+      console.warn(
+        "Tour gallery loading warning:",
+        galleryError
+      );
+
+    } else {
+
+      galleryRows =
+        galleryData || [];
+
+    }
+
+
+    /*
+      Group gallery records
+      by tour ID.
+    */
+
+    const galleryMap =
+      new Map();
+
+
+    galleryRows.forEach(
+      (image) => {
+
+        const tourId =
+          Number(
+            image.tour_id
+          );
+
+
+        if (
+          !galleryMap.has(
+            tourId
+          )
+        ) {
+
+          galleryMap.set(
+            tourId,
+            []
+          );
+
+        }
+
+
+        galleryMap
+          .get(tourId)
+          .push(image);
+
+      }
+    );
+
+
+    /*
+      Add gallery information
+      to each tour.
+    */
+
+    const toursWithGallery =
+      tours.map(
+        (tour) => ({
+
+          ...tour,
+
+          gallery:
+            galleryMap.get(
+              Number(tour.id)
+            ) || []
+
+        })
+      );
+
+
+    container.innerHTML =
+      toursWithGallery
+        .map(
+          createTourCard
+        )
+        .join("");
+
+
+  } catch (error) {
+
+    console.error(
+      "Tour loading error:",
+      error
+    );
+
+
+    container.innerHTML =
+      `
+        <div class="error-state">
+          Unable to load tours.
+        </div>
+      `;
+
+  }
+
+}
+
+
+/* =========================================================
+   CREATE TOUR CARD
+========================================================= */
+
+function createTourCard(
+  tour
+) {
+
+  const image =
+    tour.image_url ||
+    "https://placehold.co/800x600?text=Tour";
+
+
+  const title =
+    tour.title ||
+    "Sri Lanka Tour";
+
+
+  const description =
+    tour.description ||
+    "";
+
+
+  const pageUrl =
+    safePageUrl(
+      tour.page_url
+    );
+
+
+  const gallery =
+    Array.isArray(
+      tour.gallery
+    )
+      ? tour.gallery
+      : [];
+
+
+  const galleryCount =
+    gallery.length;
+
+
+  return `
+
+    <article class="tourCard">
+
+      <div class="tourCardImageWrap">
+
+        <img
+          class="tourCardImage"
+          src="${escapeAttribute(image)}"
+          alt="${escapeAttribute(title)}"
+          loading="lazy"
+        />
+
+      </div>
+
+
+      <div class="tourCardBody">
+
+        <h3 class="tourCardTitle">
+          ${escapeHTML(title)}
+        </h3>
+
+
+        ${
+          description
+            ? `
+              <p class="tourCardDescription">
+                ${escapeHTML(
+                  truncate(
+                    description,
+                    180
+                  )
+                )}
+              </p>
+            `
+            : ""
+        }
+
+
+        <div class="tourCardActions">
+
+          ${
+            galleryCount > 0
+              ? `
+                <button
+                  type="button"
+                  class="tourGalleryButton"
+                  data-tour-gallery="${Number(tour.id)}"
+                  data-tour-title="${escapeAttribute(title)}"
+                >
+                  📷 View Gallery
+                  <span class="tour-gallery-count">
+                    ${galleryCount}
+                  </span>
+                </button>
+              `
+              : ""
+          }
+
+
+          ${
+            pageUrl
+              ? `
+                <a
+                  class="tourExploreButton"
+                  href="${escapeAttribute(pageUrl)}"
+                >
+                  Explore Journey
+                  <span>→</span>
+                </a>
+              `
+              : ""
+          }
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+/* =========================================================
+   TOUR GALLERY INITIALIZATION
+========================================================= */
+
+function initTourGallery() {
+
+  const modal =
+    document.getElementById(
+      "tourGalleryModal"
+    );
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  const closeButton =
+    document.getElementById(
+      "tourGalleryClose"
+    );
+
+
+  const overlay =
+    modal.querySelector(
+      ".tour-gallery-overlay"
+    );
+
+
+  /*
+    Event delegation because
+    tour cards are dynamically created.
+  */
+
+  document.addEventListener(
+    "click",
+    (event) => {
+
+      const button =
+        event.target.closest(
+          "[data-tour-gallery]"
+        );
+
+
+      if (!button) {
+        return;
+      }
+
+
+      const tourId =
+        Number(
+          button.dataset.tourGallery
+        );
+
+
+      const tourTitle =
+        button.dataset.tourTitle ||
+        "Tour Gallery";
+
+
+      if (!tourId) {
+        return;
+      }
+
+
+      openPublicTourGallery(
+        tourId,
+        tourTitle
+      );
+
+    }
+  );
+
+
+  closeButton?.addEventListener(
+    "click",
+    closePublicTourGallery
+  );
+
+
+  overlay?.addEventListener(
+    "click",
+    closePublicTourGallery
+  );
+
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+
+      if (
+        event.key === "Escape"
+      ) {
+
+        const lightbox =
+          document.getElementById(
+            "tourGalleryLightbox"
+          );
+
+
+        if (
+          lightbox?.classList.contains(
+            "active"
+          )
+        ) {
+
+          closeGalleryLightbox();
+
+          return;
+
+        }
+
+
+        if (
+          modal.classList.contains(
+            "active"
+          )
+        ) {
+
+          closePublicTourGallery();
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   OPEN TOUR GALLERY
+========================================================= */
+
+async function openPublicTourGallery(
+  tourId,
+  tourTitle
+) {
+
+  const modal =
+    document.getElementById(
+      "tourGalleryModal"
+    );
+
+
+  const title =
+    document.getElementById(
+      "tourGalleryTitle"
+    );
+
+
+  const loading =
+    document.getElementById(
+      "tourGalleryLoading"
+    );
+
+
+  const empty =
+    document.getElementById(
+      "tourGalleryEmpty"
+    );
+
+
+  const grid =
+    document.getElementById(
+      "tourGalleryGrid"
+    );
+
+
+  if (
+    !modal ||
+    !grid
+  ) {
+    return;
+  }
+
+
+  currentPublicGalleryTourId =
+    Number(tourId);
+
+
+  if (title) {
+
+    title.textContent =
+      tourTitle ||
+      "Tour Gallery";
+
+  }
+
+
+  if (loading) {
+
+    loading.style.display =
+      "block";
+
+  }
+
+
+  if (empty) {
+
+    empty.style.display =
+      "none";
+
+  }
+
+
+  grid.innerHTML =
+    "";
+
+
+  modal.classList.add(
+    "active"
+  );
+
+
+  modal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+
+  document.body.classList.add(
+    "tour-gallery-open"
+  );
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabase
+        .from("tour_gallery")
+        .select(`
+          id,
+          tour_id,
+          image_path,
+          image_url,
+          sort_order,
+          created_at
+        `)
+        .eq(
+          "tour_id",
+          currentPublicGalleryTourId
+        )
+        .order(
+          "sort_order",
+          {
+            ascending: true
+          }
+        )
+        .order(
+          "created_at",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (loading) {
+
+      loading.style.display =
+        "none";
+
+    }
+
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+
+      if (empty) {
+
+        empty.style.display =
+          "block";
+
+      }
+
+      return;
+
+    }
+
+
+    grid.innerHTML =
+      data
+        .map(
+          createPublicGalleryImage
+        )
+        .join("");
+
+
+    initPublicGalleryLightbox();
+
+
+  } catch (error) {
+
+    console.error(
+      "Tour gallery error:",
+      error
+    );
+
+
+    if (loading) {
+
+      loading.style.display =
+        "none";
+
+    }
+
+
+    if (empty) {
+
+      empty.style.display =
+        "block";
+
+
+      empty.innerHTML = `
+
+        <div class="tour-gallery-empty-icon">
+          ⚠️
+        </div>
+
+        <h3>
+          Gallery could not be loaded
+        </h3>
+
+        <p>
+          Please try again later.
+        </p>
+
+      `;
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   CREATE GALLERY IMAGE
+========================================================= */
+
+function createPublicGalleryImage(
+  image,
+  index
+) {
+
+  let imageUrl =
+    image.image_url;
+
+
+  /*
+    If image_url is empty,
+    get public Storage URL.
+  */
+
+  if (
+    !imageUrl &&
+    image.image_path
+  ) {
+
+    const {
+      data
+    } =
+      supabase
+        .storage
+        .from("tour-gallery")
+        .getPublicUrl(
+          image.image_path
+        );
+
+
+    imageUrl =
+      data?.publicUrl ||
+      "";
+
+  }
+
+
+  if (!imageUrl) {
+    return "";
+  }
+
+
+  return `
+
+    <button
+      type="button"
+      class="tour-gallery-item"
+      data-gallery-image="${escapeAttribute(imageUrl)}"
+      data-gallery-index="${index}"
+      aria-label="Open gallery image ${index + 1}"
+    >
+
+      <img
+        src="${escapeAttribute(imageUrl)}"
+        alt="Tour gallery image ${index + 1}"
+        loading="lazy"
+      />
+
+
+      <span class="tour-gallery-image-number">
+        ${index + 1}
+      </span>
+
+
+      <span class="tour-gallery-zoom">
+        +
+      </span>
+
+    </button>
+
+  `;
+
+}
+
+
+/* =========================================================
+   GALLERY LIGHTBOX INITIALIZATION
+========================================================= */
+
+function initPublicGalleryLightbox() {
+
+  document
+    .querySelectorAll(
+      "[data-gallery-image]"
+    )
+    .forEach(
+      (button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const imageUrl =
+              button.dataset.galleryImage;
+
+
+            if (!imageUrl) {
+              return;
+            }
+
+
+            openGalleryLightbox(
+              imageUrl
+            );
+
+          }
+        );
+
+      }
+    );
+
+}
+
+
+/* =========================================================
+   OPEN LIGHTBOX
+========================================================= */
+
+function openGalleryLightbox(
+  imageUrl
+) {
+
+  let lightbox =
+    document.getElementById(
+      "tourGalleryLightbox"
+    );
+
+
+  if (!lightbox) {
+
+    lightbox =
+      document.createElement(
+        "div"
+      );
+
+
+    lightbox.id =
+      "tourGalleryLightbox";
+
+
+    lightbox.className =
+      "tour-gallery-lightbox";
+
+
+    lightbox.innerHTML = `
+
+      <div
+        class="tour-gallery-lightbox-overlay"
+      ></div>
+
+
+      <button
+        type="button"
+        class="tour-gallery-lightbox-close"
+        aria-label="Close image"
+      >
+        ×
+      </button>
+
+
+      <div
+        class="tour-gallery-lightbox-content"
+      >
+
+        <img
+          id="tourGalleryLightboxImage"
+          src=""
+          alt="Tour gallery"
+        />
+
+      </div>
+
+    `;
+
+
+    document.body.appendChild(
+      lightbox
+    );
+
+
+    lightbox
+      .querySelector(
+        ".tour-gallery-lightbox-overlay"
+      )
+      ?.addEventListener(
+        "click",
+        closeGalleryLightbox
+      );
+
+
+    lightbox
+      .querySelector(
+        ".tour-gallery-lightbox-close"
+      )
+      ?.addEventListener(
+        "click",
+        closeGalleryLightbox
+      );
+
+  }
+
+
+  const image =
+    document.getElementById(
+      "tourGalleryLightboxImage"
+    );
+
+
+  if (image) {
+
+    image.src =
+      imageUrl;
+
+  }
+
+
+  lightbox.classList.add(
+    "active"
+  );
+
+
+  document.body.classList.add(
+    "tour-lightbox-open"
+  );
+
+}
+
+
+/* =========================================================
+   CLOSE LIGHTBOX
+========================================================= */
+
+function closeGalleryLightbox() {
+
+  const lightbox =
+    document.getElementById(
+      "tourGalleryLightbox"
+    );
+
+
+  if (!lightbox) {
+    return;
+  }
+
+
+  lightbox.classList.remove(
+    "active"
+  );
+
+
+  document.body.classList.remove(
+    "tour-lightbox-open"
+  );
+
+}
+
+
+/* =========================================================
+   CLOSE TOUR GALLERY
+========================================================= */
+
+function closePublicTourGallery() {
+
+  const modal =
+    document.getElementById(
+      "tourGalleryModal"
+    );
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  modal.classList.remove(
+    "active"
+  );
+
+
+  modal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+
+  document.body.classList.remove(
+    "tour-gallery-open"
+  );
+
+
+  currentPublicGalleryTourId =
+    null;
+
+}
+
+
+/* =========================================================
+   REVEAL ANIMATIONS
+========================================================= */
+
+function initRevealAnimations() {
+
+  const elements =
+    document.querySelectorAll(
+      ".reveal, .fade-up, .animate"
+    );
+
+
+  if (
+    !elements.length
+  ) {
+    return;
+  }
+
+
+  if (
+    !("IntersectionObserver" in window)
+  ) {
+
+    elements.forEach(
+      (element) => {
+
+        element.classList.add(
+          "visible"
+        );
+
+      }
+    );
+
+    return;
+
+  }
+
+
+  const observer =
+    new IntersectionObserver(
+      (
+        entries,
+        observerInstance
+      ) => {
+
+        entries.forEach(
+          (entry) => {
+
+            if (
+              entry.isIntersecting
+            ) {
+
+              entry.target.classList.add(
+                "visible"
+              );
+
+
+              observerInstance.unobserve(
+                entry.target
+              );
+
+            }
+
+          }
+        );
+
+      },
+      {
+        threshold: 0.12
+      }
+    );
+
+
+  elements.forEach(
+    (element) => {
+
+      observer.observe(
+        element
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   SAFE PAGE URL
+========================================================= */
+
+function safePageUrl(
+  url
+) {
+
+  if (!url) {
+    return "";
+  }
+
+
+  const value =
+    String(url).trim();
+
+
+  if (!value) {
+    return "";
+  }
+
+
+  /*
+    Allow normal relative URLs
+    and HTTPS URLs.
+  */
+
+  if (
+    value.startsWith("/")
+    ||
+    value.startsWith("./")
+    ||
+    value.startsWith("../")
+    ||
+    value.startsWith("#")
+  ) {
+
+    return value;
+
+  }
+
+
+  try {
+
+    const parsed =
+      new URL(
+        value,
+        window.location.origin
+      );
+
+
+    if (
+      parsed.protocol ===
+        "https:" ||
+      parsed.protocol ===
+        "http:"
+    ) {
+
+      return parsed.href;
+
+    }
+
+  } catch {
+    return "";
+  }
+
+
+  return "";
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(
+  value
+) {
+
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+/* =========================================================
+   ESCAPE ATTRIBUTE
+========================================================= */
+
+function escapeAttribute(
+  value
+) {
+
+  return escapeHTML(
+    value
+  );
+
+}
+
+
+/* =========================================================
+   TRUNCATE
+========================================================= */
+
+function truncate(
+  text,
+  maxLength
+) {
+
+  const value =
+    String(
+      text ?? ""
+    ).trim();
+
+
+  if (
+    value.length <=
+    maxLength
+  ) {
+
+    return value;
+
+  }
+
+
+  return (
+    value
+      .slice(
+        0,
+        maxLength
+      )
+      .trimEnd() +
+    "..."
+  );
+
+}
+
+
+/* =========================================================
+   LOAD REVIEWS
+========================================================= */
+
+async function loadReviews() {
+
+  const container =
+    document.getElementById(
+      "reviewsContainer"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    `
+      <div class="loading-state">
+        Loading reviews...
+      </div>
+    `;
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabase
+        .from("reviews")
+        .select(`
+          id,
+          name,
+          country,
+          rating,
+          review,
+          photo_url,
+          created_at
+        `)
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+
+      container.innerHTML =
+        `
+          <div class="empty-state">
+            Be the first to share your experience.
+          </div>
+        `;
+
+      return;
+
+    }
+
+
+    container.innerHTML =
+      data
+        .map(
+          createReviewCard
+        )
+        .join("");
+
+
+  } catch (error) {
+
+    console.error(
+      "Review loading error:",
+      error
+    );
+
+
+    container.innerHTML =
+      `
+        <div class="error-state">
+          Unable to load reviews.
+        </div>
+      `;
+
+  }
+
+}
+
+
+/* =========================================================
+   CREATE REVIEW CARD
+========================================================= */
+
+function createReviewCard(
+  review
+) {
+
+  const name =
+    review.name ||
+    "Traveler";
+
+
+  const country =
+    review.country ||
+    "";
+
+
+  const text =
+    review.review ||
+    "";
+
+
+  const rating =
+    Math.min(
+      5,
+      Math.max(
+        0,
+        Number(
+          review.rating
+        ) || 0
+      )
+    );
+
+
+  const stars =
+    "★".repeat(
+      rating
+    ) +
+    "☆".repeat(
+      5 - rating
+    );
+
+
+  const photo =
+    review.photo_url ||
+    "";
+
+
+  const date =
+    review.created_at
+      ? formatReviewDate(
+          review.created_at
+        )
+      : "";
+
+
+  return `
+
+    <article class="reviewCard">
+
+      ${
+        photo
+          ? `
+            <div class="reviewCardPhoto">
+
+              <img
+                src="${escapeAttribute(photo)}"
+                alt="${escapeAttribute(name)}"
+                loading="lazy"
+              />
+
+            </div>
+          `
+          : ""
+      }
+
+
+      <div class="reviewCardBody">
+
+        <div class="reviewRating">
+          ${stars}
+        </div>
+
+
+        <p class="reviewText">
+          “${escapeHTML(text)}”
+        </p>
+
+
+        <div class="reviewAuthor">
+
+          <strong>
+            ${escapeHTML(name)}
+          </strong>
+
+
+          ${
+            country
+              ? `
+                <span>
+                  ${escapeHTML(country)}
+                </span>
+              `
+              : ""
+          }
+
+
+          ${
+            date
+              ? `
+                <small>
+                  ${escapeHTML(date)}
+                </small>
+              `
+              : ""
+          }
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+/* =========================================================
+   FORMAT REVIEW DATE
+========================================================= */
+
+function formatReviewDate(
+  dateValue
+) {
+
+  try {
+
+    const date =
+      new Date(
+        dateValue
+      );
+
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+
+      return "";
+
+    }
+
+
+    return date.toLocaleDateString(
+      "en-US",
+      {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      }
+    );
+
+  } catch {
+    return "";
+  }
+
+}
+
+
+/* =========================================================
+   FILE EXTENSION
+========================================================= */
+
+function getFileExtension(
+  fileName
+) {
+
+  const parts =
+    String(
+      fileName
+    )
+      .toLowerCase()
+      .split(".");
+
+
+  const extension =
+    parts.length > 1
+      ? parts.pop()
+      : "jpg";
+
+
+  const allowed = [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "gif"
+  ];
+
+
+  return allowed.includes(
+    extension
+  )
+    ? extension
+    : "jpg";
+
+}
+
+
+/* =========================================================
+   RANDOM ID
+========================================================= */
+
+function generateRandomId() {
+
+  if (
+    typeof crypto !==
+      "undefined" &&
+    typeof crypto.randomUUID ===
+      "function"
+  ) {
+
+    return crypto.randomUUID();
+
+  }
+
+
+  return (
+    Date.now().toString(36) +
+    "-" +
+    Math.random()
+      .toString(36)
+      .slice(2)
+  );
+
+}
+
+
+/* =========================================================
+   READABLE SUPABASE ERROR
+========================================================= */
+
+function getReadableError(
+  error,
+  fallback
+) {
+
+  if (!error) {
+    return fallback;
+  }
+
+
+  if (
+    error.message
+  ) {
+
+    return error.message;
+
+  }
+
+
+  if (
+    error.error_description
+  ) {
+
+    return error.error_description;
+
+  }
+
+
+  return fallback;
+
+}
