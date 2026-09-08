@@ -47,18 +47,31 @@ let currentGalleryTourTitle = "";
    DOM READY
 ========================================================= */
 
-document.addEventListener("DOMContentLoaded", initAdminDashboard);
+document.addEventListener("DOMContentLoaded", () => {
+  initAdmin();
+});
 
 
-/* 
-
-=========================================================
-   INITIALIZE
+/* =========================================================
+   INIT
 ========================================================= */
 
-async function initAdminDashboard() {
+async function initAdmin() {
 
   const loading = document.getElementById("loading");
+
+  if (loading) {
+    loading.innerHTML = `
+      <div style="
+        padding:40px;
+        text-align:center;
+        font-family:Arial,sans-serif;
+      ">
+        Loading Admin Dashboard...
+      </div>
+
+    `;
+  }
 
   try {
 
@@ -71,514 +84,602 @@ async function initAdminDashboard() {
 
     if (error) {
       throw error;
-
     }
 
     if (!session) {
-      window.location.href = "admin.html";
+
+      showLogin();
+
       return;
     }
 
-    createDashboard();
 
-    await loadDashboard();
+    renderDashboard();
 
-    supabase.auth.onAuthStateChange((event) => {
-
-      if (event === "SIGNED_OUT") {
-        window.location.href = "admin.html";
-      }
-
-    });
+    await loadDashboardData();
 
   } catch (error) {
 
+    console.error(error);
+
+    showError(
+      error?.message ||
+      "Unable to load admin dashboard."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   LOGIN
+
+========================================================= */
+
+function showLogin() {
+
+  const loading =
+    document.getElementById("loading");
+
+  if (!loading) {
+    return;
+  }
+
+  loading.innerHTML = `
+    <div style="
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:#f5f7f6;
+      font-family:Arial,sans-serif;
+    ">
+
+
+      <div style="
+        width:min(420px,100%);
+        background:white;
+        padding:30px;
+        border-radius:18px;
+        box-shadow:0 20px 60px rgba(0,0,0,.12);
+      ">
+
+        <h2 style="
+          margin:0 0 8px;
+          color:#173f2c;
+        ">
+          Admin Login
+        </h2>
+
+        <p style="
+          margin:0 0 25px;
+          color:#6f7c75;
+        ">
+          Travel With Sri Lanka
+
+        </p>
+
+        <form id="adminLoginForm">
+
+          <input
+            id="adminEmail"
+            type="email"
+            placeholder="Email"
+            required
+            style="
+              width:100%;
+              box-sizing:border-box;
+              padding:13px;
+              margin-bottom:12px;
+              border:1px solid #d8e0db;
+              border-radius:9px;
+            "
+          >
+
+          <input
+            id="adminPassword"
+            type="password"
+
+            placeholder="Password"
+            required
+            style="
+              width:100%;
+              box-sizing:border-box;
+              padding:13px;
+              margin-bottom:15px;
+              border:1px solid #d8e0db;
+              border-radius:9px;
+            "
+          >
+
+          <button
+            type="submit"
+            style="
+              width:100%;
+              padding:13px;
+              border:0;
+              border-radius:9px;
+              background:#1e5c3f;
+              color:white;
+              font-weight:700;
+
+              cursor:pointer;
+            "
+          >
+            Login
+          </button>
+
+          <p
+            id="loginStatus"
+            style="
+              margin:14px 0 0;
+              text-align:center;
+              color:#b33;
+            "
+          ></p>
+
+        </form>
+
+      </div>
+
+    </div>
+  `;
+
+  const form =
+
+    document.getElementById("adminLoginForm");
+
+  form?.addEventListener(
+    "submit",
+    loginAdmin
+  );
+}
+
+
+async function loginAdmin(event) {
+
+  event.preventDefault();
+
+  const email =
+    document.getElementById("adminEmail")?.value.trim();
+
+  const password =
+    
+
+document.getElementById("adminPassword")?.value;
+
+  const status =
+    document.getElementById("loginStatus");
+
+  if (status) {
+    status.textContent = "Logging in...";
+  }
+
+  try {
+
+    const {
+      error
+    } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    location.reload();
+
+  } catch (error) {
 
     console.error(error);
 
-    if (loading) {
-      loading.innerHTML = `
-        <div style="padding:30px;text-align:center;">
-          <h2>Admin Panel Error</h2>
-          <p>${escapeHTML(getReadableError(error))}</p>
-          <button onclick="location.reload()">
-            Reload
-          </button>
-        </div>
-      `;
+    if (status) {
+      status.textContent =
+        error?.message ||
+        "Login failed.";
     }
 
   }
 
 }
 
-/* =========================================================
-   CREATE DASHBOARD
+
+/* 
+
+=========================================================
+   DASHBOARD HTML
 ========================================================= */
 
-function createDashboard() {
+function renderDashboard() {
 
-  const loading = document.getElementById("loading");
+  const loading =
+    document.getElementById("loading");
 
   if (!loading) {
     return;
   }
 
-  loading.outerHTML = `
+  loading.innerHTML = `
 
-    <div class="admin-app">
+    <div class="admin-layout">
 
-      <header class="admin-header">
+      <aside class="admin-sidebar">
 
-        <div>
-          <h1>TRAVEL WITH SRI LANKA ADMIN</h1>
-          <p>Website Management Dashboard</p>
+        <div class="admin-brand">
+
+          <strong>Travel With</strong>
+          <span>Sri Lanka</span>
         </div>
 
-        <div class="admin-user">
 
-          <span id="adminEmail"></span>
+        <nav class="admin-nav">
 
           <button
-            id="logoutBtn"
-            class="admin-logout-btn"
             type="button"
-          >
-            Logout
-          </button>
-
-        </div>
-
-      </header>
-
-
-
-      <div class="admin-layout">
-
-        <aside class="admin-sidebar">
-
-          <button
-            class="admin-nav-btn active"
             data-section="dashboard"
-            type="button"
+            class="admin-nav-btn active"
           >
-            📊 Dashboard
+            Dashboard
           </button>
 
           <button
-            class="admin-nav-btn"
+            type="button"
             data-section="destinations"
-            type="button"
+            class="admin-nav-btn"
           >
-            📍 Destinations
+            Destinations
           </button>
 
+
           <button
-            class="admin-nav-btn"
+            type="button"
             data-section="tours"
-            type="button"
+            class="admin-nav-btn"
           >
-            🧳 Tours
+            Tours
           </button>
 
           <button
-            class="admin-nav-btn"
+            type="button"
             data-section="locations"
-            type="button"
+            class="admin-nav-btn"
           >
-            📌 Destination Locations
+            Destination Locations
           </button>
 
           <button
-            class="admin-nav-btn"
-            data-section="reviews"
             type="button"
+            data-section="reviews"
+            class="admin-nav-btn"
           >
-            ⭐ Reviews
+            Reviews
 
           </button>
 
-        </aside>
+        </nav>
 
 
-        <main class="admin-main">
+        <button
+          id="logoutBtn"
+          class="admin-logout-btn"
+          type="button"
+        >
+          Logout
+        </button>
+
+      </aside>
 
 
-          <!-- =================================================
-               DASHBOARD
-          ================================================== -->
-
-          <section
-            id="section-dashboard"
-            class="admin-section"
-          >
-
-            <div class="admin-section-header">
-
-              <div>
-                <h2>Dashboard</h2>
-                <p>
-                  Manage your Travel With Sri Lanka website.
-                </p>
-              </div>
-
-            </div>
+      <main class="admin-main">
 
 
-            <div class="admin-stats-grid">
+        <!-- DASHBOARD -->
 
-              <div class="admin-stat-card">
-                <span>Destinations</span>
-                <strong id="statDestinations">0</strong>
-              </div>
+        <section
 
-              <div class="admin-stat-card">
-                <span>Tours</span>
-                <strong id="statTours">0</strong>
+          id="section-dashboard"
+          class="admin-section"
+        >
 
-              </div>
+          <div class="admin-section-header">
 
-              <div class="admin-stat-card">
-                <span>Locations</span>
-                <strong id="statLocations">0</strong>
-              </div>
+            <div>
 
-              <div class="admin-stat-card">
-                <span>Reviews</span>
-                <strong id="statReviews">0</strong>
-              </div>
+              <p class="admin-eyebrow">
+                ADMIN PANEL
+              </p>
 
-              <div class="admin-stat-card">
-                <span>Tour Gallery Images</span>
-                <strong id="statGallery">0</strong>
-              </div>
-
-            </div>
-
-
-
-            <div class="admin-dashboard-box">
-
-              <h3>Quick Information</h3>
+              <h1>
+                Dashboard
+              </h1>
 
               <p>
-                Use the sidebar to manage destinations,
-                tours, destination locations, reviews and
-                tour gallery images.
+                Manage Travel With Sri Lanka content.
               </p>
 
             </div>
 
-          </section>
+
+          </div>
+
+
+          <div
+            class="admin-stats-grid"
+            id="adminStats"
+          ></div>
+
+
+        </section>
 
 
 
-          <!-- ===================================
+        <!-- DESTINATIONS -->
 
-==============
-               DESTINATIONS
-          ================================================== -->
+        <section
+          id="section-destinations"
+          class="admin-section"
+          style="display:none;"
+        >
 
-          <section
-            id="section-destinations"
-            class="admin-section"
-            style="display:none;"
-          >
+          <div class="admin-section-header">
 
-            <div class="admin-section-header">
+            <div>
 
-              <div>
-                <h2>Destinations</h2>
-                <p>
-                  Manage Sri Lankan destinations.
-                </p>
-              </div>
+              <h2>
+                Destinations
+              </h2>
 
-              <button
-
-                id="addDestinationBtn"
-                class="admin-primary-btn"
-                type="button"
-              >
-                + Add Destination
-              </button>
-
-            </div>
-
-            <div
-              id="destinationsList"
-              class="admin-card-list"
-            ></div>
-
-          </section>
-
-
-
-          <!-- =================================================
-               TOURS
-
-          ================================================== -->
-
-          <section
-            id="section-tours"
-            class="admin-section"
-            style="display:none;"
-          >
-
-            <div class="admin-section-header">
-
-              <div>
-                <h2>Tours</h2>
-                <p>
-                  Manage tour packages and galleries.
-                </p>
-              </div>
-
-              <button
-                id="addTourBtn"
-                class="admin-primary-btn"
-
-                type="button"
-              >
-                + Add Tour
-              </button>
+              <p>
+                Manage destination pages.
+              </p>
 
             </div>
 
-            <div
-              id="toursList"
-              class="admin-card-list"
-            ></div>
+            <button
+              id="addDestinationBtn"
+              class="admin-primary-btn"
+              type="button"
+            >
+              + Add Destination
+            </button>
 
-          </section>
+          </div>
 
 
+          <div
+            id="destinationsList"
+            class="admin-card-list"
+          ></div>
 
-          <!-- =================================================
-               LOCATIONS
-          ===================================
-
-=============== -->
-
-          <section
-            id="section-locations"
-            class="admin-section"
-            style="display:none;"
-          >
-
-            <div class="admin-section-header">
-
-              <div>
-                <h2>Destination Locations</h2>
-                <p>
-                  Manage locations inside destinations.
-                </p>
-              </div>
-
-            </div>
-
-            <div
-              id="locationsList"
-
-              class="admin-card-list"
-            ></div>
-
-          </section>
+        </section>
 
 
 
-          <!-- =================================================
-               REVIEWS
-          ================================================== -->
+        <!-- TOURS -->
 
-          <section
-            id="section-reviews"
-            class="admin-section"
-            style="display:none;"
-          >
+        <section
+          id="section-tours"
+          class="admin-section"
+          style="display:none;"
+        >
 
-            <div class="admin-section-header">
+          <div class="admin-section-header">
 
+            <div>
 
-              <div>
-                <h2>Reviews</h2>
-                <p>
-                  Manage customer reviews.
-                </p>
-              </div>
+              <h2>
+                Tours
+              </h2>
+
+              <p>
+                Manage tour packages and galleries.
+              </p>
 
             </div>
 
-            <div
-              id="reviewsList"
-              class="admin-card-list"
-            ></div>
+            <button
+              id="addTourBtn"
+              class="admin-primary-btn"
+              type="button"
+            >
+              + Add Tour
+            </button>
 
-          </section>
+          </div>
 
 
-        </main>
+          <div
+            id="toursList"
+            class="admin-card-list"
+          ></div>
 
-      </div>
+        </section>
+
+
+
+        <!-- LOCATIONS -->
+
+        <section
+          id="section-locations"
+          class="admin-section"
+          style="display:none;"
+        >
+
+          <div class="admin-section-header">
+
+            <div>
+
+              <h2>
+                Destination Locations
+              </h2>
+
+              <p>
+                Manage locations inside destinations.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div
+            id="locationsList"
+            class="admin-card-list"
+          ></div>
+
+        </section>
+
+
+        <!-- REVIEWS -->
+
+        <section
+          id="section-reviews"
+          class="admin-section"
+          style="display:none;"
+        >
+
+          <div class="admin-section-header">
+
+            <div>
+
+              <h2>
+                Reviews
+              </h2>
+
+              <p>
+                Manage traveler reviews.
+              </p>
+
+            </div>
+
+
+          </div>
+
+
+          <div
+            id="reviewsList"
+            class="admin-card-list"
+          ></div>
+
+        </section>
+
+
+      </main>
 
     </div>
 
 
+    <!-- ===================================================
+         DESTINATION MODAL
+    
 
-    <!-- =====================================================
-         CONTENT MODAL
-    ====================================================== -->
+==================================================== -->
 
     <div
-      id="contentModal"
+      id="destinationModal"
       class="admin-modal"
       style="display:none;"
     >
 
+      <div class="admin-modal-overlay"></div>
+
       <div class="admin-modal-box">
 
-        <div class="admin-modal-header">
+        <button
+          type="button"
+          class="admin-modal-close"
+          data-close-modal="destinationModal"
+        >
+          ×
+        </button>
 
-          <h2 id="contentModalTitle">
-            Add Content
-          </h2>
+        <h2 id="destinationModalTitle">
 
-          <button
-            class="admin-modal-close"
-            id="closeContentModal"
-            type="button"
-          >
-            ×
-          </button>
+          Add Destination
+        </h2>
 
-        </div>
-
-
-        <form id="contentForm">
+        <form id="destinationForm">
 
           <input
             type="hidden"
-            id="contentType"
-          />
+            id="destinationId"
+          >
 
-          <div class="admin-form-group">
+          <label>
+            Name
+          </label>
 
+          <input
+            id="destinationName"
+            type="text"
+            required
+          >
 
-            <label id="nameLabel">
-              Name
-            </label>
+          <label>
+            Slug
 
-            <input
-              id="contentName"
-              type="text"
-              required
-            />
+          </label>
 
-          </div>
+          <input
+            id="destinationSlug"
+            type="text"
+            required
+          >
 
+          <label>
+            Description
+          </label>
 
-          <div class="admin-form-group">
+          <textarea
+            id="destinationDescription"
+            rows="5"
+          ></textarea>
 
-            <label>
-              Slug
-            </label>
+          <label>
+            Image URL
+          </label>
 
-            <input
-              id="contentSlug"
+          <input
 
-              type="text"
-              required
-            />
+            id="destinationImageUrl"
+            type="url"
+          >
 
-          </div>
+          <label>
+            Page URL
+          </label>
 
+          <input
+            id="destinationPageUrl"
+            type="text"
+          >
 
-          <div class="admin-form-group">
+          <label>
+            Sort Order
+          </label>
 
-            <label>
-              Description
-            </label>
-
-            <textarea
-              id="contentDescription"
-              rows="5"
-            ></textarea>
-
-          </div>
-
-
-          <div class="admin-form-group">
-
-
-            <label>
-              Main Image URL
-            </label>
-
-            <input
-              id="contentImageUrl"
-              type="url"
-              placeholder="https://..."
-            />
-
-          </div>
+          <input
+            id="destinationSortOrder"
+            type="number"
+            value="0"
+          >
 
 
-          <div class="admin-form-group">
+          <button
+            class="admin-primary-btn"
+            type="submit"
+          >
+            Save Destination
+          </button>
 
-            <label>
-              Page URL
-            </label>
-
-            <input
-              id="contentPageUrl"
-
-              type="text"
-              placeholder="tour.html?tour=..."
-            />
-
-          </div>
-
-
-          <div class="admin-form-group">
-
-            <label>
-              Sort Order
-            </label>
-
-            <input
-              id="contentSortOrder"
-              type="number"
-              value="0"
-            />
-
-          </div>
-
-          <div
-            id="currentContentImage"
-            class="admin-current-image"
-          ></div>
-
-
-          <div class="admin-form-actions">
-
-            <button
-              type="button"
-              id="cancelContentBtn"
-              class="admin-secondary-btn"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              class="admin-primary-btn"
-              id="saveContentBtn"
-            >
-              Save
-            </button>
-
-
-          </div>
+          <p
+            id="destinationStatus"
+            class="admin-status"
+          ></p>
 
         </form>
 
@@ -588,169 +689,233 @@ function createDashboard() {
 
 
 
-    <!-- =====================================================
+    <!-- 
+
+===================================================
+         TOUR MODAL
+    ==================================================== -->
+
+    <div
+      id="tourModal"
+      class="admin-modal"
+      style="display:none;"
+    >
+
+      <div class="admin-modal-overlay"></div>
+
+      <div class="admin-modal-box">
+
+        <button
+          type="button"
+          class="admin-modal-close"
+          data-close-modal="tourModal"
+
+        >
+          ×
+        </button>
+
+        <h2 id="tourModalTitle">
+          Add Tour
+        </h2>
+
+        <form id="tourForm">
+
+          <input
+            type="hidden"
+            id="tourId"
+          >
+
+          <label>
+            Title
+          </label>
+
+          <input
+            id="tourTitle"
+            type="text"
+            required
+
+          >
+
+          <label>
+            Slug
+          </label>
+
+          <input
+            id="tourSlug"
+            type="text"
+            required
+          >
+
+          <label>
+            Description
+          </label>
+
+          <textarea
+            id="tourDescription"
+            rows="5"
+          ></textarea>
+
+          <label>
+
+            Main Image URL
+          </label>
+
+          <input
+            id="tourImageUrl"
+            type="url"
+          >
+
+          <label>
+            Page URL
+          </label>
+
+          <input
+            id="tourPageUrl"
+            type="text"
+          >
+
+          <label>
+            Sort Order
+          </label>
+
+          <input
+
+            id="tourSortOrder"
+            type="number"
+            value="0"
+          >
+
+          <button
+            class="admin-primary-btn"
+            type="submit"
+          >
+            Save Tour
+          </button>
+
+          <p
+            id="tourStatus"
+            class="admin-status"
+          ></p>
+
+        </form>
+
+      </div>
+
+    </div>
+
+
+
+
+    <!-- ===================================================
          LOCATION MODAL
-    ====================================================== -->
+    ==================================================== -->
 
     <div
       id="locationModal"
       class="admin-modal"
-
       style="display:none;"
     >
 
+      <div class="admin-modal-overlay"></div>
+
       <div class="admin-modal-box">
 
-        <div class="admin-modal-header">
+        <button
+          type="button"
+          class="admin-modal-close"
+          data-close-modal="locationModal"
+        >
+          ×
+        </button>
 
-          <h2 id="locationModalTitle">
-            Add Location
-          </h2>
-
-          <button
-            id="closeLocationModal"
-            class="admin-modal-close"
-            type="button"
-          >
-            ×
-          </button>
-
-        </div>
+        <h2>
+          Add Location
+        </h2>
 
         <form id="locationForm">
 
           <input
             type="hidden"
+            id="locationId"
+          >
+
+          <input
+            type="hidden"
             id="locationDestinationId"
-          />
+          >
 
 
-          <div class="admin-form-group">
+          <label>
+            Location Name
+          </label>
 
-            <label>
-              Destination
-            </label>
+          <input
+            id="locationName"
+            type="text"
+            required
+          >
 
-            <select
-              id="locationDestinationSelect"
-              required
-            ></select>
+          <label>
+            Description
+          </label>
 
-          </div>
+          <textarea
+            id="locationDescription"
+            rows="4"
+          ></textarea>
 
-          <div class="admin-form-group">
+          <label>
+            Image Path
 
-            <label>
-              Location Number
-            </label>
+          </label>
 
-            <input
-              id="locationNumber"
-              type="number"
-              min="1"
-              value="1"
-              required
-            />
+          <input
+            id="locationImagePath"
+            type="text"
+          >
 
-          </div>
+          <label>
+            Image URL
+          </label>
 
+          <input
+            id="locationImageUrl"
+            type="url"
+          >
 
-          <div class="admin-form-group">
+          <label>
+            Location Number
+          </label>
 
-            <label>
-              Location Name
-            </label>
+          <input
+            id="locationNumber"
 
+            type="number"
+            value="1"
+            min="1"
+          >
 
-            <input
-              id="locationName"
-              type="text"
-              required
-            />
+          <label>
+            Sort Order
+          </label>
 
-          </div>
+          <input
+            id="locationSortOrder"
+            type="number"
+            value="0"
+          >
 
+          <button
+            class="admin-primary-btn"
+            type="submit"
+          >
+            Save Location
+          </button>
 
-          <div class="admin-form-group">
-
-            <label>
-              Description
-            </label>
-
-            <textarea
-              id="locationDescription"
-              rows="4"
-            ></textarea>
-
-          </div>
-
-
-
-          <div class="admin-form-group">
-
-            <label>
-              Image URL
-            </label>
-
-            <input
-              id="locationImageUrl"
-              type="url"
-              placeholder="https://..."
-            />
-
-          </div>
-
-
-          <div class="admin-form-group">
-
-            <label>
-              Image Path
-            </label>
-
-            <input
-              id="locationImagePath"
-              type="text"
-              placeholder="images/destinations/..."
-            />
-
-          </div>
-
-
-          <div class="admin-form-group">
-
-            <label>
-              Sort Order
-            </label>
-
-            <input
-              id="locationSortOrder"
-              type="number"
-              value="0"
-            />
-
-          </div>
-
-
-          <div class="admin-form-actions">
-
-            <button
-              type="button"
-              id="cancelLocationBtn"
-              class="admin-secondary-btn"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              class="admin-primary-btn"
-              id="saveLocationBtn"
-            >
-              Save
-            </button>
-
-          </div>
-
+          <p
+            id="locationStatus"
+            class="admin-status"
+          ></p>
 
         </form>
 
@@ -760,87 +925,85 @@ function createDashboard() {
 
 
 
-    <!-- =====================================================
+    <!-- ===================================================
          TOUR GALLERY MODAL
-    ====================================================== -->
+    ==================================================== -->
 
     <div
+
       id="galleryModal"
       class="admin-modal"
       style="display:none;"
     >
 
+      <div class="admin-modal-overlay"></div>
 
-      <div class="admin-modal-box admin-gallery-modal-box">
+      <div
+        class="admin-modal-box admin-gallery-modal-box"
+      >
 
-        <div class="admin-modal-header">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="galleryCloseBtn"
+        >
+          ×
+        </button>
 
-          <div>
+        <div class="gallery-modal-header">
 
-            <h2>
-              Tour Gallery
-            </h2>
+          <p class="admin-eyebrow">
+            TOUR GALLERY
+          </p>
 
-            <p
-              id="galleryTourTitle"
-              class="admin-modal-subtitle"
-            ></p>
-
-          </div>
-
-          <button
-            id="closeGalleryModal"
-            class="admin-modal-close"
-
-            type="button"
-          >
-            ×
-          </button>
+          <h2 id="galleryTourTitle">
+            Tour Gallery
+          </h2>
 
         </div>
 
 
-        <div class="gallery-upload-box">
+        <div class="gallery-upload-area">
 
           <label
-            for="galleryFileInput"
-            class="gallery-upload-label"
+            for="galleryFiles"
+            class="gallery-file-label"
           >
-            📷 Select Gallery Images
+            Select Photos
           </label>
 
           <input
-            id="galleryFileInput"
+
+            id="galleryFiles"
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif"
             multiple
+          >
 
-          />
+          <small>
+            JPG, PNG, WEBP or GIF • Maximum 5 MB per image
+          </small>
 
-          <p>
-            You can select multiple images.
-            Maximum 5MB per image.
-          </p>
 
           <button
-            id="uploadGalleryBtn"
-            class="admin-primary-btn"
             type="button"
+            id="galleryUploadBtn"
+            class="admin-primary-btn"
           >
-            Upload Images
+            Upload Photos
           </button>
 
-          <div
-            id="galleryUploadStatus"
-            class="gallery-upload-status"
-          ></div>
+          <p
+            id="galleryStatus"
+            class="admin-status"
+          ></p>
 
         </div>
 
 
         <div
-          id="galleryPreview"
-          class="gallery-admin-grid"
+          id="galleryGrid"
+          class="admin-gallery-grid"
         ></div>
 
       </div>
@@ -848,1115 +1011,896 @@ function createDashboard() {
     </div>
 
 
-
-    <!-- =====================================================
-         ADMIN STYLES
-    ====================================================== -->
-
-    <style>
-
-      * {
-        box-sizing: border-box;
-      }
-
-
-      body {
-        margin: 0;
-        background: #f5f7f4;
-        color: #18352a;
-        font-family:
-          Arial,
-          Helvetica,
-          sans-serif;
-      }
-
-
-      .admin-app {
-        min-height: 100vh;
-      }
-
-
-      .admin-header {
-
-        min-height: 78px;
-        background: #173f2c;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        padding: 16px 28px;
-      }
-
-
-      .admin-header h1 {
-        margin: 0;
-        font-size: 20px;
-        letter-spacing: .5px;
-      }
-
-
-      .admin-header p {
-        margin: 5px 0 0;
-        opacity: .75;
-        font-size: 13px;
-
-      }
-
-
-      .admin-user {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        font-size: 13px;
-      }
-
-
-      .admin-logout-btn {
-        border: 1px solid rgba(255,255,255,.4);
-        background: transparent;
-        color: white;
-        padding: 9px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-      }
-
-
-      .admin-layout {
-
-        display: flex;
-        min-height: calc(100vh - 78px);
-      }
-
-
-      .admin-sidebar {
-        width: 240px;
-        background: white;
-        border-right: 1px solid #e1e8e2;
-        padding: 18px 12px;
-        flex-shrink: 0;
-      }
-
-
-      .admin-nav-btn {
-        display: block;
-        width: 100%;
-        border: 0;
-        background: transparent;
-        text-align: left;
-        padding: 13px 15px;
-        margin-bottom: 5px;
-        border-radius: 9px;
-
-        color: #315044;
-        cursor: pointer;
-        font-size: 14px;
-      }
-
-
-      .admin-nav-btn:hover,
-      .admin-nav-btn.active {
-        background: #e9f1eb;
-        color: #173f2c;
-        font-weight: 700;
-      }
-
-
-      .admin-main {
-        flex: 1;
-        padding: 30px;
-        min-width: 0;
-      }
-
-
-      .admin-section-header {
-
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 25px;
-      }
-
-
-      .admin-section-header h2 {
-        margin: 0 0 6px;
-        font-size: 27px;
-      }
-
-
-      .admin-section-header p {
-        margin: 0;
-        color: #718078;
-        font-size: 14px;
-      }
-
-
-      .admin-primary-btn,
-
-      .admin-secondary-btn,
-      .admin-danger-btn,
-      .admin-small-btn {
-        border: 0;
-        border-radius: 8px;
-        padding: 10px 15px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 13px;
-      }
-
-
-      .admin-primary-btn {
-        background: #1e5c3f;
-        color: white;
-      }
-
-
-      .admin-primary-btn:hover {
-        background: #174b34;
-      }
-
-
-      .admin-secondary-btn {
-        background: #edf1ee;
-        color: #30473b;
-      }
-
-
-      .admin-danger-btn {
-        background: #c53d3d;
-        color: white;
-      }
-
-
-      .admin-small-btn {
-        background: #edf1ee;
-        color: #264438;
-        padding: 8px 11px;
-      }
-
-
-      .admin-card-list {
-        display: grid;
-
-        gap: 15px;
-      }
-
-
-      .admin-card {
-        background: white;
-        border: 1px solid #e1e8e2;
-        border-radius: 13px;
-        padding: 15px;
-        display: flex;
-        gap: 18px;
-        align-items: center;
-      }
-
-
-      .admin-card-image {
-        width: 130px;
-        height: 95px;
-        object-fit: cover;
-        border-radius: 9px;
-        background: #edf1ee;
-        flex-shrink: 0;
-
-      }
-
-
-      .admin-card-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-
-      .admin-card-info h3 {
-        margin: 0 0 6px;
-        font-size: 18px;
-      }
-
-
-      .admin-card-info p {
-        margin: 0 0 7px;
-        color: #697870;
-        font-size: 13px;
-        line-height: 1.5;
-      }
-
-      .admin-card-meta {
-        color: #87938d;
-        font-size: 12px;
-      }
-
-
-      .admin-card-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 7px;
-      }
-
-
-      .gallery-btn {
-        background: #d7a83c;
-        color: #172a20;
-      }
-
-
-      .admin-stats-grid {
-        display: grid;
-        grid-template-columns:
-
-          repeat(5, minmax(0, 1fr));
-        gap: 15px;
-      }
-
-
-      .admin-stat-card {
-        background: white;
-        border: 1px solid #e1e8e2;
-        border-radius: 13px;
-        padding: 20px;
-      }
-
-
-      .admin-stat-card span {
-        display: block;
-        color: #738079;
-        font-size: 13px;
-        margin-bottom: 8px;
-      }
-
-
-      .admin-stat-card strong {
-
-        font-size: 30px;
-        color: #1e5c3f;
-      }
-
-
-      .admin-dashboard-box {
-        margin-top: 25px;
-        padding: 25px;
-        background: white;
-        border: 1px solid #e1e8e2;
-        border-radius: 13px;
-      }
-
-
-      .admin-dashboard-box h3 {
-        margin-top: 0;
-      }
-
-
-      .admin-modal {
-        position: fixed;
-        inset: 0;
-
-        z-index: 9999;
-        background: rgba(10, 25, 18, .68);
-        padding: 25px;
-        overflow-y: auto;
-      }
-
-
-      .admin-modal-box {
-        width: min(700px, 100%);
-        margin: 30px auto;
-        background: white;
-        border-radius: 16px;
-        padding: 25px;
-      }
-
-
-      .admin-gallery-modal-box {
-        width: min(1000px, 100%);
-      }
-
-
-      .admin-modal-header {
-
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 15px;
-        margin-bottom: 20px;
-      }
-
-
-      .admin-modal-header h2 {
-        margin: 0;
-      }
-
-
-      .admin-modal-subtitle {
-        margin: 5px 0 0;
-        color: #718078;
-        font-size: 13px;
-      }
-
-
-      .admin-modal-close {
-        width: 35px;
-        height: 35px;
-
-        border: 0;
-        border-radius: 8px;
-        background: #edf1ee;
-        font-size: 25px;
-        line-height: 1;
-        cursor: pointer;
-      }
-
-
-      .admin-form-group {
-        margin-bottom: 17px;
-      }
-
-
-      .admin-form-group label {
-        display: block;
-        margin-bottom: 7px;
-        font-weight: 700;
-        font-size: 13px;
-      }
-
-      .admin-form-group input,
-      .admin-form-group textarea,
-      .admin-form-group select {
-        width: 100%;
-        border: 1px solid #d8e0da;
-        border-radius: 8px;
-        padding: 11px 12px;
-        font: inherit;
-        outline: none;
-      }
-
-
-      .admin-form-group input:focus,
-      .admin-form-group textarea:focus,
-      .admin-form-group select:focus {
-        border-color: #1e5c3f;
-      }
-
-
-      .admin-form-actions {
-        display: flex;
-        justify-content: flex-end;
-
-        gap: 9px;
-        margin-top: 22px;
-      }
-
-
-      .admin-current-image {
-        margin-top: 10px;
-      }
-
-
-      .admin-current-image img {
-        width: 130px;
-        height: 90px;
-        object-fit: cover;
-        border-radius: 8px;
-      }
-
-
-      /* =====================================================
-         GALLERY
-
-      ================================================== */
-
-
-      .gallery-upload-box {
-        border: 2px dashed #cbd8ce;
-        border-radius: 13px;
-        padding: 22px;
-        text-align: center;
-        margin-bottom: 25px;
-        background: #f8faf8;
-      }
-
-
-      .gallery-upload-label {
-        display: block;
-        font-weight: 700;
-        margin-bottom: 12px;
-        font-size: 16px;
-      }
-
-
-      #galleryFileInput {
-        display: block;
-        width: 100%;
-        margin-bottom: 10px;
-      }
-
-
-      .gallery-upload-box p {
-        margin: 8px 0 15px;
-        color: #738079;
-        font-size: 12px;
-      }
-
-
-      .gallery-upload-status {
-        min-height: 20px;
-        margin-top: 12px;
-        font-size: 13px;
-        font-weight: 600;
-      }
-
-
-      .gallery-admin-grid {
-        display: grid;
-        grid-template-columns:
-          repeat(4, minmax(0, 1fr));
-        gap: 15px;
-      }
-
-
-      .gallery-admin-item {
-        background: #f7f9f7;
-        border: 1px solid #dfe7e1;
-        border-radius: 11px;
-        overflow: hidden;
-      }
-
-
-      .gallery-admin-image-wrap {
-        position: relative;
-        aspect-ratio: 4 / 3;
-        background: #e9efea;
-      }
-
-
-      .gallery-admin-item img {
-        width: 100%;
-        height: 100%;
-        display: block;
-        object-fit: cover;
-      }
-
-
-      .gallery-admin-number {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        background: rgba(0,0,0,.65);
-        color: white;
-        border-radius: 6px;
-        padding: 4px 7px;
-        font-size: 11px;
-      }
-
-
-      .gallery-admin-item-bottom {
-
-        padding: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-      }
-
-
-      .gallery-admin-item-bottom small {
-        color: #718078;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-
-      .gallery-delete-btn {
-        border: 0;
-        background: #c53d3d;
-        color: white;
-        border-radius: 7px;
-        padding: 7px 9px;
-
-        cursor: pointer;
-        font-size: 12px;
-      }
-
-
-      .gallery-empty {
-        grid-column: 1 / -1;
-        text-align: center;
-        padding: 45px 20px;
-        border: 1px dashed #cbd8ce;
-        border-radius: 12px;
-        color: #718078;
-      }
-
-
-      .admin-review-card {
-        align-items: flex-start;
-      }
-
-
-      .admin-review-rating {
-        color: #d7a83c;
-
-        margin-bottom: 5px;
-      }
-
-
-      .admin-review-photo {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 8px;
-      }
-
-
-      @media (max-width: 1100px) {
-
-        .admin-stats-grid {
-          grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-        }
-
-        .gallery-admin-grid {
-          grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-
-        }
-
-      }
-
-
-      @media (max-width: 850px) {
-
-        .admin-layout {
-          display: block;
-        }
-
-        .admin-sidebar {
-          width: 100%;
-          display: flex;
-          overflow-x: auto;
-          gap: 5px;
-          border-right: 0;
-          border-bottom: 1px solid #e1e8e2;
-        }
-
-        .admin-nav-btn {
-          width: auto;
-          min-width: max-content;
-
-          margin: 0;
-        }
-
-        .admin-main {
-          padding: 20px;
-        }
-
-        .admin-header {
-          padding: 15px 18px;
-        }
-
-        .admin-user span {
-          display: none;
-        }
-
-      }
-
-
-      @media (max-width: 650px) {
-
-        .admin-header {
-          display: block;
-
-        }
-
-        .admin-user {
-          margin-top: 12px;
-          justify-content: space-between;
-        }
-
-        .admin-section-header {
-          align-items: flex-start;
-          flex-direction: column;
-        }
-
-        .admin-stats-grid {
-          grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        }
-
-        .admin-card {
-          display: block;
-        }
-
-        .admin-card-image {
-
-          width: 100%;
-          height: 180px;
-          margin-bottom: 12px;
-        }
-
-        .admin-card-actions {
-          margin-top: 12px;
-        }
-
-        .gallery-admin-grid {
-          grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        }
-
-        .admin-modal {
-          padding: 10px;
-        }
-
-        .admin-modal-box {
-          padding: 18px;
-          margin: 10px auto;
-        }
-
-
-      }
-
-
-      @media (max-width: 400px) {
-
-        .admin-stats-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .gallery-admin-grid {
-          grid-template-columns: 1fr;
-        }
-
-      }
-
-    </style>
   `;
 
-  setupDashboardEvents();
+
+  injectAdminStyles();
+
+
+  initAdminEvents();
 
 }
 
 
-
 /* =========================================================
-   DASHBOARD EVENTS
+   EVENTS
 ========================================================= */
 
-function setupDashboardEvents() {
+function initAdminEvents() {
 
-  document.querySelectorAll(".admin-nav-btn").forEach((button) => {
+  document
+    .querySelectorAll(".admin-nav-btn")
+    .forEach((button) => {
 
-    button.addEventListener("click", () => {
+      button.addEventListener(
+        "click",
+        () => {
 
-      switchSection(button.dataset.section);
+
+          switchSection(
+            button.dataset.section
+          );
+
+        }
+      );
 
     });
-
-  });
 
 
   document
     .getElementById("logoutBtn")
-    ?.addEventListener("click", logout);
+    ?.addEventListener(
+      "click",
+      logoutAdmin
+    );
 
 
   document
     .getElementById("addDestinationBtn")
-    ?.addEventListener("click", () => {
+    ?.addEventListener(
 
-      openContentModal("destination");
-
-    });
+      "click",
+      () => openDestinationModal()
+    );
 
 
   document
     .getElementById("addTourBtn")
-    ?.addEventListener("click", () => {
-
-      openContentModal("tour");
-
-    });
-
-
-  document
-    .getElementById("contentForm")
-    ?.addEventListener("submit", saveContent);
+    ?.addEventListener(
+      "click",
+      () => openTourModal()
+    );
 
 
   document
-    .getElementById("cancelContentBtn")
-    ?.addEventListener("click", closeContentModal);
+    .getElementById("destinationForm")
+    ?.addEventListener(
+      "submit",
+      saveDestination
+    );
 
 
   document
-    .getElementById("closeContentModal")
-    ?.addEventListener("click", closeContentModal);
+
+    .getElementById("tourForm")
+    ?.addEventListener(
+      "submit",
+      saveTour
+    );
 
 
   document
     .getElementById("locationForm")
-    ?.addEventListener("submit", 
-
-saveLocation);
-
-
-  document
-    .getElementById("cancelLocationBtn")
-    ?.addEventListener("click", closeLocationModal);
+    ?.addEventListener(
+      "submit",
+      saveLocation
+    );
 
 
   document
-    .getElementById("closeLocationModal")
-    ?.addEventListener("click", closeLocationModal);
+    .querySelectorAll("[data-close-modal]")
+    .forEach((button) => {
 
+      button.addEventListener(
+        "click",
+        () => {
 
-  document
-    .getElementById("closeGalleryModal")
-    ?.addEventListener("click", closeGalleryModal);
+          closeModal(
+            button.dataset.closeModal
+          );
 
-
-  document
-
-    .getElementById("uploadGalleryBtn")
-    ?.addEventListener("click", uploadGalleryImages);
-
-
-  document
-    .getElementById("galleryFileInput")
-    ?.addEventListener("change", previewSelectedGalleryFiles);
-
-
-  document
-    .getElementById("contentModal")
-    ?.addEventListener("click", (event) => {
-
-      if (event.target.id === "contentModal") {
-        closeContentModal();
-      }
-
-    });
-
-  document
-    .getElementById("locationModal")
-    ?.addEventListener("click", (event) => {
-
-      if (event.target.id === "locationModal") {
-        closeLocationModal();
-      }
+        }
+      );
 
     });
 
 
   document
-    .getElementById("galleryModal")
-    ?.addEventListener("click", (event) => {
+    .querySelectorAll(".admin-modal-overlay")
+    .forEach((overlay) => {
 
-      if (event.target.id === "galleryModal") {
-        closeGalleryModal();
-      }
+      overlay.addEventListener(
+        "click",
+        () => {
+
+          const modal =
+            overlay.closest(".admin-modal");
+
+          if (modal) {
+            modal.style.display = "none";
+          }
+
+        }
+      );
 
     });
+
+
+  document
+    .getElementById("galleryCloseBtn")
+    ?.addEventListener(
+      "click",
+      closeGalleryModal
+    );
+
+
+  document
+    .getElementById("galleryUploadBtn")
+    ?.addEventListener(
+      "click",
+
+      uploadGalleryImages
+    );
+
+
+  document
+    .getElementById("galleryFiles")
+    ?.addEventListener(
+      "change",
+      previewGalleryFiles
+    );
+
+
+  document.addEventListener(
+    "click",
+    handleDynamicClicks
+  );
 
 }
 
 
+/* ===================================
 
-/* =========================================================
-   SWITCH SECTION
+======================
+   DYNAMIC CLICKS
 ========================================================= */
 
-async function switchSection(section) {
+function handleDynamicClicks(event) {
+
+  const editDestination =
+    event.target.closest(
+      "[data-edit-destination]"
+    );
+
+  if (editDestination) {
+
+    editDestinationById(
+      Number(
+        editDestination.dataset.editDestination
+      )
+    );
+
+    return;
+
+  }
+
+
+  const deleteDestinationButton =
+    event.target.closest(
+      "[data-delete-destination]"
+    );
+
+  if (deleteDestinationButton) {
+
+    deleteDestination(
+      Number(
+        deleteDestinationButton.dataset.deleteDestination
+      )
+    );
+
+    return;
+  }
+
+
+  const editTour =
+
+    event.target.closest(
+      "[data-edit-tour]"
+    );
+
+  if (editTour) {
+
+    editTourById(
+      Number(
+        editTour.dataset.editTour
+      )
+    );
+
+    return;
+  }
+
+
+  const deleteTourButton =
+    event.target.closest(
+      "[data-delete-tour]"
+    );
+
+  if (deleteTourButton) {
+
+
+    deleteTour(
+      Number(
+        deleteTourButton.dataset.deleteTour
+      )
+    );
+
+    return;
+  }
+
+
+  const openGalleryButton =
+    event.target.closest(
+      "[data-open-gallery]"
+    );
+
+  if (openGalleryButton) {
+
+    openGalleryModal(
+      Number(
+        openGalleryButton.dataset.openGallery
+
+      ),
+      openGalleryButton.dataset.tourTitle || "Tour"
+    );
+
+    return;
+  }
+
+
+  const addLocationButton =
+    event.target.closest(
+      "[data-add-location]"
+    );
+
+  if (addLocationButton) {
+
+    openLocationModal(
+      Number(
+        addLocationButton.dataset.addLocation
+      )
+    );
+
+
+    return;
+  }
+
+
+  const editLocationButton =
+    event.target.closest(
+      "[data-edit-location]"
+    );
+
+  if (editLocationButton) {
+
+    editLocationById(
+      Number(
+        editLocationButton.dataset.editLocation
+      )
+    );
+
+    return;
+  }
+
+
+  const deleteLocationButton =
+    event.target.closest(
+      "[data-delete-location]"
+    );
+
+  if (deleteLocationButton) {
+
+    deleteLocation(
+      Number(
+        deleteLocationButton.dataset.deleteLocation
+      )
+    );
+
+    return;
+  }
+
+
+  const deleteReviewButton =
+    event.target.closest(
+
+      "[data-delete-review]"
+    );
+
+  if (deleteReviewButton) {
+
+    deleteReview(
+      deleteReviewButton.dataset.deleteReview
+    );
+
+  }
+
+
+  const deleteGalleryButton =
+    event.target.closest(
+      "[data-delete-gallery]"
+    );
+
+  if (deleteGalleryButton) {
+
+    deleteGalleryImage(
+      Number(
+        
+
+deleteGalleryButton.dataset.deleteGallery
+      )
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SECTION SWITCH
+========================================================= */
+
+function switchSection(section) {
 
   currentSection = section;
 
-  document.querySelectorAll(".admin-section").forEach((item) => {
-    item.style.display = "none";
-  });
+
+  document
+
+    .querySelectorAll(".admin-section")
+    .forEach((element) => {
+
+      element.style.display =
+        element.id ===
+        `section-${section}`
+          ? "block"
+          : "none";
+
+    });
 
 
-  const target = document.getElementById(
-    `section-${section}`
-  );
+  document
+    .querySelectorAll(".admin-nav-btn")
+    .forEach((button) => {
 
+      button.classList.toggle(
+        "active",
+        button.dataset.section === section
+      );
 
-  if (target) {
-    target.style.display = "block";
-  }
+    });
 
-
-  document.querySelectorAll(".admin-nav-btn").forEach((button) => {
-
-    button.classList.toggle(
-      "active",
-      button.dataset.section === section
-    );
-
-  });
 
 
   if (section === "dashboard") {
-    await loadDashboard();
+    loadDashboardStats();
   }
 
   if (section === "destinations") {
-    await loadDestinationsAdmin();
-
+    loadDestinationsAdmin();
   }
 
   if (section === "tours") {
-    await loadToursAdmin();
+    loadToursAdmin();
   }
 
   if (section === "locations") {
-    await loadLocationsAdmin();
+    loadLocationsAdmin();
   }
 
   if (section === "reviews") {
-    await loadReviewsAdmin();
+    loadReviewsAdmin();
   }
 
 }
 
 
 /* =========================================================
-   LOAD DASHBOARD
-===================================
+   LOAD ALL
+========================================================= */
 
-====================== */
+async function loadDashboardData() {
 
-async function loadDashboard() {
+  await Promise.all([
+    loadDashboardStats(),
+    loadDestinationsAdmin(),
+    loadToursAdmin(),
+    loadLocationsAdmin(),
+    loadReviewsAdmin()
+  ]);
 
-  try {
-
-    const sessionResult =
-      await supabase.auth.getSession();
-
-    const email =
-      sessionResult.data.session?.user?.email || "";
-
-    const emailElement =
-      document.getElementById("adminEmail");
-
-    if (emailElement) {
-      emailElement.textContent = email;
-    }
+}
 
 
-    const [
-      destinationsResult,
-      toursResult,
-      locationsResult,
-      reviewsResult,
-      galleryResult
-    ] = await Promise.all([
+/* =========================================================
+   DASHBOARD STATS
+========================================================= */
 
-      supabase
-        .from("destinations")
-        .select("id", {
-          count: "exact",
-          head: true
-        }),
+async function loadDashboardStats() {
 
-      supabase
-        .from("tours")
-        .select("id", {
-          count: "exact",
-          head: true
-        }),
+  const container =
+    document.getElementById("adminStats");
+
+  if (!container) {
+    return;
+  }
 
 
-      supabase
-        .from("destination_locations")
-        .select("id", {
-          count: "exact",
-          head: true
-        }),
+  const [
+    destinations,
+    tours,
+    locations,
 
-      supabase
-        .from("reviews")
-        .select("id", {
-          count: "exact",
-          head: true
-        }),
-
-      supabase
-        .from("tour_gallery")
-        .select("id", {
-          count: "exact",
-          head: true
-        })
-
+    reviews
+  ] =
+    await Promise.all([
+      countTable("destinations"),
+      countTable("tours"),
+      countTable("destination_locations"),
+      countTable("reviews")
     ]);
 
 
-    setText(
-      "statDestinations",
-      destinationsResult.count || 0
+  container.innerHTML = `
+
+    <div class="admin-stat-card">
+      <strong>${destinations}</strong>
+      <span>Destinations</span>
+    </div>
+
+    <div class="admin-stat-card">
+      <strong>${tours}</strong>
+      <span>Tours</span>
+    </div>
+
+    <div class="admin-stat-card">
+      <strong>${locations}</strong>
+      <span>Locations</span>
+    </div>
+
+    <div class="admin-stat-card">
+      <strong>${reviews}</strong>
+      <span>Reviews</span>
+    </div>
+
+  `;
+
+}
+
+
+async function countTable(table) {
+
+  const {
+    count,
+    error
+  } =
+    await supabase
+
+      .from(table)
+      .select("*", {
+        count: "exact",
+        head: true
+      });
+
+
+  if (error) {
+
+    console.error(
+      `Count ${table}:`,
+      error
     );
 
-    setText(
-      "statTours",
-      toursResult.count || 0
-    );
-
-    setText(
-      "statLocations",
-      locationsResult.count || 0
-    );
-
-    setText(
-      "statReviews",
-      reviewsResult.count || 0
-    );
-
-    setText(
-      "statGallery",
-      galleryResult.count || 0
-    );
-
-
-    if (currentSection === "dashboard") {
-      return;
-    }
-
-  } catch (error) {
-
-    console.error("Dashboard error:", error);
-
+    return 0;
   }
+
+
+  return count || 0;
 
 }
 
 
 /* =========================================================
-
    DESTINATIONS
 ========================================================= */
 
 async function loadDestinationsAdmin() {
 
   const container =
-    document.getElementById("destinationsList");
+    document.getElementById(
+      "destinationsList"
+    );
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
+
 
   container.innerHTML =
     loadingHTML("Loading destinations...");
 
 
+
   const {
     data,
     error
-  } = await supabase
-    .from("destinations")
-
-    .select("*")
-    .order("sort_order", {
-      ascending: true
-    })
-    .order("created_at", {
-      ascending: true
-    });
+  } =
+    await supabase
+      .from("destinations")
+      .select("*")
+      .order(
+        "sort_order",
+        {
+          ascending: true
+        }
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
 
 
   if (error) {
 
     container.innerHTML =
-      errorHTML(getReadableError(error));
+      errorHTML(error.message);
 
     return;
   }
 
 
-  if (!data || data.length === 0) {
+  if (!data?.length) {
 
     container.innerHTML =
-      emptyHTML("No destinations found.");
-
+      emptyHTML("No destinations yet.");
 
     return;
-
   }
 
 
   container.innerHTML =
-    data.map(createDestinationCard).join("");
+    data.map(
+      createDestinationAdminCard
+    ).join("");
+
 
 }
 
 
-function createDestinationCard(destination) {
+function createDestinationAdminCard(destination) {
 
   const image =
     destination.image_url ||
-    "https://placehold.co/600x400?text=Destination";
+    "https://placehold.co/500x300?text=Destination";
 
 
   return `
 
-
-    <div class="admin-card">
+    <article class="admin-content-card">
 
       <img
-        class="admin-card-image"
         src="${escapeAttribute(image)}"
         alt="${escapeAttribute(destination.name || "")}"
-      />
+        loading="lazy"
 
-      <div class="admin-card-info">
+      >
+
+      <div class="admin-content-card-body">
 
         <h3>
-          ${escapeHTML(destination.name || "Unnamed")}
+          ${escapeHTML(
+            destination.name || "Destination"
+          )}
         </h3>
 
         <p>
           ${escapeHTML(
-            truncate(destination.description || "", 180)
+            truncate(
+              destination.description || "",
+              150
+            )
           )}
-
         </p>
 
-        <div class="admin-card-meta">
-          Slug: ${escapeHTML(destination.slug || "-")}
-          · Order: ${destination.sort_order ?? 0}
+        <div class="admin-card-actions">
+
+          <button
+
+            type="button"
+            class="admin-small-btn"
+            data-edit-destination="${Number(destination.id)}"
+          >
+            Edit
+          </button>
+
+          <button
+            type="button"
+            class="admin-small-btn"
+            data-add-location="${Number(destination.id)}"
+          >
+            Locations
+          </button>
+
+          <button
+            type="button"
+            class="admin-small-btn danger"
+            data-delete-destination="${Number(destination.id)}"
+
+          >
+            Delete
+          </button>
+
         </div>
 
       </div>
 
-      <div class="admin-card-actions">
-
-        <button
-          class="admin-small-btn"
-          data-edit-destination="${destination.id}"
-          type="button"
-        >
-          Edit
-        </button>
-
-        <button
-          class="admin-small-btn"
-
-          data-location-destination="${destination.id}"
-          type="button"
-        >
-          Locations
-        </button>
-
-        <button
-          class="admin-danger-btn"
-          data-delete-destination="${destination.id}"
-          type="button"
-        >
-          Delete
-        </button>
-
-      </div>
-
-    </div>
+    </article>
 
   `;
+
+}
+
+
+/* =========================================================
+   ADD / EDIT DESTINATION
+========================================================= */
+
+async function editDestinationById(id) {
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from("destinations")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+
+  if (error) {
+
+    alert(error.message);
+
+    return;
+  }
+
+
+  editingDestinationId = id;
+
+
+
+  document.getElementById(
+    "destinationModalTitle"
+  ).textContent = "Edit Destination";
+
+
+  document.getElementById(
+    "destinationId"
+  ).value = id;
+
+
+  document.getElementById(
+    "destinationName"
+  ).value = data.name || "";
+
+
+  document.getElementById(
+    "destinationSlug"
+  ).value = data.slug || "";
+
+
+  document.getElementById(
+
+    "destinationDescription"
+  ).value = data.description || "";
+
+
+  document.getElementById(
+    "destinationImageUrl"
+  ).value = data.image_url || "";
+
+
+  document.getElementById(
+    "destinationPageUrl"
+  ).value = data.page_url || "";
+
+
+  document.getElementById(
+    "destinationSortOrder"
+  ).value = data.sort_order ?? 0;
+
+
+  openModal("destinationModal");
+
+}
+
+
+
+function openDestinationModal() {
+
+  editingDestinationId = null;
+
+
+  document.getElementById(
+    "destinationModalTitle"
+  ).textContent = "Add Destination";
+
+
+  document.getElementById(
+    "destinationForm"
+  ).reset();
+
+
+  document.getElementById(
+    "destinationId"
+  ).value = "";
+
+  openModal("destinationModal");
+
+}
+
+
+async function saveDestination(event) {
+
+  event.preventDefault();
+
+
+  const payload = {
+
+    name:
+      document.getElementById(
+        "destinationName"
+      ).value.trim(),
+
+    slug:
+      document.getElementById(
+        "destinationSlug"
+      ).value.trim(),
+
+    description:
+      document.getElementById(
+        "destinationDescription"
+      ).value.trim() || null,
+
+    image_url:
+      document.getElementById(
+        "destinationImageUrl"
+      ).value.trim() || null,
+
+    page_url:
+      document.getElementById(
+        "destinationPageUrl"
+      ).value.trim() || null,
+
+    sort_order:
+      Number(
+        document.getElementById(
+          "destinationSortOrder"
+        ).value
+      ) || 0
+
+  };
+
+
+  const status =
+    document.getElementById(
+      "destinationStatus"
+    );
+
+
+  if (status) {
+    status.textContent = "Saving...";
+  }
+
+
+  let error;
+
+
+  if (editingDestinationId) {
+
+    ({
+      error
+    } =
+      await supabase
+
+        .from("destinations")
+        .update(payload)
+        .eq(
+          "id",
+          editingDestinationId
+        ));
+
+  } else {
+
+    ({
+      error
+    } =
+      await supabase
+        .from("destinations")
+        .insert(payload));
+
+  }
+
+
+  if (error) {
+
+    console.error(error);
+
+
+    if (status) {
+      status.textContent =
+        error.message;
+    }
+
+    return;
+  }
+
+
+  closeModal("destinationModal");
+
+  await loadDestinationsAdmin();
+
+  await loadDashboardStats();
+
+}
+
+
+async function deleteDestination(id) {
+
+  const confirmed =
+
+    confirm(
+      "Delete this destination? Its locations may also be deleted."
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabase
+      .from("destinations")
+      .delete()
+      .eq("id", id);
+
+
+  if (error) {
+
+    alert(error.message);
+
+    return;
+  }
+
+
+  await loadDestinationsAdmin();
+
+  await loadLocationsAdmin();
+
+  await loadDashboardStats();
 
 }
 
@@ -1968,1438 +1912,455 @@ function createDestinationCard(destination) {
 async function loadToursAdmin() {
 
   const container =
-    document.getElementById("toursList");
+    document.getElementById(
+      "toursList"
+    );
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
+
 
   container.innerHTML =
     loadingHTML("Loading tours...");
 
 
   const {
-
     data,
     error
-  } = await supabase
-    .from("tours")
-    .select("*")
-    .order("sort_order", {
-      ascending: true
-    })
-    .order("created_at", {
-      ascending: true
-    });
+  } =
+    await supabase
+      .from("tours")
+
+      .select("*")
+      .order(
+        "sort_order",
+        {
+          ascending: true
+        }
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
 
 
   if (error) {
 
     container.innerHTML =
-      errorHTML(getReadableError(error));
+      errorHTML(error.message);
 
     return;
-
   }
 
 
-  if (!data || data.length === 0) {
+  if (!data?.length) {
 
     container.innerHTML =
-      emptyHTML("No tours found.");
+      emptyHTML("No tours yet.");
 
     return;
+  }
+
+
+  const tourIds =
+    data.map(
+      (tour) => Number(tour.id)
+    );
+
+
+  let galleryCounts = {};
+
+
+  if (tourIds.length) {
+
+    const {
+
+      data: galleryRows
+    } =
+      await supabase
+        .from("tour_gallery")
+        .select("tour_id")
+        .in(
+          "tour_id",
+          tourIds
+        );
+
+
+    (galleryRows || [])
+      .forEach((row) => {
+
+        const id =
+          Number(row.tour_id);
+
+        galleryCounts[id] =
+          (galleryCounts[id] || 0) + 1;
+
+      });
 
   }
 
 
   container.innerHTML =
-    data.map(createTourCard).join("");
-
-
-  bindTourActions();
+    data.map(
+      (tour) =>
+        createTourAdminCard(
+          tour,
+          galleryCounts[
+            Number(tour.id)
+          ] || 0
+        )
+    ).join("");
 
 }
 
 
-function createTourCard(tour) {
+function createTourAdminCard(
+  tour,
+  galleryCount
+) {
 
   const image =
     tour.image_url ||
-    "https://placehold.co/600x400?text=Tour";
+    "https://placehold.co/500x300?text=Tour";
 
 
   return `
 
-    <div class="admin-card">
+    <article class="admin-content-card">
 
       <img
-        class="admin-card-image"
         src="${escapeAttribute(image)}"
         alt="${escapeAttribute(tour.title || "")}"
-      />
+        loading="lazy"
+      >
 
 
-      <div class="admin-card-info">
+      <div class="admin-content-card-body">
 
         <h3>
-          ${escapeHTML(tour.title || "Unnamed Tour")}
+          ${escapeHTML(
+            tour.title || "Tour"
+
+          )}
         </h3>
 
 
         <p>
           ${escapeHTML(
-            truncate(tour.description || "", 180)
+            truncate(
+              tour.description || "",
+              150
+            )
           )}
         </p>
 
-        <div class="admin-card-meta">
 
-          Slug:
-          ${escapeHTML(tour.slug || "-")}
+        <div class="admin-gallery-count">
+          📷 ${galleryCount} gallery image${galleryCount === 1 ? "" : "s"}
+        </div>
 
-          · Order:
-          ${tour.sort_order ?? 0}
+
+        <div class="admin-card-actions">
+
+          <button
+
+            type="button"
+            class="admin-small-btn"
+            data-edit-tour="${Number(tour.id)}"
+          >
+            Edit
+          </button>
+
+
+          <button
+            type="button"
+            class="admin-small-btn gallery-btn"
+            data-open-gallery="${Number(tour.id)}"
+            data-tour-title="${escapeAttribute(tour.title || "Tour")}"
+          >
+            📷 Gallery
+          </button>
+
+
+          <button
+            type="button"
+
+            class="admin-small-btn danger"
+            data-delete-tour="${Number(tour.id)}"
+          >
+            Delete
+          </button>
 
         </div>
 
       </div>
 
-
-      <div class="admin-card-actions">
-
-        <button
-          class="admin-small-btn"
-          data-edit-tour="${tour.id}"
-          type="button"
-        >
-          Edit
-        </button>
-
-
-        <button
-          class="admin-small-btn gallery-btn"
-          data-open-gallery="${tour.id}"
-          data-tour-title="${escapeAttribute(
-            tour.title || "Tour"
-          )}"
-          type="button"
-        >
-          📷 Gallery
-        </button>
-
-
-        <button
-
-          class="admin-danger-btn"
-          data-delete-tour="${tour.id}"
-          type="button"
-        >
-          Delete
-        </button>
-
-      </div>
-
-    </div>
+    </article>
 
   `;
 
 }
 
 
-function bindTourActions() {
-
-  document
-    .querySelectorAll("[data-edit-tour]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        const id =
-          Number(button.dataset.editTour);
-
-        openContentModal("tour", id);
-
-      });
-
-    });
-
-
-  document
-    .querySelectorAll("[data-open-gallery]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        const id =
-          Number(button.dataset.openGallery);
-
-        const title =
-
-          button.dataset.tourTitle || "Tour";
-
-        openGalleryModal(id, title);
-
-      });
-
-    });
-
-
-  document
-    .querySelectorAll("[data-delete-tour]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        const id =
-          Number(button.dataset.deleteTour);
-
-        deleteTour(id);
-
-      });
-
-    });
-
-
-  document
-    .querySelectorAll("[data-edit-destination]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        openContentModal(
-          "destination",
-         document
-  .querySelectorAll("[data-delete-destination]")
-  .forEach((button) => {
-
-    button.addEventListener("click", () => {
-
-      deleteDestination(
-        Number(button.dataset.deleteDestination)
-      );
-
-    });
-
-  });
-
-    });
-
-
-  document
-    .querySelectorAll("[data-location-destination]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        currentLocationDestinationId =
-          Number(button.dataset.locationDestination);
-
-        switchSection("locations");
-
-      });
-
-    });
-
-}
-
-
 /* =========================================================
-   CONTENT MODAL
+   ADD / EDIT TOUR
+
 ========================================================= */
 
-async function openContentModal(type, id 
+async function editTourById(id) {
 
-= null) {
-
-  editingDestinationId = null;
-  editingTourId = null;
-
-
-  document.getElementById("contentType").value = type;
-
-
-  if (type === "destination") {
-
-    document.getElementById("contentModalTitle").textContent =
-      id ? "Edit Destination" : "Add Destination";
-
-    document.getElementById("nameLabel").textContent =
-
-      "Destination Name";
-
-  } else {
-
-    document.getElementById("contentModalTitle").textContent =
-      id ? "Edit Tour" : "Add Tour";
-
-    document.getElementById("nameLabel").textContent =
-      "Tour Title";
-
-  }
-
-
-  clearContentForm();
-
-
-  if (id) {
-
-    const table =
-      type === "destination"
-        ? "destinations"
-        : "tours";
-
-
-    const {
-      data,
-      error
-    } = await supabase
-      .from(table)
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from("tours")
       .select("*")
       .eq("id", id)
       .single();
 
 
-    if (error) {
+  if (error) {
 
-      alert(getReadableError(error));
+    alert(error.message);
 
-      return;
-
-    }
-
-
-
-    document.getElementById("contentName").value =
-      type === "destination"
-        ? data.name || ""
-        : data.title || "";
-
-
-    document.getElementById("contentSlug").value =
-      data.slug || "";
-
-
-    document.getElementById("contentDescription").value =
-      data.description || "";
-
-    document.getElementById("contentImageUrl").value =
-      data.image_url || "";
-
-
-    document.getElementById("contentPageUrl").value =
-      data.page_url || "";
-
-
-    document.getElementById("contentSortOrder").value =
-      data.sort_order ?? 0;
-
-
-    if (type === "destination") {
-      editingDestinationId = id;
-    } else {
-      editingTourId = id;
-
-    }
-
-
-    if (data.image_url) {
-
-      document.getElementById(
-        "currentContentImage"
-      ).innerHTML = `
-
-        <img
-          src="${escapeAttribute(data.image_url)}"
-          alt="Current image"
-        />
-
-      `;
-
-    }
-
+    return;
   }
 
+
+
+  editingTourId = id;
+
+
   document.getElementById(
-    "contentModal"
-  ).style.display = "block";
+    "tourModalTitle"
+  ).textContent = "Edit Tour";
+
+
+  document.getElementById(
+    "tourId"
+  ).value = id;
+
+
+  document.getElementById(
+    "tourTitle"
+  ).value = data.title || "";
+
+
+  document.getElementById(
+    "tourSlug"
+
+  ).value = data.slug || "";
+
+
+  document.getElementById(
+    "tourDescription"
+  ).value = data.description || "";
+
+
+  document.getElementById(
+    "tourImageUrl"
+  ).value = data.image_url || "";
+
+
+  document.getElementById(
+    "tourPageUrl"
+  ).value = data.page_url || "";
+
+
+  document.getElementById(
+    "tourSortOrder"
+  ).value = data.sort_order ?? 0;
+
+
+  openModal("tourModal");
 
 }
 
 
-function clearContentForm() {
+function openTourModal() {
 
-  document.getElementById("contentForm").reset();
+  editingTourId = null;
 
-  document.getElementById("contentSortOrder").value = "0";
 
   document.getElementById(
-    "currentContentImage"
-  ).innerHTML = "";
+    "tourModalTitle"
+  ).textContent = "Add Tour";
+
+
+  document.getElementById(
+    "tourForm"
+  ).reset();
+
+
+  document.getElementById(
+    "tourId"
+
+  ).value = "";
+
+
+  openModal("tourModal");
 
 }
 
 
-
-/* =========================================================
-   SAVE CONTENT
-========================================================= */
-
-async function saveContent(event) {
+async function saveTour(event) {
 
   event.preventDefault();
 
 
-  const type =
-    document.getElementById("contentType").value;
+  const payload = {
+
+    title:
+      document.getElementById(
+        "tourTitle"
+      ).value.trim(),
+
+    slug:
+      document.getElementById(
+
+        "tourSlug"
+      ).value.trim(),
+
+    description:
+      document.getElementById(
+        "tourDescription"
+      ).value.trim() || null,
+
+    image_url:
+      document.getElementById(
+        "tourImageUrl"
+      ).value.trim() || null,
+
+    page_url:
+      document.getElementById(
+        "tourPageUrl"
+      ).value.trim() || null,
+
+    sort_order:
+      Number(
+        document.getElementById(
+          "tourSortOrder"
+
+        ).value
+      ) || 0
+
+  };
 
 
-  const name =
-    
-
-document.getElementById("contentName").value.trim();
-
-
-  const slug =
-    document.getElementById("contentSlug").value.trim();
+  const status =
+    document.getElementById(
+      "tourStatus"
+    );
 
 
-  const description =
-    document.getElementById("contentDescription").value.trim();
+  if (status) {
+    status.textContent = "Saving...";
+  }
 
 
-  const imageUrl =
-    document.getElementById("contentImageUrl").value.trim();
+  let error;
 
 
-  const pageUrl =
+  if (editingTourId) {
 
-    document.getElementById("contentPageUrl").value.trim();
-
-
-  const sortOrder =
-    Number(
-      document.getElementById("contentSortOrder").value
-    ) || 0;
-
-
-  const button =
-    document.getElementById("saveContentBtn");
-
-
-  button.disabled = true;
-  button.textContent = "Saving...";
-
-
-  try {
-
-    const table =
-      type === "destination"
-        ? "destinations"
-        : "tours";
-
-
-    const payload =
-      type === "destination"
-        ? {
-            name,
-            slug,
-            description: description || null,
-            image_url: imageUrl || null,
-            page_url: pageUrl || null,
-            sort_order: sortOrder
-          }
-        : {
-            title: name,
-            slug,
-
-            description: description || null,
-            image_url: imageUrl || null,
-            page_url: pageUrl || null,
-            sort_order: sortOrder
-          };
-
-
-    let error;
-
-
-    if (
-      type === "destination" &&
-      editingDestinationId
-    ) {
-
-      ({
-        error
-      } = await supabase
-        .from(table)
+    ({
+      error
+    } =
+      await supabase
+        .from("tours")
         .update(payload)
-        .eq("id", editingDestinationId));
+        .eq(
+          "id",
+          editingTourId
+        ));
 
-    } else if (
-      type === "tour" &&
-      editingTourId
-    ) {
+  } else {
 
-      ({
-        error
-      } = await supabase
-        .from(table)
-        .update(payload)
-        .eq("id", editingTourId));
-
-    } else {
-
-      ({
-        error
-      } = await supabase
-        .from(table)
+    ({
+      error
+    } =
+      await supabase
+        .from("tours")
         .insert(payload));
 
-    }
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    closeContentModal();
-
-
-    if (type === "destination") {
-
-      await loadDestinationsAdmin();
-
-    } else {
-
-      await loadToursAdmin();
-
-    }
-
-
-    await loadDashboard();
-
-
-    alert(
-      type === "destination"
-        ? "Destination saved successfully."
-        : "Tour saved successfully."
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Save failed:\n\n" +
-      getReadableError(error)
-    );
-
-  } finally {
-
-    button.disabled = false;
-    button.textContent = "Save";
-
   }
-
-}
-
-
-/* =========================================================
-   DELETE DESTINATION
-========================================================= */
-
-async function deleteDestination(id) {
-
-  if (
-    !confirm(
-      "Delete this destination?\n\n" +
-      "Its destination locations may also be deleted " +
-      "depending on your database foreign key settings."
-    )
-  ) {
-    return;
-
-  }
-
-
-  const {
-    error
-  } = await supabase
-    .from("destinations")
-    .delete()
-    .eq("id", id);
 
 
   if (error) {
 
-    alert(
-      "Delete failed:\n\n" +
-      getReadableError(error)
-    );
+    console.error(error);
+
+    if (status) {
+      status.textContent =
+        error.message;
+    }
 
     return;
-
   }
 
 
-  await loadDestinationsAdmin();
+  closeModal("tourModal");
 
-  await loadDashboard();
+  await loadToursAdmin();
+
+  await loadDashboardStats();
 
 }
 
-
-/* =========================================================
-   DELETE TOUR
-========================================================= */
-
 async function deleteTour(id) {
 
-  if (
-    !confirm(
-      "Delete this tour?\n\n" +
-      "All gallery database records belonging to this " +
+  const confirmed =
+    confirm(
+      "Delete this tour and all its gallery images?"
+    );
 
-      "tour will also be deleted."
-    )
-  ) {
+
+  if (!confirmed) {
     return;
   }
 
 
-  try {
+  const {
+    data: galleryRows
+  } =
+    await supabase
+      .from("tour_gallery")
+      .select("image_path")
+      .eq(
+        "tour_id",
 
-    /*
-      First get gallery files so we can remove the
-      physical Storage objects too.
-    */
+        id
+      );
+
+
+  const paths =
+    (galleryRows || [])
+      .map(
+        (row) => row.image_path
+      )
+      .filter(Boolean);
+
+
+  if (paths.length) {
 
     const {
-      data: galleryRows,
-      error: galleryError
-    } = await supabase
-      .from("tour_gallery")
-      .select("id,image_path")
-      .eq("tour_id", id);
-
-
-
-    if (galleryError) {
-
-      /*
-        If the table does not exist yet, this will fail.
-        In that situation we stop rather than deleting
-        the tour unexpectedly.
-      */
-
-      throw galleryError;
-
-    }
-
-
-    const paths =
-      (galleryRows || [])
-        .map(item => item.image_path)
-        .filter(Boolean);
-
-    if (paths.length > 0) {
-
-      const {
-        error: storageError
-      } = await supabase
+      error: storageError
+    } =
+      await supabase
         .storage
         .from("tour-gallery")
         .remove(paths);
 
 
-      if (storageError) {
-        console.warn(
-          "Gallery storage cleanup failed:",
-          storageError
-        );
-      }
-
-    }
-
-
-    const {
-      error
-
-    } = await supabase
-      .from("tours")
-      .delete()
-      .eq("id", id);
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    await loadToursAdmin();
-
-    await loadDashboard();
-
-
-    alert("Tour deleted successfully.");
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Delete failed:\n\n" +
-      getReadableError(error)
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   LOCATION LIST
-========================================================= */
-
-async function loadLocationsAdmin() {
-
-  const container =
-    document.getElementById("locationsList");
-
-
-  if (!container) return;
-
-  container.innerHTML =
-    loadingHTML("Loading locations...");
-
-
-  const {
-    data,
-    error
-  } = await supabase
-    .from("destination_locations")
-    .select(`
-      *,
-      destinations (
-        id,
-        name
-      )
-    `)
-    .order("destination_id", {
-      ascending: true
-    })
-
-    .order("sort_order", {
-      ascending: true
-    });
-
-
-  if (error) {
-
-    container.innerHTML =
-      errorHTML(getReadableError(error));
-
-    return;
-
-  }
-
-
-  if (!data || data.length === 0) {
-
-    container.innerHTML =
-      emptyHTML("No destination locations found.");
-
-    return;
-
-
-  }
-
-
-  container.innerHTML =
-    data.map(createLocationCard).join("");
-
-
-  bindLocationActions();
-
-}
-
-
-function createLocationCard(location) {
-
-  const image =
-    location.image_url ||
-    "https://placehold.co/600x400?text=Location";
-
-
-  const destinationName =
-    location.destinations?.name ||
-
-    "Unknown Destination";
-
-
-  return `
-
-    <div class="admin-card">
-
-      <img
-        class="admin-card-image"
-        src="${escapeAttribute(image)}"
-        alt="${escapeAttribute(location.name || "")}"
-      />
-
-
-      <div class="admin-card-info">
-
-        <h3>
-          ${escapeHTML(location.name || "Unnamed")}
-        </h3>
-
-        <p>
-          ${escapeHTML(
-            truncate(location.description || "", 180)
-          )}
-        </p>
-
-        <div class="admin-card-meta">
-
-          Destination:
-          ${escapeHTML(destinationName)}
-
-          · Location #:
-          ${location.location_number ?? "-"}
-
-          · Order:
-          ${location.sort_order ?? 0}
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-card-actions">
-
-        <button
-          class="admin-small-btn"
-          data-edit-location="${location.id}"
-          type="button"
-        >
-          Edit
-        </button>
-
-        <button
-          class="admin-danger-btn"
-          data-delete-location="${location.id}"
-          type="button"
-        >
-          Delete
-        </button>
-
-      </div>
-
-    </div>
-
-
-  `;
-
-}
-
-
-function bindLocationActions() {
-
-  document
-    .querySelectorAll("[data-edit-location]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        openLocationModal(
-          Number(button.dataset.editLocation)
-        );
-
-      });
-
-    });
-
-
-  document
-    .querySelectorAll("[data-delete-location]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        deleteLocation(
-          Number(button.dataset.deleteLocation)
-        );
-
-      });
-
-    });
-
-}
-
-
-/* =========================================================
-   LOCATION MODAL
-
-========================================================= */
-
-async function openLocationModal(id = null) {
-
-  editingLocationId = id;
-
-
-  document.getElementById(
-    "locationModalTitle"
-  ).textContent =
-    id
-      ? "Edit Location"
-      : "Add Location";
-
-
-  await populateDestinationSelect();
-
-
-  clearLocationForm();
-
-
-  if (id) {
-
-    const {
-      data,
-      error
-    } = await supabase
-      .from("destination_locations")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-
-    if (error) {
-
-      alert(getReadableError(error));
-
-      return;
-
-    }
-
-    document.getElementById(
-      "locationDestinationSelect"
-    ).value =
-      data.destination_id;
-
-
-    document.getElementById(
-      "locationNumber"
-    ).value =
-      data.location_number;
-
-
-    document.getElementById(
-      "locationName"
-    ).value =
-      data.name || "";
-
-
-    document.getElementById(
-      "locationDescription"
-    ).value =
-      data.description || "";
-
-
-
-    document.getElementById(
-      "locationImageUrl"
-    ).value =
-      data.image_url || "";
-
-
-    document.getElementById(
-      "locationImagePath"
-    ).value =
-      data.image_path || "";
-
-
-    document.getElementById(
-      "locationSortOrder"
-    ).value =
-      data.sort_order ?? 0;
-
-  }
-
-  document.getElementById(
-    "locationModal"
-  ).style.display = "block";
-
-}
-
-
-async function populateDestinationSelect() {
-
-  const select =
-    document.getElementById(
-      "locationDestinationSelect"
-    );
-
-
-  if (!select) return;
-
-
-  const {
-    data,
-    error
-
-  } = await supabase
-    .from("destinations")
-    .select("id,name")
-    .order("sort_order", {
-      ascending: true
-    });
-
-
-  if (error) {
-
-    select.innerHTML =
-      `<option value="">Unable to load</option>`;
-
-    return;
-
-  }
-
-
-  select.innerHTML = `
-    <option value="">
-      Select destination
-    </option>
-
-  `;
-
-
-  (data || []).forEach((destination) => {
-
-    select.insertAdjacentHTML(
-      "beforeend",
-      `
-        <option value="${destination.id}">
-          ${escapeHTML(destination.name)}
-        </option>
-      `
-    );
-
-  });
-
-
-  if (currentLocationDestinationId) {
-
-    select.value =
-      currentLocationDestinationId;
-
-  }
-
-}
-
-
-function clearLocationForm() {
-
-  document
-    .getElementById("locationForm")
-    .reset();
-
-  document
-    .getElementById("locationNumber")
-    .value = "1";
-
-  document
-    .getElementById("locationSortOrder")
-    .value = "0";
-
-}
-
-/* =========================================================
-   SAVE LOCATION
-========================================================= */
-
-async function saveLocation(event) {
-
-  event.preventDefault();
-
-
-  const destinationId =
-    Number(
-      document.getElementById(
-        "locationDestinationSelect"
-      ).value
-    );
-
-
-  const locationNumber =
-    Number(
-
-      document.getElementById(
-        "locationNumber"
-      ).value
-    );
-
-
-  const name =
-    document.getElementById(
-      "locationName"
-    ).value.trim();
-
-
-  const description =
-    document.getElementById(
-      "locationDescription"
-    ).value.trim();
-
-
-  const imageUrl =
-    document.getElementById(
-      "locationImageUrl"
-    ).value.trim();
-
-
-
-  const imagePath =
-    document.getElementById(
-      "locationImagePath"
-    ).value.trim();
-
-
-  const sortOrder =
-    Number(
-      document.getElementById(
-        "locationSortOrder"
-      ).value
-    ) || 0;
-
-
-  if (!destinationId) {
-
-    alert("Please select a destination.");
-
-    return;
-
-  }
-
-
-
-  const button =
-    document.getElementById(
-      "saveLocationBtn"
-    );
-
-
-  button.disabled = true;
-  button.textContent = "Saving...";
-
-
-  try {
-
-    const payload = {
-
-      destination_id: destinationId,
-
-      location_number: locationNumber,
-
-      name,
-
-      description:
-        description || null,
-
-      image_path:
-        imagePath || null,
-
-      image_url:
-        imageUrl || null,
-
-      sort_order:
-        sortOrder
-
-    };
-
-
-    let error;
-
-
-    if (editingLocationId) {
-
-      ({
-        error
-
-      } = await supabase
-        .from("destination_locations")
-        .update(payload)
-        .eq("id", editingLocationId));
-
-    } else {
-
-      ({
-        error
-      } = await supabase
-        .from("destination_locations")
-        .insert(payload));
-
-    }
-
-
-    if (error) {
-      throw error;
-    }
-
-
-    closeLocationModal();
-
-
-    await loadLocationsAdmin();
-
-    await loadDashboard();
-
-
-    alert("Location saved successfully.");
-
-  } catch (error) {
-
-    alert(
-      "Save failed:\n\n" +
-      getReadableError(error)
-    );
-
-  } finally {
-
-    button.disabled = false;
-    button.textContent = "Save";
-
-  }
-
-}
-
-
-/* =========================================================
-   DELETE LOCATION
-========================================================= */
-
-async function deleteLocation(id) {
-
-  if (
-    !confirm(
-      "Delete this destination location?"
-    )
-  ) {
-    return;
-  }
-
-
-  const {
-
-    error
-  } = await supabase
-    .from("destination_locations")
-    .delete()
-    .eq("id", id);
-
-
-  if (error) {
-
-    alert(
-      "Delete failed:\n\n" +
-      getReadableError(error)
-    );
-
-    return;
-
-  }
-
-
-  await loadLocationsAdmin();
-
-  await loadDashboard();
-
-}
-
-
-/* =========================================================
-   REVIEWS
-========================================================= */
-
-async function loadReviewsAdmin() {
-
-  const container =
-    document.getElementById("reviewsList");
-
-  if (!container) return;
-
-  container.innerHTML =
-    loadingHTML("Loading reviews...");
-
-
-  const {
-
-    data,
-    error
-  } = await supabase
-    .from("reviews")
-    .select("*")
-    .order("created_at", {
-      ascending: false
-    });
-
-
-  if (error) {
-
-    container.innerHTML =
-      errorHTML(getReadableError(error));
-
-    return;
-
-  }
-
-
-  if (!data || data.length === 0) {
-
-    container.innerHTML =
-      emptyHTML("No reviews found.");
-
-    return;
-
-  }
-
-
-  container.innerHTML =
-    data.map(createReviewCard).join("");
-
-
-  document
-    .querySelectorAll("[data-delete-review]")
-    .forEach((button) => {
-
-      button.addEventListener("click", () => {
-
-        deleteReview(
-          button.dataset.deleteReview
-        );
-
-      });
-
-    });
-
-}
-
-
-function createReviewCard(review) {
-
-  const stars =
-    "★".repeat(
-      Math.max(
-        0,
-        Math.min(5, Number(review.rating) || 0)
-      )
-    );
-
-
-  return `
-
-    <div class="admin-card admin-review-
-
-card">
-
-      ${
-        review.photo_url
-          ? `
-            <img
-              class="admin-review-photo"
-              src="${escapeAttribute(review.photo_url)}"
-              alt="${escapeAttribute(review.name || "")}"
-            />
-          `
-          : ""
-      }
-
-
-      <div class="admin-card-info">
-
-        <h3>
-          ${escapeHTML(review.name || "Anonymous")}
-        </h3>
-
-
-        <div class="admin-review-rating">
-          ${stars}
-        </div>
-
-        <p>
-          ${escapeHTML(review.review || "")}
-        </p>
-
-        <div class="admin-card-meta">
-
-          ${escapeHTML(review.country || "")}
-
-          ·
-
-          ${formatDate(review.created_at)}
-
-        </div>
-
-      </div>
-
-      <div class="admin-card-actions">
-
-        <button
-          class="admin-danger-btn"
-          data-delete-review="${escapeAttribute(review.id)}"
-          type="button"
-        >
-          Delete
-        </button>
-
-      </div>
-
-    </div>
-
-  `;
-
-}
-
-
-async function deleteReview(id) {
-
-  if (
-    !confirm(
-      "Delete this review?"
-    )
-  ) {
-    return;
-  }
-
-
-  const {
-    data: review
-  } = await supabase
-    .from("reviews")
-    .select("photo_path")
-    .eq("id", id)
-    .maybeSingle();
-
-
-  if (review?.photo_path) {
-
-    const {
-      error: storageError
-
-    } = await supabase
-      .storage
-      .from("review-photos")
-      .remove([
-        review.photo_path
-      ]);
-
-
     if (storageError) {
-
       console.warn(
-        "Review photo cleanup failed:",
+        "Gallery storage cleanup failed:",
         storageError
       );
-
     }
 
   }
@@ -3407,28 +2368,27 @@ async function deleteReview(id) {
 
   const {
     error
-
-  } = await supabase
-    .from("reviews")
-    .delete()
-    .eq("id", id);
+  } =
+    await supabase
+      .from("tours")
+      .delete()
+      .eq(
+        "id",
+        id
+      );
 
 
   if (error) {
 
-    alert(
-      "Delete failed:\n\n" +
-      getReadableError(error)
-    );
+    alert(error.message);
 
     return;
-
   }
 
 
-  await loadReviewsAdmin();
+  await loadToursAdmin();
 
-  await loadDashboard();
+  await loadDashboardStats();
 
 }
 
@@ -3436,6 +2396,7 @@ async function deleteReview(id) {
 /* =========================================================
    TOUR GALLERY
 ========================================================= */
+
 
 async function openGalleryModal(
   tourId,
@@ -3449,186 +2410,179 @@ async function openGalleryModal(
     tourTitle || "Tour";
 
 
-  document.getElementById(
+  const title =
+    document.getElementById(
+      "galleryTourTitle"
+    );
 
-    "galleryTourTitle"
-  ).textContent =
-    currentGalleryTourTitle;
-
-
-  document.getElementById(
-    "galleryModal"
-  ).style.display = "block";
-
-
-  document.getElementById(
-    "galleryFileInput"
-  ).value = "";
+  if (title) {
+    title.textContent =
+      currentGalleryTourTitle;
+  }
 
 
-  document.getElementById(
-    "galleryUploadStatus"
-  ).textContent = "";
+
+  const files =
+    document.getElementById(
+      "galleryFiles"
+    );
+
+  if (files) {
+    files.value = "";
+  }
 
 
-  await loadTourGallery();
+  const status =
+    document.getElementById(
+      "galleryStatus"
+    );
+
+  if (status) {
+    status.textContent = "";
+  }
+
+
+  openModal("galleryModal");
+
+
+
+  await loadGalleryImages();
 
 }
 
 
-/* =========================================================
-   LOAD TOUR GALLERY
-========================================================= */
+async function loadGalleryImages() {
 
-async function loadTourGallery() {
-
-  const container =
+  const grid =
     document.getElementById(
-      "galleryPreview"
+      "galleryGrid"
     );
 
-
-  if (!container || !currentGalleryTourId) {
+  if (!grid) {
     return;
   }
 
 
-  container.innerHTML =
-    loadingHTML("Loading gallery...");
+  grid.innerHTML =
+    loadingHTML(
+      "Loading gallery..."
+
+    );
 
 
   const {
     data,
     error
-  } = await supabase
-    .from("tour_gallery")
-    .select(`
-      id,
-      tour_id,
-      image_path,
-      image_url,
-      sort_order,
-      created_at,
-      updated_at
-    `)
-    .eq(
-      "tour_id",
-      currentGalleryTourId
+  } =
+    await supabase
+      .from("tour_gallery")
+      .select(`
+        id,
+        tour_id,
+        image_path,
+        image_url,
+        sort_order,
+        created_at
+      `)
+      .eq(
+        "tour_id",
+        currentGalleryTourId
+      )
+      .order(
 
-    )
-    .order("sort_order", {
-      ascending: true
-    })
-    .order("created_at", {
-      ascending: true
-    });
+        "sort_order",
+        {
+          ascending: true
+        }
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
 
 
   if (error) {
 
-    console.error(error);
+    grid.innerHTML =
+      errorHTML(error.message);
 
-    container.innerHTML =
-      errorHTML(
-        getReadableError(error)
+    return;
+  }
+
+  if (!data?.length) {
+
+    grid.innerHTML =
+      emptyHTML(
+        "No gallery images yet."
       );
 
     return;
-
   }
 
 
-  if (!data || data.length === 0) {
-
-    container.innerHTML = `
-      <div class="gallery-empty">
-
-        <div style="font-size:32px;">
-          📷
-        </div>
-
-        <p>
-          No gallery images yet.
-        </p>
-
-        <small>
-          Select images above and upload them.
-        </small>
-
-      </div>
-    `;
-
-    return;
-
-
-  }
-
-
-  container.innerHTML =
-    data.map(
-      createGalleryAdminItem
-    ).join("");
-
-
-  bindGalleryDeleteActions();
+  grid.innerHTML =
+    data
+      .map(
+        createGalleryAdminCard
+      )
+      .join("");
 
 }
 
 
-/* =========================================================
-   GALLERY ITEM
-========================================================= */
+function createGalleryAdminCard(image) {
 
-function createGalleryAdminItem(
-  image,
-  index
-) {
 
-  const imageUrl =
-    image.image_url ||
-    getTourGalleryPublicUrl(
-      image.image_path
-    );
+  let imageUrl =
+    image.image_url || "";
+
+
+  if (
+    !imageUrl &&
+    image.image_path
+  ) {
+
+    const {
+      data
+    } =
+      supabase
+        .storage
+        .from("tour-gallery")
+        .getPublicUrl(
+          image.image_path
+        );
+
+
+    imageUrl =
+
+      data?.publicUrl || "";
+
+  }
 
 
   return `
 
-    <div
-      class="gallery-admin-item"
-      data-gallery-item="${image.id}"
-    >
+    <div class="admin-gallery-item">
 
-      <div class="gallery-admin-image-wrap">
+      <img
+        src="${escapeAttribute(imageUrl)}"
+        alt="Tour gallery image"
+        loading="lazy"
+      >
 
-        <img
+      <div class="admin-gallery-item-footer">
 
-          src="${escapeAttribute(imageUrl)}"
-          alt="Tour gallery image ${index + 1}"
-          loading="lazy"
-        />
-
-        <span class="gallery-admin-number">
-          #${index + 1}
+        <span>
+          #${Number(image.sort_order || 0)}
         </span>
 
-      </div>
-
-
-      <div class="gallery-admin-item-bottom">
-
-        <small>
-          Order ${image.sort_order ?? index}
-        </small>
-
-
         <button
-          class="gallery-delete-btn"
-          data-delete-gallery="${image.id}"
-
-          data-gallery-path="${escapeAttribute(
-            image.image_path || ""
-          )}"
           type="button"
+
+          class="admin-small-btn danger"
+          data-delete-gallery="${Number(image.id)}"
         >
           Delete
         </button>
@@ -3642,65 +2596,29 @@ function createGalleryAdminItem(
 }
 
 
-/* =========================================================
-   GALLERY DELETE BIND
-===================================
-
-====================== */
-
-function bindGalleryDeleteActions() {
-
-  document
-    .querySelectorAll("[data-delete-gallery]")
-    .forEach((button) => {
-
-      button.addEventListener(
-        "click",
-        async () => {
-
-          const id =
-            Number(
-              button.dataset.deleteGallery
-            );
-
-
-          const path =
-            button.dataset.galleryPath || "";
-
-          await deleteGalleryImage(
-            id,
-            path
-          );
-
-        }
-      );
-
-    });
-
-}
-
-
-/* =========================================================
-   UPLOAD PREVIEW
-========================================================= */
-
-function previewSelectedGalleryFiles() {
+function previewGalleryFiles() {
 
   const input =
-
     document.getElementById(
-      "galleryFileInput"
+      "galleryFiles"
     );
 
 
   const status =
     document.getElementById(
-      "galleryUploadStatus"
+      "galleryStatus"
     );
 
 
+  if (!input || !status) {
+    return;
+  }
+
+
   const files =
-    Array.from(input.files || []);
+    Array.from(
+      input.files || []
+    );
 
 
   if (!files.length) {
@@ -3708,144 +2626,106 @@ function previewSelectedGalleryFiles() {
     status.textContent = "";
 
     return;
-
   }
 
 
-
   const invalid =
-    files.filter(
-      file =>
-        !isValidGalleryFile(file)
+    files.find(
+      (file) =>
+        file.size > 5 * 1024 * 1024
     );
 
 
-  if (invalid.length) {
+  if (invalid) {
 
     status.textContent =
-      `${invalid.length} invalid file(s). ` +
-      "Only JPG, PNG, WEBP and GIF up to 5MB are allowed.";
-
-    status.style.color = "#c53d3d";
+      `File "${invalid.name}" is larger than 5 MB.`;
 
     return;
-
   }
 
 
   status.textContent =
-    `${files.length} image(s) selected. Ready to upload.`;
 
-  status.style.color = "#1e5c3f";
-
-}
-
-
-/* =========================================================
-   VALIDATE GALLERY FILE
-========================================================= */
-
-function isValidGalleryFile(file) {
-
-  const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-
-    "image/webp",
-    "image/gif"
-  ];
-
-
-  const maxSize =
-    5 * 1024 * 1024;
-
-
-  return (
-    allowedTypes.includes(file.type) &&
-    file.size <= maxSize
-  );
+    `${files.length} image${files.length === 1 ? "" : "s"} selected.`;
 
 }
 
-
-/* =========================================================
-   UPLOAD GALLERY IMAGES
-===================================
-
-====================== */
 
 async function uploadGalleryImages() {
 
-  if (!currentGalleryTourId) {
-
-    alert("No tour selected.");
-
-    return;
-
-  }
-
-
   const input =
     document.getElementById(
-      "galleryFileInput"
+      "galleryFiles"
     );
-
 
   const status =
     document.getElementById(
-      "galleryUploadStatus"
+      "galleryStatus"
     );
 
-
-
-  const button =
+  const uploadButton =
     document.getElementById(
-      "uploadGalleryBtn"
+      "galleryUploadBtn"
     );
+
+
+
+  if (
+    !input ||
+    !status ||
+    !uploadButton
+  ) {
+    return;
+  }
 
 
   const files =
-    Array.from(input.files || []);
+    Array.from(
+      input.files || []
+    );
 
 
   if (!files.length) {
 
-    alert(
-      "Please select at least one image."
-    );
+    status.textContent =
+      "Please select at least one image.";
 
     return;
 
   }
 
 
-  const invalidFiles =
-    files.filter(
-      file =>
-        !isValidGalleryFile(file)
-    );
+  if (!currentGalleryTourId) {
 
-
-  if (invalidFiles.length > 0) {
-
-    alert(
-      "Some files are invalid.\n\n" +
-      "Allowed: JPG, PNG, WEBP, GIF\n" +
-      "Maximum: 5MB per image."
-    );
+    status.textContent =
+      "Tour not selected.";
 
     return;
-
   }
 
 
-  button.disabled = true;
+  const invalidFile =
+    files.find(
+      (file) =>
+        file.size >
+        5 * 1024 * 1024
+    );
 
 
-  input.disabled = true;
+  if (invalidFile) {
+
+    status.textContent =
+      `"${invalidFile.name}" is larger than 5 MB.`;
+
+    return;
+  }
+
+
+  uploadButton.disabled = true;
 
   status.textContent =
-    "Preparing upload...";
+    "Uploading images...";
 
 
   try {
@@ -3853,18 +2733,22 @@ async function uploadGalleryImages() {
     const {
       data: existingRows,
       error: existingError
-    } = await supabase
-      .from("tour_gallery")
-      .select("sort_order")
-      .eq(
-        "tour_id",
-        currentGalleryTourId
-      )
-      .order("sort_order", {
-        ascending: false
-      })
+    } =
+      await supabase
+        .from("tour_gallery")
 
-      .limit(1);
+        .select("sort_order")
+        .eq(
+          "tour_id",
+          currentGalleryTourId
+        )
+        .order(
+          "sort_order",
+          {
+            ascending: false
+          }
+        )
+        .limit(1);
 
 
     if (existingError) {
@@ -3873,391 +2757,706 @@ async function uploadGalleryImages() {
 
 
     let nextSortOrder =
-      existingRows?.length
-        ? Number(
-            existingRows[0].sort_order
-          ) + 1
-        : 0;
+      Number(
+        existingRows?.[0]?.sort_order
+
+      ) + 1;
 
 
-    let uploadedCount = 0;
+    if (
+      !Number.isFinite(nextSortOrder) ||
+      nextSortOrder < 1
+    ) {
+      nextSortOrder = 1;
+    }
 
 
-    for (const file of files) {
+    for (
+      let index = 0;
+      index < files.length;
+      index++
+    ) {
 
-      uploadedCount++;
-
-
-
-      status.textContent =
-        `Uploading ${uploadedCount} of ${files.length}...`;
+      const file =
+        files[index];
 
 
       const extension =
-        getFileExtension(file);
+
+        getFileExtension(file.name);
 
 
-      const randomPart =
-        crypto.randomUUID
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random()
-              .toString(36)
-              .slice(2)}`;
+      const uniqueName =
+        `${Date.now()}-${createRandomId()}.${extension}`;
 
 
-      const storagePath =
-        `tours/${currentGalleryTourId}/${Date.now()}-${randomPart}.${extension}`;
+      const path =
+        `tours/${currentGalleryTourId}/${uniqueName}`;
 
-
-
-      /*
-        Upload to Supabase Storage
-      */
 
       const {
         error: uploadError
-      } = await supabase
-        .storage
-        .from("tour-gallery")
-        .upload(
-          storagePath,
-          file,
-          {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: file.type
-          }
-        );
+      } =
+        await supabase
+          .storage
+          .from("tour-gallery")
+          .upload(
+            path,
+            file,
+
+            {
+              cacheControl: "3600",
+              upsert: false,
+              contentType:
+                file.type ||
+                "image/jpeg"
+            }
+          );
 
 
       if (uploadError) {
-
         throw uploadError;
       }
 
 
+      const {
+        data: publicUrlData
+      } =
+        supabase
+          .storage
+          .from("tour-gallery")
+          .getPublicUrl(path);
+
+
       const publicUrl =
-        getTourGalleryPublicUrl(
-          storagePath
-        );
+        publicUrlData?.publicUrl ||
+        null;
 
-
-      /*
-        Insert DB record
-      */
 
       const {
         error: insertError
-      } = await supabase
-        .from("tour_gallery")
-        .insert({
-          tour_id:
-            currentGalleryTourId,
+      } =
+        await supabase
+          .from("tour_gallery")
+          .insert({
 
-          image_path:
-            storagePath,
+            tour_id:
+              currentGalleryTourId,
 
-          image_url:
-            publicUrl,
+            image_path:
+              path,
 
-          sort_order:
-            nextSortOrder
-        });
+            image_url:
+              publicUrl,
+
+            sort_order:
+              nextSortOrder++
+
+          });
 
 
       if (insertError) {
 
-        /*
-          Important:
-          If DB insertion fails after storage upload,
-          remove the uploaded Storage file.
-        */
-
         await supabase
           .storage
-
           .from("tour-gallery")
-          .remove([
-            storagePath
-          ]);
-
+          .remove([path]);
 
         throw insertError;
-
       }
 
-
-      nextSortOrder++;
-
     }
-
-
-    status.textContent =
-      `${uploadedCount} image(s) uploaded successfully.`;
-
-    status.style.color =
-      "#1e5c3f";
-
 
 
     input.value = "";
 
-
-    await loadTourGallery();
-
-    await loadDashboard();
-
-
-  } catch (error) {
-
-    console.error(
-      "Gallery upload error:",
-      error
-    );
-
-
     status.textContent =
-      "Upload failed.";
-
-    status.style.color =
-
-      "#c53d3d";
+      "Gallery images uploaded successfully.";
 
 
-    alert(
-      "Gallery upload failed:\n\n" +
-      getReadableError(error)
-    );
+    await loadGalleryImages();
 
-  } finally {
-
-    button.disabled = false;
-
-    input.disabled = false;
-
-  }
-
-}
-
-
-/* =========================================================
-   DELETE GALLERY IMAGE
-
-========================================================= */
-
-async function deleteGalleryImage(
-  id,
-  imagePath
-) {
-
-  if (
-    !confirm(
-      "Delete this gallery image?"
-    )
-  ) {
-    return;
-
-  }
-
-
-  try {
-
-    /*
-      Delete database row first.
-
-    */
-
-    const {
-      error: dbError
-    } = await supabase
-      .from("tour_gallery")
-      .delete()
-      .eq("id", id);
-
-
-    if (dbError) {
-      throw dbError;
-    }
-
-
-    /*
-      Delete physical Storage object.
-    */
-
-    if (imagePath) {
-
-      const {
-
-        error: storageError
-      } = await supabase
-        .storage
-        .from("tour-gallery")
-        .remove([
-          imagePath
-        ]);
-
-
-      if (storageError) {
-
-        console.warn(
-          "Storage delete failed:",
-          storageError
-        );
-
-      }
-
-    }
-
-
-    await loadTourGallery();
-
-
-    await loadDashboard();
+    await loadToursAdmin();
 
 
   } catch (error) {
 
     console.error(error);
 
-    alert(
-      "Gallery image delete failed:\n\n" +
-      getReadableError(error)
-    );
+    status.textContent =
+      error?.message ||
+      "Upload failed.";
+
+  } finally {
+
+    uploadButton.disabled = false;
 
   }
+
 
 }
 
 
-/* =========================================================
-   GALLERY PUBLIC URL
+async function deleteGalleryImage(id) {
 
-========================================================= */
+  const confirmed =
+    confirm(
+      "Delete this gallery image?"
+    );
 
-function getTourGalleryPublicUrl(
-  path
-) {
 
-  if (!path) {
-    return "";
+  if (!confirmed) {
+    return;
   }
 
 
   const {
-    data
-  } = supabase
-    .storage
-    .from("tour-gallery")
-    .getPublicUrl(path);
+    data,
+    error: fetchError
+  } =
+    await supabase
+
+      .from("tour_gallery")
+      .select(
+        "image_path"
+      )
+      .eq(
+        "id",
+        id
+      )
+      .single();
 
 
-  return data?.publicUrl || "";
+  if (fetchError) {
+
+    alert(fetchError.message);
+
+    return;
+  }
+
+
+  if (
+    data?.image_path
+  ) {
+
+    const {
+      error: storageError
+    } =
+      await supabase
+        .storage
+        .from("tour-gallery")
+        .remove([
+          data.image_path
+        ]);
+
+
+    if (storageError) {
+
+      console.warn(
+        "Storage delete failed:",
+        storageError
+      );
+
+    }
+
+  }
+
+
+  const {
+    error
+  } =
+    await supabase
+      .from("tour_gallery")
+      .delete()
+      .eq(
+        "id",
+        id
+      );
+
+
+  if (error) {
+
+    alert(error.message);
+
+    return;
+  }
+
+
+  await loadGalleryImages();
+
+
+  await loadToursAdmin();
 
 }
 
 
 /* =========================================================
-   FILE EXTENSION
+   LOCATIONS
 ========================================================= */
 
-function getFileExtension(file) {
+async function loadLocationsAdmin() {
 
-  const originalName =
-    file.name || "";
+  const container =
+    document.getElementById(
+      "locationsList"
+    );
 
-
-  const parts =
-    originalName
-      .split(".");
-
-
-  if (parts.length > 1) {
-
-    return parts
-      .pop()
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "");
+  if (!container) {
+    return;
 
   }
 
 
-  if (file.type === "image/jpeg") {
-    return "jpg";
+  container.innerHTML =
+    loadingHTML(
+      "Loading locations..."
+    );
+
+
+  const {
+    data: destinations,
+    error
+  } =
+    await supabase
+      .from("destinations")
+      .select(
+        "id,name,slug"
+      )
+      .order(
+        "sort_order",
+        {
+          ascending: true
+
+        }
+      );
+
+
+  if (error) {
+
+    container.innerHTML =
+      errorHTML(error.message);
+
+    return;
   }
 
-  if (file.type === "image/png") {
-    return "png";
+
+  if (!destinations?.length) {
+
+    container.innerHTML =
+      emptyHTML(
+        "Create a destination first."
+      );
+
+    return;
   }
 
-  if (file.type === "image/webp") {
-    return "webp";
+
+
+  const html = [];
+
+
+  for (
+    const destination of destinations
+  ) {
+
+    const {
+      data: locations
+    } =
+      await supabase
+        .from(
+          "destination_locations"
+        )
+        .select("*")
+        .eq(
+          "destination_id",
+          destination.id
+        )
+        .order(
+          "sort_order",
+
+          {
+            ascending: true
+          }
+        );
+
+
+    html.push(`
+
+      <div class="admin-location-group">
+
+        <div class="admin-location-header">
+
+          <div>
+
+            <h3>
+              ${escapeHTML(
+                destination.name
+              )}
+            </h3>
+
+            <small>
+              ${locations?.length || 0}
+
+              locations
+            </small>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="admin-primary-btn"
+            data-add-location="${Number(destination.id)}"
+          >
+            + Add Location
+          </button>
+
+        </div>
+
+
+        <div class="admin-location-list">
+
+          ${
+            locations?.length
+
+              ? locations
+                  .map(
+                    createLocationAdminCard
+                  )
+                  .join("")
+              : emptyHTML(
+                  "No locations yet."
+                )
+          }
+
+        </div>
+
+      </div>
+
+    `);
+
   }
 
-  if (file.type === "image/gif") {
-    return "gif";
 
-  }
-
-
-  return "jpg";
+  container.innerHTML =
+    html.join("");
 
 }
 
 
-/* =========================================================
-   CLOSE MODALS
-========================================================= */
+function createLocationAdminCard(location) {
 
-function closeContentModal() {
+  const image =
+    location.image_url ||
+    "https://placehold.co/300x200?text=Location";
 
-  document.getElementById(
-    "contentModal"
-  ).style.display = "none";
 
-  editingDestinationId = null;
+  return `
 
-  editingTourId = null;
+    <article class="admin-content-card compact">
+
+      <img
+        src="${escapeAttribute(image)}"
+        alt="${escapeAttribute(location.name || "")}"
+        loading="lazy"
+
+      >
+
+
+      <div class="admin-content-card-body">
+
+        <h3>
+          ${escapeHTML(
+            location.name || "Location"
+          )}
+        </h3>
+
+
+        <p>
+          ${escapeHTML(
+            truncate(
+              location.description || "",
+              120
+            )
+          )}
+        </p>
+
+
+        <div class="admin-card-actions">
+
+
+          <button
+            type="button"
+            class="admin-small-btn"
+            data-edit-location="${Number(location.id)}"
+          >
+            Edit
+          </button>
+
+
+          <button
+            type="button"
+            class="admin-small-btn danger"
+            data-delete-location="${Number(location.id)}"
+          >
+            Delete
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
 
 }
 
 
-function closeLocationModal() {
-
-  document.getElementById(
-    "locationModal"
-  ).style.display = "none";
-
+function openLocationModal(
+  destinationId
+) {
 
   editingLocationId = null;
 
-}
+  currentLocationDestinationId =
+    Number(destinationId);
 
-
-function closeGalleryModal() {
 
   document.getElementById(
+    "locationForm"
+  ).reset();
 
-    "galleryModal"
-  ).style.display = "none";
 
 
-  currentGalleryTourId = null;
+  document.getElementById(
+    "locationId"
+  ).value = "";
 
-  currentGalleryTourTitle = "";
+
+  document.getElementById(
+    "locationDestinationId"
+  ).value =
+    currentLocationDestinationId;
+
+
+  openModal("locationModal");
 
 }
 
 
-/* =========================================================
-   LOGOUT
-========================================================= */
+async function editLocationById(id) {
 
-async function logout() {
+  const {
+    data,
+
+    error
+  } =
+    await supabase
+      .from(
+        "destination_locations"
+      )
+      .select("*")
+      .eq(
+        "id",
+        id
+      )
+      .single();
+
+
+  if (error) {
+
+    alert(error.message);
+
+    return;
+  }
+
+  editingLocationId = id;
+
+  currentLocationDestinationId =
+    Number(data.destination_id);
+
+
+  document.getElementById(
+    "locationId"
+  ).value = id;
+
+
+  document.getElementById(
+    "locationDestinationId"
+  ).value =
+    data.destination_id;
+
+
+  document.getElementById(
+    "locationName"
+  ).value =
+    data.name || "";
+
+
+  document.getElementById(
+    "locationDescription"
+  ).value =
+    data.description || "";
+
+
+  document.getElementById(
+    "locationImagePath"
+  ).value =
+    data.image_path || "";
+
+
+  document.getElementById(
+    "locationImageUrl"
+  ).value =
+    data.image_url || "";
+
+
+  document.getElementById(
+    "locationNumber"
+  ).value =
+    data.location_number || 1;
+
+
+
+  document.getElementById(
+    "locationSortOrder"
+  ).value =
+    data.sort_order ?? 0;
+
+
+  openModal("locationModal");
+
+}
+
+
+async function saveLocation(event) {
+
+  event.preventDefault();
+
+
+  const destinationId =
+    Number(
+      document.getElementById(
+        "locationDestinationId"
+
+      ).value
+    );
+
+
+  const payload = {
+
+    destination_id:
+      destinationId,
+
+    location_number:
+      Number(
+        document.getElementById(
+          "locationNumber"
+        ).value
+      ) || 1,
+
+    name:
+      document.getElementById(
+        "locationName"
+      ).value.trim(),
+
+    description:
+
+      document.getElementById(
+        "locationDescription"
+      ).value.trim() || null,
+
+    image_path:
+      document.getElementById(
+        "locationImagePath"
+      ).value.trim() || null,
+
+    image_url:
+      document.getElementById(
+        "locationImageUrl"
+      ).value.trim() || null,
+
+    sort_order:
+      Number(
+        document.getElementById(
+          "locationSortOrder"
+        ).value
+      ) || 0
+
+  };
+
+
+
+  const status =
+    document.getElementById(
+      "locationStatus"
+    );
+
+
+  if (status) {
+    status.textContent = "Saving...";
+  }
+
+
+  let error;
+
+
+  if (editingLocationId) {
+
+    ({
+      error
+    } =
+      await supabase
+
+        .from(
+          "destination_locations"
+        )
+        .update(payload)
+        .eq(
+          "id",
+          editingLocationId
+        ));
+
+  } else {
+
+    ({
+      error
+    } =
+      await supabase
+        .from(
+          "destination_locations"
+        )
+        .insert(payload));
+
+  }
+
+  if (error) {
+
+    console.error(error);
+
+    if (status) {
+      status.textContent =
+        error.message;
+    }
+
+    return;
+  }
+
+
+  closeModal("locationModal");
+
+  await loadLocationsAdmin();
+
+  await loadDashboardStats();
+
+}
+
+async function deleteLocation(id) {
 
   const confirmed =
     confirm(
-
-      "Are you sure you want to logout?"
+      "Delete this location?"
     );
 
 
@@ -4268,220 +3467,1167 @@ async function logout() {
 
   const {
     error
-  } = await supabase.auth.signOut();
+  } =
+    await supabase
+      .from(
+        "destination_locations"
+      )
+      .delete()
+      .eq(
+
+        "id",
+        id
+      );
 
 
   if (error) {
 
-    alert(
-      "Logout failed:\n\n" +
-      getReadableError(error)
-    );
+    alert(error.message);
 
     return;
+  }
 
+
+  await loadLocationsAdmin();
+
+  await loadDashboardStats();
+
+}
+
+
+/* ===================================
+
+======================
+   REVIEWS
+========================================================= */
+
+async function loadReviewsAdmin() {
+
+  const container =
+    document.getElementById(
+      "reviewsList"
+    );
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    loadingHTML(
+      "Loading reviews..."
+    );
+
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from("reviews")
+      .select("*")
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+
+  if (error) {
+
+    container.innerHTML =
+      errorHTML(error.message);
+
+    return;
 
   }
 
 
-  window.location.href =
-    "admin.html";
+  if (!data?.length) {
+
+    container.innerHTML =
+      emptyHTML(
+        "No reviews yet."
+      );
+
+    return;
+  }
+
+
+  container.innerHTML =
+    data
+      .map(
+        createReviewAdminCard
+      )
+      .join("");
 
 }
+
+
+function createReviewAdminCard(review) {
+
+  const rating =
+    Math.max(
+      0,
+      Math.min(
+        5,
+        Number(review.rating) || 0
+      )
+    );
+
+
+  const stars =
+    "★".repeat(rating) +
+    "☆".repeat(5 - rating);
+
+
+  return `
+
+    <article class="admin-review-card">
+
+      ${
+        review.photo_url
+          ? `
+            <img
+              src="${escapeAttribute(review.photo_url)}"
+              alt="${escapeAttribute(review.name || "Traveler")}"
+              loading="lazy"
+            >
+          `
+          : ""
+      }
+
+
+      <div>
+
+        <h3>
+          ${escapeHTML(
+            review.name || "Traveler"
+          )}
+
+        </h3>
+
+
+        <span>
+          ${escapeHTML(
+            review.country || ""
+          )}
+        </span>
+
+
+        <div class="admin-review-stars">
+          ${stars}
+        </div>
+
+
+        <p>
+          ${escapeHTML(
+            review.review || ""
+          )}
+        </p>
+
+        <button
+          type="button"
+          class="admin-small-btn danger"
+          data-delete-review="${escapeAttribute(review.id)}"
+        >
+          Delete Review
+        </button>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+async function deleteReview(id) {
+
+  const confirmed =
+    confirm(
+
+      "Delete this review?"
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  const {
+    data,
+    error: fetchError
+  } =
+    await supabase
+      .from("reviews")
+      .select(
+        "photo_path"
+      )
+      .eq(
+        "id",
+        id
+      )
+      .single();
+
+
+
+  if (
+    !fetchError &&
+    data?.photo_path
+  ) {
+
+    await supabase
+      .storage
+      .from("review-photos")
+      .remove([
+        data.photo_path
+      ]);
+
+  }
+
+
+  const {
+    error
+  } =
+    await supabase
+      .from("reviews")
+
+      .delete()
+      .eq(
+        "id",
+        id
+      );
+
+
+  if (error) {
+
+    alert(error.message);
+
+    return;
+  }
+
+
+  await loadReviewsAdmin();
+
+  await loadDashboardStats();
+
+}
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+async function logoutAdmin() {
+
+  await supabase.auth.signOut();
+
+  location.reload();
+
+}
+
+
+/* =========================================================
+   MODAL HELPERS
+========================================================= */
+
+
+function openModal(id) {
+
+  const modal =
+    document.getElementById(id);
+
+  if (modal) {
+    modal.style.display = "flex";
+  }
+
+}
+
+
+function closeModal(id) {
+
+  const modal =
+    document.getElementById(id);
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+
+}
+
+
+function closeGalleryModal() {
+
+  currentGalleryTourId = null;
+
+  currentGalleryTourTitle = "";
+
+  closeModal("galleryModal");
+
+}
+
+
+/* =========================================================
+   ERROR / LOADING
+========================================================= */
+
+function loadingHTML(text) {
+
+
+  return `
+
+    <div class="admin-message-card">
+
+      <div class="admin-spinner"></div>
+
+      <p>
+        ${escapeHTML(text)}
+      </p>
+
+    </div>
+
+  `;
+
+}
+
+
+function errorHTML(text) {
+
+  return `
+
+    <div class="admin-message-card error">
+
+
+      <strong>
+        Error
+      </strong>
+
+      <p>
+        ${escapeHTML(text)}
+      </p>
+
+    </div>
+
+  `;
+
+}
+
+
+function emptyHTML(text) {
+
+  return `
+
+    <div class="admin-message-card">
+
+      <p>
+        ${escapeHTML(text)}
+      </p>
+
+    </div>
+
+  `;
+
+}
+
+
+function showError(message) {
+
+  const loading =
+    document.getElementById(
+      "loading"
+    );
+
+  if (!loading) {
+    return;
+  }
+
+
+  loading.innerHTML = `
+
+    <div style="
+      padding:40px;
+      font-family:Arial,sans-serif;
+      color:#b33;
+    ">
+
+      <h2>
+        Admin Dashboard Error
+      </h2>
+
+      <p>
+        ${escapeHTML(message)}
+      </p>
+
+    </div>
+
+  `;
+
+}
+
 
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function setText(
-  id,
-  value
-) {
-
-  const element =
-
-    document.getElementById(id);
-
-
-  if (element) {
-    element.textContent = String(value);
-  }
-
-}
-
-
-function loadingHTML(
-  text = "Loading..."
-) {
-
-  return `
-
-    <div
-      style="
-        padding:35px;
-        text-align:center;
-        color:#718078;
-      "
-
-    >
-      ${escapeHTML(text)}
-    </div>
-
-  `;
-
-}
-
-
-function emptyHTML(
-  text
-) {
-
-  return `
-
-    <div
-      style="
-        padding:40px;
-        text-align:center;
-        background:white;
-        border:1px dashed #cbd8ce;
-        border-radius:12px;
-
-        color:#718078;
-      "
-    >
-      ${escapeHTML(text)}
-    </div>
-
-  `;
-
-}
-
-
-function errorHTML(
-  text
-) {
-
-  return `
-
-    <div
-      style="
-        padding:25px;
-        text-align:center;
-        background:#fff4f4;
-
-        border:1px solid #efcaca;
-        border-radius:12px;
-        color:#a12e2e;
-      "
-    >
-      ${escapeHTML(text)}
-    </div>
-
-  `;
-
-}
-
-
-function truncate(
-  text,
-  maxLength = 150
-) {
-
-  if (!text) {
-    return "";
-  }
-
-
-  if (text.length <= maxLength) {
-    return text;
-  }
-
-
-  return (
-    text.slice(0, maxLength).trim() +
-    "..."
-  );
-
-}
-
-
-function escapeHTML(
-  value
-) {
+function escapeHTML(value) {
 
   return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-
-    .replace(/'/g, "&#039;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 
 }
 
 
-function escapeAttribute(
-  value
-) {
+function escapeAttribute(value) {
+
 
   return escapeHTML(value);
 
 }
 
 
-function formatDate(
-  value
+function truncate(
+  value,
+  length
 ) {
 
-  if (!value) {
-    return "-";
-  }
-
-
-  try {
-
-    return new Date(value)
-      .toLocaleDateString(
-        undefined,
-        {
-          year: "numeric",
-          month: "short",
-          day: "numeric"
-        }
-      );
-
-  } catch {
-
-    return value;
-
-  }
-
-}
-
-function getReadableError(
-  error
-) {
-
-  if (!error) {
-    return "Unknown error";
-  }
+  const text =
+    String(value ?? "");
 
 
   if (
-    typeof error === "string"
+    text.length <= length
   ) {
-    return error;
+    return text;
   }
 
 
   return (
-    error.message ||
-    error.error_description ||
-    error.details ||
-    error.hint ||
-    "Unknown error"
 
+    text.slice(
+      0,
+      length
+    ) + "..."
   );
+
+}
+
+
+function getFileExtension(
+  filename
+) {
+
+  const parts =
+    String(filename)
+      .split(".");
+
+
+  const extension =
+    parts.length > 1
+      ? parts.pop()
+      : "jpg";
+
+
+
+  return extension
+    .toLowerCase()
+    .replace(
+      /[^a-z0-9]/g,
+      ""
+    ) || "jpg";
+
+}
+
+
+function createRandomId() {
+
+  if (
+    typeof crypto !== "undefined" &&
+    crypto.randomUUID
+  ) {
+
+    return crypto.randomUUID();
+
+  }
+
+
+
+  return (
+    Math.random()
+      .toString(36)
+      .slice(2) +
+    Date.now()
+  );
+
+}
+
+
+/* =========================================================
+   ADMIN CSS
+========================================================= */
+
+function injectAdminStyles() {
+
+  if (
+
+    document.getElementById(
+      "adminDashboardStyles"
+    )
+  ) {
+    return;
+  }
+
+
+  const style =
+    document.createElement("style");
+
+
+  style.id =
+    "adminDashboardStyles";
+
+
+  style.textContent = `
+
+    * {
+      box-sizing:border-box;
+    }
+
+
+    body {
+      margin:0;
+      background:#f4f7f5;
+      color:#18352a;
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+    }
+
+
+    .admin-layout {
+      min-height:100vh;
+      display:flex;
+    }
+
+
+    .admin-sidebar {
+      position:fixed;
+      inset:0 auto 0 0;
+      width:250px;
+
+      padding:25px 18px;
+      background:#10251d;
+      color:white;
+      display:flex;
+      flex-direction:column;
+      z-index:100;
+    }
+
+
+    .admin-brand {
+      padding:8px 10px 25px;
+      display:flex;
+      flex-direction:column;
+    }
+
+
+    .admin-brand strong {
+      font-family:Georgia,serif;
+      font-size:22px;
+    }
+
+
+    .admin-brand span {
+
+      color:#e6b84c;
+      font-family:Georgia,serif;
+      font-size:22px;
+    }
+
+
+    .admin-nav {
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
+
+
+    .admin-nav-btn,
+    .admin-logout-btn {
+      width:100%;
+      padding:12px 13px;
+      border:0;
+      border-radius:9px;
+      text-align:left;
+      background:transparent;
+      color:#dce7e1;
+
+      cursor:pointer;
+      font-weight:700;
+    }
+
+
+    .admin-nav-btn:hover,
+    .admin-nav-btn.active {
+      background:#1e5c3f;
+      color:white;
+    }
+
+
+    .admin-logout-btn {
+      margin-top:auto;
+      background:#3b211e;
+      color:#ffd9d4;
+    }
+
+
+    .admin-main {
+      width:100%;
+      margin-left:250px;
+
+      padding:35px;
+    }
+
+
+    .admin-section {
+      max-width:1250px;
+      margin:auto;
+    }
+
+
+    .admin-section-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      margin-bottom:25px;
+    }
+
+
+    .admin-section-header h1,
+    .admin-section-header h2 {
+      margin:0 0 7px;
+
+      font-family:Georgia,serif;
+      color:#173f2c;
+    }
+
+
+    .admin-section-header p {
+      margin:0;
+      color:#718078;
+    }
+
+
+    .admin-eyebrow {
+      margin:0 0 7px;
+      color:#b48a27;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:2px;
+    }
+
+
+    .admin-primary-btn {
+      min-height:42px;
+
+      padding:10px 16px;
+      border:0;
+      border-radius:9px;
+      background:#1e5c3f;
+      color:white;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+
+    .admin-primary-btn:hover {
+      background:#174b34;
+    }
+
+
+    .admin-primary-btn:disabled {
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+
+    .admin-stats-grid {
+      display:grid;
+
+      grid-template-columns:
+        repeat(4,minmax(0,1fr));
+      gap:18px;
+    }
+
+
+    .admin-stat-card {
+      background:white;
+      border-radius:15px;
+      padding:25px;
+      box-shadow:
+        0 8px 30px rgba(16,37,29,.07);
+    }
+
+
+    .admin-stat-card strong {
+      display:block;
+      font-size:35px;
+      color:#1e5c3f;
+    }
+
+    .admin-stat-card span {
+      color:#718078;
+    }
+
+
+    .admin-card-list {
+      display:grid;
+      grid-template-columns:
+        repeat(3,minmax(0,1fr));
+      gap:18px;
+    }
+
+
+    .admin-content-card {
+      overflow:hidden;
+      background:white;
+      border-radius:15px;
+      box-shadow:
+        0 8px 30px rgba(16,37,29,.07);
+    }
+
+    .admin-content-card > img {
+      display:block;
+      width:100%;
+      height:190px;
+      object-fit:cover;
+    }
+
+
+    .admin-content-card-body {
+      padding:18px;
+    }
+
+
+    .admin-content-card-body h3 {
+      margin:0 0 8px;
+      font-family:Georgia,serif;
+    }
+
+
+    .admin-content-card-body p {
+      min-height:42px;
+      margin:0 0 13px;
+
+      color:#718078;
+      line-height:1.6;
+    }
+
+
+    .admin-card-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+    }
+
+
+    .admin-small-btn {
+      min-height:35px;
+      padding:8px 11px;
+      border:0;
+      border-radius:7px;
+      background:#e9efeb;
+      color:#18352a;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+
+    }
+
+
+    .admin-small-btn:hover {
+      background:#dce7e1;
+    }
+
+
+    .admin-small-btn.danger {
+      background:#f7e5e2;
+      color:#a23a2e;
+    }
+
+
+    .admin-small-btn.gallery-btn {
+      background:#f1dfac;
+      color:#18352a;
+    }
+
+
+    .admin-gallery-count {
+      margin-bottom:13px;
+
+      color:#b48a27;
+      font-size:12px;
+      font-weight:700;
+    }
+
+
+    .admin-message-card {
+      grid-column:1/-1;
+      padding:35px;
+      background:white;
+      border-radius:15px;
+      text-align:center;
+      color:#718078;
+    }
+
+
+    .admin-message-card.error {
+      color:#a23a2e;
+    }
+
+
+    .admin-spinner {
+      width:30px;
+
+      height:30px;
+      margin:0 auto 12px;
+      border:3px solid #dce7e1;
+      border-top-color:#1e5c3f;
+      border-radius:50%;
+      animation:adminSpin .8s linear infinite;
+    }
+
+
+    @keyframes adminSpin {
+      to {
+        transform:rotate(360deg);
+      }
+    }
+
+
+    .admin-modal {
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:flex;
+      align-items:center;
+
+      justify-content:center;
+      padding:20px;
+    }
+
+
+    .admin-modal-overlay {
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,.7);
+    }
+
+
+    .admin-modal-box {
+      position:relative;
+      z-index:2;
+      width:min(620px,100%);
+      max-height:90vh;
+      overflow-y:auto;
+      padding:28px;
+      border-radius:17px;
+      background:white;
+      box-shadow:
+
+        0 25px 80px rgba(0,0,0,.3);
+    }
+
+
+    .admin-modal-box h2 {
+      margin:0 0 22px;
+      font-family:Georgia,serif;
+      color:#173f2c;
+    }
+
+
+    .admin-modal-close {
+      position:absolute;
+      top:12px;
+      right:12px;
+      width:38px;
+      height:38px;
+      border:0;
+      border-radius:50%;
+      background:#edf1ee;
+      color:#173f2c;
+      font-size:25px;
+
+      cursor:pointer;
+    }
+
+
+    .admin-modal-box form {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+
+    .admin-modal-box label {
+      margin-top:8px;
+      font-size:13px;
+      font-weight:700;
+    }
+
+
+    .admin-modal-box input,
+    .admin-modal-box textarea {
+      width:100%;
+      padding:12px;
+
+      border:1px solid #d6dfd9;
+      border-radius:8px;
+      outline:none;
+      font:inherit;
+    }
+
+
+    .admin-modal-box textarea {
+      resize:vertical;
+    }
+
+
+    .admin-status {
+      min-height:20px;
+      margin:5px 0 0;
+      color:#718078;
+      font-size:13px;
+    }
+
+
+    .gallery-upload-area {
+      margin-bottom:25px;
+
+      padding:18px;
+      border:1px dashed #c7d5cc;
+      border-radius:12px;
+      background:#f7faf8;
+    }
+
+
+    .gallery-upload-area input {
+      margin:10px 0;
+    }
+
+
+    .gallery-upload-area small {
+      display:block;
+      margin-bottom:14px;
+      color:#718078;
+    }
+
+
+    .admin-gallery-grid {
+      display:grid;
+      grid-template-columns:
+        repeat(3,minmax(0,1fr));
+
+      gap:12px;
+    }
+
+
+    .admin-gallery-item {
+      overflow:hidden;
+      border:1px solid #e0e7e2;
+      border-radius:10px;
+      background:#f8faf9;
+    }
+
+
+    .admin-gallery-item img {
+      display:block;
+      width:100%;
+      aspect-ratio:4/3;
+      object-fit:cover;
+    }
+
+
+    .admin-gallery-item-footer {
+      display:flex;
+
+      align-items:center;
+      justify-content:space-between;
+      gap:7px;
+      padding:8px;
+      font-size:11px;
+      color:#718078;
+    }
+
+
+    .admin-location-group {
+      margin-bottom:25px;
+      padding:20px;
+      border-radius:15px;
+      background:white;
+      box-shadow:
+        0 8px 30px rgba(16,37,29,.07);
+    }
+
+
+    .admin-location-header {
+      display:flex;
+      align-items:center;
+
+      justify-content:space-between;
+      gap:15px;
+      margin-bottom:15px;
+    }
+
+
+    .admin-location-header h3 {
+      margin:0 0 5px;
+      font-family:Georgia,serif;
+    }
+
+
+    .admin-location-header small {
+      color:#718078;
+    }
+
+
+    .admin-location-list {
+      display:grid;
+      grid-template-columns:
+        repeat(3,minmax(0,1fr));
+      gap:15px;
+
+    }
+
+
+    .admin-review-card {
+      display:grid;
+      grid-template-columns:140px 1fr;
+      gap:18px;
+      padding:18px;
+      background:white;
+      border-radius:15px;
+      box-shadow:
+        0 8px 30px rgba(16,37,29,.07);
+    }
+
+
+    .admin-review-card img {
+      width:140px;
+      height:140px;
+      object-fit:cover;
+      border-radius:10px;
+    }
+
+
+    .admin-review-card h3 {
+      margin:0 0 4px;
+      font-family:Georgia,serif;
+    }
+
+
+    .admin-review-card span {
+      color:#718078;
+      font-size:13px;
+    }
+
+
+    .admin-review-stars {
+      margin:8px 0;
+      color:#c39732;
+      letter-spacing:2px;
+    }
+
+
+    .admin-review-card p {
+      color:#4f5f56;
+      line-height:1.65;
+
+    }
+
+
+    @media(max-width:1000px) {
+
+      .admin-card-list {
+        grid-template-columns:
+          repeat(2,minmax(0,1fr));
+      }
+
+      .admin-location-list {
+        grid-template-columns:
+          repeat(2,minmax(0,1fr));
+      }
+
+      .admin-stats-grid {
+        grid-template-columns:
+          repeat(2,minmax(0,1fr));
+      }
+
+    }
+
+
+    @media(max-width:700px) {
+
+      .admin-sidebar {
+        position:static;
+        width:100%;
+        min-height:auto;
+      }
+
+
+      .admin-layout {
+        display:block;
+      }
+
+
+      .admin-main {
+        margin-left:0;
+        padding:20px 14px;
+      }
+
+
+      .admin-section-header {
+
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+
+      .admin-card-list,
+      .admin-location-list,
+      .admin-gallery-grid {
+        grid-template-columns:1fr;
+      }
+
+
+      .admin-stats-grid {
+        grid-template-columns:1fr 1fr;
+      }
+
+
+      .admin-review-card {
+        grid-template-columns:1fr;
+      }
+
+      .admin-review-card img {
+        width:100%;
+        height:220px;
+      }
+
+    }
+
+
+  `;
+
+
+  document.head.appendChild(style);
 
 }
