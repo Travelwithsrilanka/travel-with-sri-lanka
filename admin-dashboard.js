@@ -1,118 +1,3879 @@
+import {
+  createClient
+} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"; /* ========================================================= SUPABASE ========================================================= */ const SUPABASE_URL = "https://vbbmnzqrvoceqbwwwsrc.supabase.co"; const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3"; const supabase = createClient( SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } } ); /* ========================================================= STATE ========================================================= */ let destinations = []; let tours = []; let currentGalleryId = null; let 
 
-currentLocationId = null; /* ========================================================= DOM READY ========================================================= */ document.addEventListener("DOMContentLoaded", async () => { try { const { data, error } = await supabase.auth.getSession(); if (error) { throw error; } if (!data?.session) { window.location.replace("admin.html"); return; } createDashboard(); setupEvents(); await Promise.all([ loadDestinations(), loadTours(), loadReviews(), loadGallery(), loadLocations() ]); } catch (error) { console.error("Dashboard initialization error:", error); showFatalError(error); } }); /* ========================================================= DASHBOARD HTML ========================================================= */ function 
+/* =========================================================
+   SUPABASE
+========================================================= */
 
-createDashboard() { document.body.innerHTML = ` <div class="adminApp"> <header class="adminHeader"> <div class="adminHeaderInner"> <div> <div class="adminLogo">TWS</div> <div class="adminTitle"> Travel With Sri Lanka </div> <div class="adminSubtitle"> Administration Dashboard </div> </div> <button type="button" id="logoutBtn" class="adminLogoutBtn" > Logout </button> </div> </header> <main class="adminMain"> <div id="adminMessage" class="adminMessage"></div> <!-- DASHBOARD STATS --> <section class="adminStats"> <div class="statBox"> <span>Destinations</span> <strong id="destinationCount">0</strong> </div> <div class="statBox"> <span>Tours</span> <strong id="tourCount">0</strong> </div> <div class="statBox"> 
+const SUPABASE_URL =
+  "https://vbbmnzqrvoceqbwwwsrc.supabase.co";
 
-<span>Reviews</span> <strong id="reviewCount">0</strong> </div> <div class="statBox"> <span>Locations</span> <strong id="locationCount">0</strong> </div> </section> <!-- DESTINATIONS --> <section class="adminSection"> <div class="adminSectionHeader"> <div> <h2>Destinations</h2> <p>Manage destination pages.</p> </div> <button type="button" class="adminPrimaryBtn" id="addDestinationBtn" > + Add Destination </button> </div> <div id="destinationsAdminGrid" class="adminGrid" ></div> </section> <!-- TOURS --> <section class="adminSection"> <div class="adminSectionHeader"> <div> <h2>Tours</h2> <p>Manage your signature journeys.</p> </div> <button type="button" class="adminPrimaryBtn" id="addTourBtn" > + Add Tour </button> </div> <div id="toursAdminGrid" class="adminGrid" ></div> </section> <!-- 
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_HZ1A8CURkRFs0v21FUT0VA_44dtPzr3";
 
-LOCATIONS --> <section class="adminSection"> <div class="adminSectionHeader"> <div> <h2>Destination Locations</h2> <p>Manage locations shown inside destination pages.</p> </div> <button type="button" class="adminPrimaryBtn" id="addLocationBtn" > + Add Location </button> </div> <div id="locationsAdminGrid" class="adminGrid" ></div> </section> <!-- REVIEWS --> <section class="adminSection"> <div class="adminSectionHeader"> <div> <h2>Traveler Reviews</h2> <p>Manage submitted traveler reviews.</p> </div> </div> <div id="reviewsAdminGrid" class="adminGrid" ></div> </section> <!-- GALLERY --> <section class="adminSection"> <div class="adminSectionHeader"> <div> <h2>Gallery</h2> <p>Manage gallery 
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
 
-images.</p> </div> <button type="button" class="adminPrimaryBtn" id="addGalleryBtn" > + Add Image </button> </div> <div id="galleryAdminGrid" class="adminGrid" ></div> </section> </main> <!-- CONTENT MODAL --> <div id="contentModal" class="adminModal" aria-hidden="true" > <div class="adminModalBackdrop"></div> <div class="adminModalBox"> <div class="adminModalHeader"> <h2 id="contentModalTitle"> Add Destination </h2> <button type="button" class="adminCloseBtn" data-close-modal="contentModal" > × </button> </div> <form id="contentForm"> <input type="hidden" id="contentType" > <input type="hidden" id="contentId" > <div class="adminField"> <label for="contentName"> Name / Title </label> <input id="contentName" type="text" maxlength="160" required > </div> <div class="adminField"> <label 
 
-for="contentSlug"> Slug </label> <input id="contentSlug" type="text" maxlength="160" required > </div> <div class="adminField"> <label for="contentDescription"> Description </label> <textarea id="contentDescription" rows="6" maxlength="3000" ></textarea> </div> <div class="adminField"> <label for="contentImageUrl"> Image URL </label> <input id="contentImageUrl" type="url" placeholder="https://..." > </div> <div class="adminField"> <label for="contentPageUrl"> Page URL </label> <input id="contentPageUrl" type="text" placeholder="./ella.html" > </div> <div class="adminField"> <label for="contentSortOrder"> Sort Order </label> <input id="contentSortOrder" type="number" min="0" step="1" value="0" > </div> <div id="contentCurrentImage" class="currentImagePreview" ></div> <div class="adminModalActions"> <button 
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
 
-type="button" class="adminSecondaryBtn" data-close-modal="contentModal" > Cancel </button> <button type="submit" class="adminPrimaryBtn" id="contentSaveBtn" > Save </button> </div> </form> </div> </div> <!-- GALLERY MODAL --> <div id="galleryModal" class="adminModal" aria-hidden="true" > <div class="adminModalBackdrop"></div> <div class="adminModalBox"> <div class="adminModalHeader"> <h2 id="galleryModalTitle"> Add Gallery Image </h2> <button type="button" class="adminCloseBtn" data-close-modal="galleryModal" > × </button> </div> <form id="galleryForm"> <input type="hidden" id="galleryId" > <div class="adminField"> <label for="galleryTitle"> Title </label> <input id="galleryTitle" type="text" maxlength="160" required > </div> <div class="adminField"> <label 
+let currentSection = "dashboard";
 
-for="galleryImageUrl"> Image URL </label> <input id="galleryImageUrl" type="url" placeholder="https://..." > </div> <div class="adminField"> <label for="galleryImageFile"> Upload Image </label> <input id="galleryImageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" > </div> <div id="galleryCurrentImage" class="currentImagePreview" ></div> <div class="adminModalActions"> <button type="button" class="adminSecondaryBtn" data-close-modal="galleryModal" > Cancel </button> <button type="submit" class="adminPrimaryBtn" id="gallerySaveBtn" > Save </button> </div> </form> </div> </div> <!-- LOCATION MODAL --> <div id="locationModal" class="adminModal" aria-hidden="true" > <div class="adminModalBackdrop"></div> <div class="adminModalBox"> <div class="adminModalHeader"> <h2 
+let editingDestinationId = null;
+let editingTourId = null;
+let editingLocationId = null;
 
-id="locationModalTitle"> Add Location </h2> <button type="button" class="adminCloseBtn" data-close-modal="locationModal" > × </button> </div> <form id="locationForm"> <input type="hidden" id="locationId" > <div class="adminField"> <label for="locationDestination"> Destination </label> <select id="locationDestination" required ></select> </div> <div class="adminField"> <label for="locationNumber"> Location Number </label> <input id="locationNumber" type="number" min="1" step="1" value="1" required > </div> <div class="adminField"> <label for="locationName"> Location Name </label> <input id="locationName" type="text" maxlength="160" required > </div> <div class="adminField"> <label for="locationDescription"> Description </label> <textarea id="locationDescription" rows="5" maxlength="3000" ></textarea> 
+let currentLocationDestinationId = null;
 
-</div> <div class="adminField"> <label for="locationImageUrl"> Image URL </label> <input id="locationImageUrl" type="url" placeholder="https://..." > </div> <div id="locationCurrentImage" class="currentImagePreview" ></div> <div class="adminModalActions"> <button type="button" class="adminSecondaryBtn" data-close-modal="locationModal" > Cancel </button> <button type="submit" class="adminPrimaryBtn" id="locationSaveBtn" > Save </button> </div> </form> </div> </div> <style> * { box-sizing: border-box; } body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7f5; color: #17221d; } .adminApp { min-height: 100vh; } .adminHeader { background: #10251d; color: #ffffff; } .adminHeaderInner { width: min(1300px, calc(100% - 32px)); margin: 0 auto; min-height: 86px; display: flex; align-items: center; justify-content: space-between; gap: 20px; } .adminLogo { font-
 
-size: 13px; font-weight: 700; letter-spacing: 2px; color: #c9a85b; } .adminTitle { margin-top: 3px; font-size: 21px; font-weight: 700; } .adminSubtitle { margin-top: 3px; font-size: 12px; opacity: .72; } .adminMain { width: min(1300px, calc(100% - 32px)); margin: 0 auto; padding: 35px 0 70px; } .adminMessage { display: none; padding: 13px 16px; margin-bottom: 24px; border-radius: 10px; background: #ffffff; border: 1px solid #dfe7e2; } .adminStats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 35px; } .statBox { background: #ffffff; border: 1px solid #e3e8e5; border-radius: 14px; padding: 20px; box-shadow: 0 8px 25px rgba(16,37,29,.05); } .statBox span { display: block; color: #69736e; font-size: 13px; margin-bottom: 8px; } .statBox strong { display: block; color: #176b4d; font-size: 30px; } .adminSection { background: #ffffff; border: 1px solid 
+/* =========================================================
+   SECURITY HELPERS
+========================================================= */
 
-#e3e8e5; border-radius: 16px; padding: 24px; margin-bottom: 25px; box-shadow: 0 8px 25px rgba(16,37,29,.04); } .adminSectionHeader { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; } .adminSectionHeader h2 { margin: 0 0 5px; font-size: 22px; } .adminSectionHeader p { margin: 0; color: #69736e; font-size: 14px; } .adminGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } .adminCard { overflow: hidden; border: 1px solid #e2e7e4; border-radius: 13px; background: #ffffff; } .adminCardImage { width: 100%; height: 190px; object-fit: cover; display: block; background: #eef2ef; } .adminCardBody { padding: 16px; } .adminCardBody h3 { margin: 0 0 7px; font-size: 18px; } .adminCardBody p { margin: 0 0 14px; color: #69736e; font-size: 13px; line-height: 1.55; } .adminMeta { font-size: 
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-12px; color: #69736e; margin-bottom: 13px; } .adminActions { display: flex; flex-wrap: wrap; gap: 8px; } .adminActions button, .adminPrimaryBtn, .adminSecondaryBtn, .adminDangerBtn, .adminLogoutBtn { border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; } .adminPrimaryBtn { background: #176b4d; color: #ffffff; } .adminPrimaryBtn:hover { background: #12573f; } .adminSecondaryBtn { background: #eef2ef; color: #17221d; } .adminDangerBtn { background: #f8e3e1; color: #b72e24; } .adminLogoutBtn { background: rgba(255,255,255,.1); color: #ffffff; border: 1px solid rgba(255,255,255,.2); } .emptyAdmin { grid-column: 1 / -1; padding: 35px 20px; text-align: center; border: 1px dashed #d6dfda; border-radius: 12px; color: #69736e; } .reviewAdminCard { border: 1px solid 
 
-#e2e7e4; border-radius: 13px; overflow: hidden; background: #ffffff; } .reviewAdminPhoto { width: 100%; height: 190px; object-fit: cover; display: block; } .reviewAdminBody { padding: 16px; } .reviewAdminStars { color: #c9a85b; letter-spacing: 2px; margin-bottom: 9px; } .reviewAdminText { line-height: 1.6; font-size: 14px; margin: 0 0 12px; } .reviewAdminAuthor { font-size: 13px; color: #69736e; margin-bottom: 14px; } .adminModal { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; } .adminModal.open { display: flex; } .adminModalBackdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); } .adminModalBox { position: relative; width: min(650px, 100%); max-height: 90vh; overflow-y: auto; background: #ffffff; border-radius: 16px; padding: 25px; box-shadow: 0 25px 80px rgba(0,0,0,.2); } 
+function escapeAttribute(value) {
+  return escapeHTML(value);
+}
 
-.adminModalHeader { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; } .adminModalHeader h2 { margin: 0; font-size: 22px; } .adminCloseBtn { width: 38px; height: 38px; border: 0; border-radius: 50%; background: #eef2ef; cursor: pointer; font-size: 24px; line-height: 1; } .adminField { margin-bottom: 16px; } .adminField label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 600; } .adminField input, .adminField textarea, .adminField select { width: 100%; padding: 12px 13px; border: 1px solid #d8e0db; border-radius: 9px; outline: none; font: inherit; background: #ffffff; } .adminField textarea { resize: vertical; } .adminField input:focus, .adminField textarea:focus, .adminField select:focus { border-color: #176b4d; } .currentImagePreview { margin: 10px 0 18px; } .currentImagePreview img { width: 100%; max-height: 220px; object-fit: cover; 
 
-border-radius: 10px; display: block; } .adminModalActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; } .adminLocationImage { width: 100%; height: 170px; object-fit: cover; display: block; } @media (max-width: 950px) { .adminGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .adminStats { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 600px) { .adminHeaderInner, .adminMain { width: min(100% - 22px, 1300px); } .adminHeaderInner { min-height: 75px; } .adminTitle { font-size: 17px; } .adminSection { padding: 17px; } .adminSectionHeader { align-items: flex-start; flex-direction: column; } .adminGrid { grid-template-columns: 1fr; } .adminStats { grid-template-columns: 1fr 1fr; } .adminModalBox { padding: 18px; } } </style> </div> `; } /* ========================================================= EVENTS 
+function safeImageUrl(value) {
+  const fallback =
+    "https://via.placeholder.com/800x500?text=No+Image";
 
-========================================================= */ function setupEvents() { document .getElementById("logoutBtn") ?.addEventListener("click", logout); document .getElementById("addDestinationBtn") ?.addEventListener( "click", () => openContentModal("destination") ); document .getElementById("addTourBtn") ?.addEventListener( "click", () => openContentModal("tour") ); document .getElementById("addGalleryBtn") ?.addEventListener( "click", () => openGalleryModal() ); document .getElementById("addLocationBtn") ?.addEventListener( "click", () => openLocationModal() ); document .getElementById("contentForm") ?.addEventListener( "submit", handleContentSubmit ); document .getElementById("galleryForm") 
+  if (!value) {
+    return fallback;
+  }
 
-?.addEventListener( "submit", handleGallerySubmit ); document .getElementById("locationForm") ?.addEventListener( "submit", handleLocationSubmit ); document .querySelectorAll("[data-close-modal]") .forEach(button => { button.addEventListener( "click", () => { closeModal( button.dataset.closeModal ); } ); }); document .querySelectorAll(".adminModalBackdrop") .forEach(backdrop => { backdrop.addEventListener( "click", event => { const modal = event.currentTarget.closest(".adminModal"); if (modal) { closeModal(modal.id); } } ); }); document.addEventListener( "keydown", event => { if (event.key !== "Escape") { return; } document .querySelectorAll(".adminModal.open") .forEach(modal => { closeModal(modal.id); }); } ); document 
+  const url = String(value).trim();
 
-.getElementById("contentName") ?.addEventListener( "input", event => { const slugInput = document.getElementById("contentSlug"); if ( slugInput && !slugInput.dataset.edited ) { slugInput.value = createSlug(event.target.value); } } ); document .getElementById("contentSlug") ?.addEventListener( "input", event => { event.target.dataset.edited = "true"; } ); } /* ========================================================= DESTINATIONS ========================================================= */ async function loadDestinations() { const { data, error } = await supabase .from("destinations") .select(` id, slug, name, description, image_url, page_url, sort_order `) .order("sort_order", { ascending: true, nullsFirst: false }); if (error) { throw error; } destinations = data || []; 
+  if (!url) {
+    return fallback;
+  }
 
-renderDestinations(); updateCount( "destinationCount", destinations.length ); populateDestinationSelect(); } function renderDestinations() { const container = document.getElementById( "destinationsAdminGrid" ); if (!container) return; if (!destinations.length) { container.innerHTML = ` <div class="emptyAdmin"> No destinations found. </div> `; return; } container.innerHTML = destinations .map(destination => { const image = safeImageUrl(destination.image_url); return ` <article class="adminCard"> ${ image ? ` <img class="adminCardImage" src="${escapeAttribute(image)}" alt="${escapeAttribute(destination.name)}" loading="lazy" > ` : "" } <div class="adminCardBody"> <h3> ${escapeHTML(destination.name)} </h3> <p> ${escapeHTML( truncate( destination.description, 140 ) )} </p> <div 
+  if (
+    url.startsWith("https://") ||
+    url.startsWith("http://") ||
+    url.startsWith("/") ||
+    url.startsWith("./") ||
+    url.startsWith("../") ||
+    url.startsWith("images/")
+  ) {
+    return url;
+  }
 
-class="adminMeta"> Slug: ${escapeHTML(destination.slug)} </div> <div class="adminActions"> <button type="button" class="adminSecondaryBtn" data-action="edit-destination" data-id="${escapeAttribute(destination.id)}" > Edit </button> <button type="button" class="adminDangerBtn" data-action="delete-destination" data-id="${escapeAttribute(destination.id)}" > Delete </button> </div> </div> </article> `; }) .join(""); bindDynamicActions(container); } /* ========================================================= TOURS ========================================================= */ async function loadTours() { const { data, error } = await supabase .from("tours") .select(` id, slug, title, description, image_url, page_url, sort_order `) .order("sort_order", { ascending: true, nullsFirst: false }); if (error) 
+  return fallback;
+}
 
-{ throw error; } tours = data || []; renderTours(); updateCount( "tourCount", tours.length ); } function renderTours() { const container = document.getElementById( "toursAdminGrid" ); if (!container) return; if (!tours.length) { container.innerHTML = ` <div class="emptyAdmin"> No tours found. </div> `; return; } container.innerHTML = tours .map(tour => { const image = safeImageUrl(tour.image_url); return ` <article class="adminCard"> ${ image ? ` <img class="adminCardImage" src="${escapeAttribute(image)}" alt="${escapeAttribute(tour.title)}" loading="lazy" > ` : "" } <div class="adminCardBody"> <h3> ${escapeHTML(tour.title)} </h3> <p> ${escapeHTML( truncate( tour.description, 140 ) )} </p> <div class="adminMeta"> Slug: ${escapeHTML(tour.slug)} </div> <div class="adminActions"> <button type="button" class="adminSecondaryBtn" data-action="edit-tour" data-id="$
 
-{escapeAttribute(tour.id)}" > Edit </button> <button type="button" class="adminDangerBtn" data-action="delete-tour" data-id="${escapeAttribute(tour.id)}" > Delete </button> </div> </div> </article> `; }) .join(""); bindDynamicActions(container); } /* ========================================================= DESTINATION LOCATIONS ========================================================= */ let locations = []; async function loadLocations() { const { data, error } = await supabase .from("destination_locations") .select(` id, destination_id, location_number, name, description, image_path, image_url, sort_order `) .order("sort_order", { ascending: true }); if (error) { throw error; } locations = data || []; renderLocations(); updateCount( "locationCount", 
+/* =========================================================
+   INITIALIZATION
+========================================================= */
 
-locations.length ); populateDestinationSelect(); } function renderLocations() { const container = document.getElementById( "locationsAdminGrid" ); if (!container) return; if (!locations.length) { container.innerHTML = ` <div class="emptyAdmin"> No destination locations found. </div> `; return; } container.innerHTML = locations .map(location => { const destination = destinations.find( item => String(item.id) === String(location.destination_id) ); const image = safeImageUrl( location.image_url ) || safeImageUrl( location.image_path ); return ` <article class="adminCard"> ${ image ? ` <img class="adminLocationImage" src="${escapeAttribute(image)}" alt="${escapeAttribute(location.name)}" loading="lazy" > ` : "" } <div class="adminCardBody"> <h3> $
+document.addEventListener(
+  "DOMContentLoaded",
+  initAdminDashboard
+);
 
-{escapeHTML(location.name)} </h3> <p> ${escapeHTML( truncate( location.description, 140 ) )} </p> <div class="adminMeta"> ${escapeHTML( destination?.name || "Unknown destination" )} · Location ${escapeHTML(location.location_number)} </div> <div class="adminActions"> <button type="button" class="adminSecondaryBtn" data-action="edit-location" data-id="${escapeAttribute(location.id)}" > Edit </button> <button type="button" class="adminDangerBtn" data-action="delete-location" data-id="${escapeAttribute(location.id)}" > Delete </button> </div> </div> </article> `; }) .join(""); bindDynamicActions(container); } /* ========================================================= REVIEWS ========================================================= */ let reviews = 
 
-[]; async function loadReviews() { const { data, error } = await supabase .from("reviews") .select(` id, name, country, rating, review, photo_url, photo_path `) .order("created_at", { ascending: false }); if (error) { throw error; } reviews = data || []; renderReviews(); updateCount( "reviewCount", reviews.length ); } function renderReviews() { const container = document.getElementById( "reviewsAdminGrid" ); if (!container) return; if (!reviews.length) { container.innerHTML = ` <div class="emptyAdmin"> No traveler reviews yet. </div> `; return; } container.innerHTML = reviews .map(review => { const photo = getReviewPhotoUrl(review); const rating = Math.max( 0, Math.min( 5, Number(review.rating) || 0 ) ); return ` <article class="reviewAdminCard"> ${ photo ? ` <img class="reviewAdminPhoto" src="${escapeAttribute(photo)}" alt="$
+async function initAdminDashboard() {
 
-{escapeAttribute(review.name)}" loading="lazy" > ` : "" } <div class="reviewAdminBody"> <div class="reviewAdminStars"> ${"★".repeat(rating)} ${"☆".repeat(5 - rating)} </div> <p class="reviewAdminText"> ${escapeHTML(review.review)} </p> <div class="reviewAdminAuthor"> ${escapeHTML(review.name)} · ${escapeHTML(review.country)} </div> <button type="button" class="adminDangerBtn" data-action="delete-review" data-id="${escapeAttribute(review.id)}" > Delete Review </button> </div> </article> `; }) .join(""); bindDynamicActions(container); } /* ========================================================= GALLERY ========================================================= */ /* The original database schema provided earlier 
+  try {
 
-does not contain a "gallery" table. Therefore this section intentionally detects the absence instead of causing the entire dashboard to crash. */ let galleryAvailable = false; async function loadGallery() { const { data, error } = await supabase .from("gallery") .select("*"); if (error) { console.warn( "Gallery table is not available:", error.message ); galleryAvailable = false; const container = document.getElementById( "galleryAdminGrid" ); if (container) { container.innerHTML = ` <div class="emptyAdmin"> Gallery database table is not configured yet. </div> `; } return; } galleryAvailable = true; const gallery = data || []; renderGallery(gallery); } function renderGallery(gallery) { const container = document.getElementById( "galleryAdminGrid" ); if (!container) return; if (!gallery.length) { container.innerHTML = ` <div class="emptyAdmin"> No gallery 
+    const {
+      data: {
+        session
+      }
+    } = await supabase.auth.getSession();
 
-images found. </div> `; return; } container.innerHTML = gallery .map(item => { const image = safeImageUrl( item.image_url || item.image_path || item.url ); return ` <article class="adminCard"> ${ image ? ` <img class="adminCardImage" src="${escapeAttribute(image)}" alt="${escapeAttribute( item.title || item.name || "Gallery image" )}" loading="lazy" > ` : "" } <div class="adminCardBody"> <h3> ${escapeHTML( item.title || item.name || "Gallery Image" )} </h3> <div class="adminActions"> <button type="button" class="adminSecondaryBtn" data-action="edit-gallery" data-id="${escapeAttribute(item.id)}" > Edit </button> <button type="button" class="adminDangerBtn" data-action="delete-gallery" data-id="${escapeAttribute(item.id)}" > Delete </button> </div> </div> </article> `; }) 
 
-.join(""); bindDynamicActions(container); } /* ========================================================= DYNAMIC ACTION BINDING ========================================================= */ function bindDynamicActions(container) { container .querySelectorAll("[data-action]") .forEach(button => { button.addEventListener( "click", async () => { const action = button.dataset.action; const id = button.dataset.id; try { if (action === "edit-destination") { openContentModal( "destination", id ); } if (action === "delete-destination") { await deleteDestination(id); } if (action === "edit-tour") { openContentModal( "tour", id ); } if (action === "delete-tour") { await deleteTour(id); } if (action === "edit-location") { openLocationModal(id); } if (action === "delete-location") { await 
+    if (!session) {
 
-deleteLocation(id); } if (action === "delete-review") { await deleteReview(id); } if (action === "edit-gallery") { openGalleryModal(id); } if (action === "delete-gallery") { await deleteGallery(id); } } catch (error) { console.error(error); showMessage( getReadableSupabaseError(error), "error" ); } } ); }); } /* ========================================================= CONTENT MODAL ========================================================= */ function openContentModal( type, id = null ) { const modal = document.getElementById( "contentModal" ); const title = document.getElementById( "contentModalTitle" ); const form = document.getElementById( "contentForm" ); if (!modal || !form) return; document.getElementById( "contentType" 
+      window.location.href =
+        "admin.html";
 
-).value = type; document.getElementById( "contentId" ).value = id || ""; const nameInput = document.getElementById( "contentName" ); const slugInput = document.getElementById( "contentSlug" ); const descriptionInput = document.getElementById( "contentDescription" ); const imageInput = document.getElementById( "contentImageUrl" ); const pageInput = document.getElementById( "contentPageUrl" ); const sortInput = document.getElementById( "contentSortOrder" ); form.reset(); slugInput.dataset.edited = ""; let item = null; if (id) { item = type === "destination" ? destinations.find( item => String(item.id) === String(id) ) : tours.find( item => String(item.id) === String(id) ); } if (type === "destination") { title.textContent = id ? "Edit Destination" : "Add Destination"; } else { title.textContent = id ? "Edit Tour" : "Add 
+      return;
+    }
 
-Tour"; } if (item) { nameInput.value = type === "destination" ? item.name || "" : item.title || ""; slugInput.value = item.slug || ""; slugInput.dataset.edited = "true"; descriptionInput.value = item.description || ""; imageInput.value = item.image_url || ""; pageInput.value = item.page_url || ""; sortInput.value = Number.isFinite( Number(item.sort_order) ) ? item.sort_order : 0; renderCurrentImage( "contentCurrentImage", item.image_url ); } else { renderCurrentImage( "contentCurrentImage", "" ); } openModal("contentModal"); } /* ========================================================= CONTENT SAVE ========================================================= */ async function handleContentSubmit( event ) { event.preventDefault(); const saveButton = document.getElementById( "contentSaveBtn" ); const type = 
 
-document.getElementById( "contentType" ).value; const id = document.getElementById( "contentId" ).value; const name = document.getElementById( "contentName" ).value.trim(); const slug = createSlug( document.getElementById( "contentSlug" ).value ); const description = document.getElementById( "contentDescription" ).value.trim(); const imageUrl = document.getElementById( "contentImageUrl" ).value.trim(); const pageUrl = document.getElementById( "contentPageUrl" ).value.trim(); const sortOrder = Number( document.getElementById( "contentSortOrder" ).value ) || 0; if (!name) { showMessage( "Name / title is required.", "error" ); return; } if (!slug) { showMessage( "A valid slug is required.", "error" ); return; } saveButton.disabled = true; saveButton.textContent = "Saving..."; try { if 
+    createDashboard();
 
-(type === "destination") { const payload = { name, slug, description: description || null, image_url: imageUrl || null, page_url: pageUrl || null, sort_order: sortOrder }; let query; if (id) { query = supabase .from("destinations") .update(payload) .eq("id", id); } else { query = supabase .from("destinations") .insert(payload); } const { error } = await query; if (error) { throw error; } showMessage( id ? "Destination updated successfully." : "Destination created successfully.", "success" ); closeModal("contentModal"); await loadDestinations(); await loadLocations(); } else { const payload = { title: name, slug, description: description || null, image_url: imageUrl || null, page_url: pageUrl || null, sort_order: sortOrder }; let query; if (id) { query = supabase .from("tours") .update(payload) .eq("id", id); } else { query = supabase .from("tours") .insert(payload); } const { error } = await 
+    await loadDashboard();
 
-query; if (error) { throw error; } showMessage( id ? "Tour updated successfully." : "Tour created successfully.", "success" ); closeModal("contentModal"); await loadTours(); } } catch (error) { console.error( "Save content error:", error ); showMessage( getReadableSupabaseError(error), "error" ); } finally { saveButton.disabled = false; saveButton.textContent = "Save"; } } /* ========================================================= DELETE DESTINATION ========================================================= */ async function deleteDestination(id) { const destination = destinations.find( item => String(item.id) === String(id) ); if (!destination) return; const confirmed = window.confirm( `Delete destination "${destination.name}"?\n\nThis may also 
 
-affect its destination locations.` ); if (!confirmed) return; const { error } = await supabase .from("destinations") .delete() .eq("id", id); if (error) { throw error; } showMessage( "Destination deleted successfully.", "success" ); await loadDestinations(); await loadLocations(); } /* ========================================================= DELETE TOUR ========================================================= */ async function deleteTour(id) { const tour = tours.find( item => String(item.id) === String(id) ); if (!tour) return; const confirmed = window.confirm( `Delete tour "${tour.title}"?` ); if (!confirmed) return; const { error } = await supabase .from("tours") .delete() .eq("id", id); if (error) { throw error; } showMessage( "Tour deleted successfully.", "success" ); await loadTours(); } /* 
+    supabase.auth.onAuthStateChange(
+      async (_event, session) => {
 
-========================================================= LOCATION MODAL ========================================================= */ function openLocationModal( id = null ) { const modal = document.getElementById( "locationModal" ); const title = document.getElementById( "locationModalTitle" ); const form = document.getElementById( "locationForm" ); if (!modal || !form) return; form.reset(); document.getElementById( "locationId" ).value = id || ""; populateDestinationSelect(); const item = id ? locations.find( location => String(location.id) === String(id) ) : null; title.textContent = id ? "Edit Location" : "Add Location"; if (item) { document.getElementById( "locationDestination" ).value = String(item.destination_id); document.getElementById( 
+        if (!session) {
 
-"locationNumber" ).value = item.location_number || 1; document.getElementById( "locationName" ).value = item.name || ""; document.getElementById( "locationDescription" ).value = item.description || ""; document.getElementById( "locationImageUrl" ).value = item.image_url || ""; renderCurrentImage( "locationCurrentImage", item.image_url || item.image_path ); } else { renderCurrentImage( "locationCurrentImage", "" ); } openModal("locationModal"); } /* ========================================================= DESTINATION SELECT ========================================================= */ function populateDestinationSelect() { const select = document.getElementById( 
+          window.location.href =
+            "admin.html";
 
-"locationDestination" ); if (!select) return; select.innerHTML = ` <option value=""> Select destination </option> ${ destinations .map( destination => ` <option value="${escapeAttribute(destination.id)}"> ${escapeHTML(destination.name)} </option> ` ) .join("") } `; } /* ========================================================= LOCATION SAVE ========================================================= */ async function handleLocationSubmit( event ) { event.preventDefault(); const saveButton = document.getElementById( "locationSaveBtn" ); const id = document.getElementById( "locationId" ).value; const destinationId = document.getElementById( "locationDestination" ).value; const locationNumber = Number( 
+        }
 
-document.getElementById( "locationNumber" ).value ); const name = document.getElementById( "locationName" ).value.trim(); const description = document.getElementById( "locationDescription" ).value.trim(); const imageUrl = document.getElementById( "locationImageUrl" ).value.trim(); if (!destinationId) { showMessage( "Please select a destination.", "error" ); return; } if ( !Number.isInteger(locationNumber) || locationNumber < 1 ) { showMessage( "Location number must be a positive integer.", "error" ); return; } if (!name) { showMessage( "Location name is required.", "error" ); return; } saveButton.disabled = true; saveButton.textContent = "Saving..."; try { const payload = { destination_id: Number(destinationId), location_number: locationNumber, name, description: description || null, image_url: imageUrl || 
+      }
+    );
 
-null, sort_order: locationNumber }; let query; if (id) { query = supabase .from("destination_locations") .update(payload) .eq("id", id); } else { query = supabase .from("destination_locations") .insert(payload); } const { error } = await query; if (error) { throw error; } showMessage( id ? "Location updated successfully." : "Location created successfully.", "success" ); closeModal("locationModal"); await loadLocations(); } catch (error) { console.error( "Location save error:", error ); showMessage( getReadableSupabaseError(error), "error" ); } finally { saveButton.disabled = false; saveButton.textContent = "Save"; } } /* ========================================================= DELETE LOCATION ========================================================= */ async 
 
-function deleteLocation(id) { const location = locations.find( item => String(item.id) === String(id) ); if (!location) return; const confirmed = window.confirm( `Delete location "${location.name}"?` ); if (!confirmed) return; const { error } = await supabase .from("destination_locations") .delete() .eq("id", id); if (error) { throw error; } showMessage( "Location deleted successfully.", "success" ); await loadLocations(); } /* ========================================================= DELETE REVIEW ========================================================= */ async function deleteReview(id) { const review = reviews.find( item => String(item.id) === String(id) ); if (!review) return; const confirmed = window.confirm( `Delete review from "${review.name}"?` ); if (!confirmed) return; /* Delete storage image 
+  } catch (error) {
 
-first when a photo_path exists. */ if (review.photo_path) { const { error: storageError } = await supabase .storage .from("review-photos") .remove([ review.photo_path ]); if (storageError) { console.warn( "Could not delete review photo:", storageError.message ); } } const { error } = await supabase .from("reviews") .delete() .eq("id", id); if (error) { throw error; } showMessage( "Review deleted successfully.", "success" ); await loadReviews(); } /* ========================================================= GALLERY MODAL ========================================================= */ function openGalleryModal( id = null ) { if (!galleryAvailable) { showMessage( "Gallery is not available because the gallery table has not been configured.", "error" ); return; } const modal = document.getElementById( "galleryModal" ); const form = 
+    console.error(
+      "Admin initialization error:",
+      error
+    );
 
-document.getElementById( "galleryForm" ); const title = document.getElementById( "galleryModalTitle" ); form.reset(); document.getElementById( "galleryId" ).value = id || ""; title.textContent = id ? "Edit Gallery Image" : "Add Gallery Image"; /* Gallery records are loaded on demand when editing. */ if (id) { loadGalleryItem(id); } else { renderCurrentImage( "galleryCurrentImage", "" ); } openModal("galleryModal"); } /* ========================================================= GALLERY ITEM ========================================================= */ async function loadGalleryItem(id) { const { data, error } = await supabase .from("gallery") .select("*") .eq("id", id) .maybeSingle(); if (error) { showMessage( getReadableSupabaseError(error), "error" ); return; } if (!data) return; 
+    showFatalError(error);
 
-document.getElementById( "galleryTitle" ).value = data.title || data.name || ""; document.getElementById( "galleryImageUrl" ).value = data.image_url || data.image_path || data.url || ""; renderCurrentImage( "galleryCurrentImage", data.image_url || data.image_path || data.url || "" ); } /* ========================================================= GALLERY SAVE ========================================================= */ async function handleGallerySubmit( event ) { event.preventDefault(); if (!galleryAvailable) { showMessage( "Gallery table is not configured.", "error" ); return; } const saveButton = document.getElementById( "gallerySaveBtn" ); const id = document.getElementById( "galleryId" ).value; const title = 
+  }
 
-document.getElementById( "galleryTitle" ).value.trim(); const imageUrl = document.getElementById( "galleryImageUrl" ).value.trim(); const file = document.getElementById( "galleryImageFile" ).files?.[0]; if (!title) { showMessage( "Gallery title is required.", "error" ); return; } if (!imageUrl && !file && !id) { showMessage( "Please provide an image URL or upload an image.", "error" ); return; } saveButton.disabled = true; saveButton.textContent = "Saving..."; try { let finalImageUrl = imageUrl || ""; /* Uploading gallery images requires a storage bucket. Since the known project bucket is review-photos, only upload there if a file is selected. */ if (file) { validateImageFile(file); const path = `gallery/${Date.now()}-${createSafeFileName(file.name)}`; const { error: uploadError } = await supabase .storage .from("review-photos") .upload( 
+}
 
-path, file, { cacheControl: "3600", upsert: false, contentType: file.type } ); if (uploadError) { throw uploadError; } const { data: publicData } = supabase .storage .from("review-photos") .getPublicUrl(path); finalImageUrl = publicData?.publicUrl || ""; } const payload = { title, image_url: finalImageUrl || null }; let query; if (id) { query = supabase .from("gallery") .update(payload) .eq("id", id); } else { query = supabase .from("gallery") .insert(payload); } const { error } = await query; if (error) { throw error; } showMessage( id ? "Gallery image updated successfully." : "Gallery image added successfully.", "success" ); closeModal("galleryModal"); await loadGallery(); } catch (error) { console.error( "Gallery save error:", error ); showMessage( getReadableSupabaseError(error), "error" ); } finally { saveButton.disabled = false; 
 
-saveButton.textContent = "Save"; } } /* ========================================================= DELETE GALLERY ========================================================= */ async function deleteGallery(id) { if (!galleryAvailable) return; const confirmed = window.confirm( "Delete this gallery image?" ); if (!confirmed) return; const { error } = await supabase .from("gallery") .delete() .eq("id", id); if (error) { throw error; } showMessage( "Gallery image deleted successfully.", "success" ); await loadGallery(); } /* ========================================================= MODALS ========================================================= */ function openModal(id) { const modal = document.getElementById(id); if (!modal) return; modal.classList.add("open"); 
+/* =========================================================
+   FATAL ERROR
+========================================================= */
 
-modal.setAttribute( "aria-hidden", "false" ); document.body.style.overflow = "hidden"; } function closeModal(id) { const modal = document.getElementById(id); if (!modal) return; modal.classList.remove("open"); modal.setAttribute( "aria-hidden", "true" ); if ( !document.querySelector( ".adminModal.open" ) ) { document.body.style.overflow = ""; } } /* ========================================================= IMAGE PREVIEW ========================================================= */ function renderCurrentImage( elementId, url ) { const container = document.getElementById( elementId ); if (!container) return; const safeUrl = safeImageUrl(url); container.innerHTML = safeUrl ? ` <img src="${escapeAttribute(safeUrl)}" alt="Current image" > ` : ""; } /* ===================================
+function showFatalError(error) {
 
-====================== REVIEW PHOTO URL ========================================================= */ function getReviewPhotoUrl( review ) { if (review?.photo_url) { return safeImageUrl( review.photo_url ); } if (review?.photo_path) { const { data } = supabase .storage .from("review-photos") .getPublicUrl( review.photo_path ); return safeImageUrl( data?.publicUrl ); } return ""; } /* ========================================================= SAFE IMAGE URL ========================================================= */ function safeImageUrl(value) { const url = String(value ?? "") .trim(); if (!url) return ""; try { const parsed = new URL( url, window.location.href ); if ( parsed.protocol !== "http:" && parsed.protocol !== "https:" ) { return ""; } return parsed.href; } catch { 
+  const loading =
+    document.getElementById("loading");
 
-return ""; } } /* ========================================================= SLUG ========================================================= */ function createSlug(value) { return String(value ?? "") .trim() .toLowerCase() .normalize("NFKD") .replace( /[\u0300-\u036f]/g, "" ) .replace( /[^a-z0-9]+/g, "-" ) .replace( /^-+|-+$/g, "" ) .slice(0, 150); } /* ========================================================= FILE HELPERS ========================================================= */ function validateImageFile( file ) { const allowedTypes = [ "image/jpeg", "image/png", "image/webp", "image/gif" ]; if ( !allowedTypes.includes( file.type ) ) { throw new Error( "Only JPG, PNG, WEBP and GIF images are allowed." ); } if ( file.size > 5 * 1024 * 1024 ) { throw new Error( "Image must be 5 MB or smaller." ); } } function 
+  const message =
+    error?.message ||
+    "Unknown error";
 
-createSafeFileName( filename ) { const original = String(filename ?? "") .toLowerCase(); const extension = getSafeExtension( original ); const base = original .replace( /\.[^/.]+$/, "" ) .replace( /[^a-z0-9]+/g, "-" ) .replace( /^-+|-+$/g, "" ) .slice(0, 80); return `${ base || "image" }-${Date.now()}-${Math.random() .toString(36) .slice(2, 8) }${extension}`; } function getSafeExtension( filename ) { const match = String(filename) .match( /\.(jpg|jpeg|png|webp|gif)$/i ); return match ? `.${match[1].toLowerCase()}` : ".jpg"; } /* ========================================================= HTML ESCAPING ========================================================= */ function escapeHTML(value) { return String(value ?? "") .replace( /&/g, "&amp;" ) .replace( /</g, "&lt;" ) .replace( />/g, "&gt;" ) .replace( /"/g, "&quot;" ) .replace( /'/g, "&#039;" ); } 
 
-function escapeAttribute(value) { return escapeHTML(value); } /* ========================================================= TEXT ========================================================= */ function truncate( value, length = 140 ) { const text = String(value ?? "") .trim(); if ( text.length <= length ) { return text; } return ( text.slice( 0, length ).trim() + "..." ); } /* ========================================================= MESSAGE ========================================================= */ function showMessage( message, type = "info" ) { const element = document.getElementById( "adminMessage" ); if (!element) return; element.textContent = String(message ?? ""); element.style.display = "block"; element.style.color = type === "success" ? "#176b4d" : type === "error" ? "#b72e24" : 
+  if (loading) {
 
-"#17221d"; element.style.background = type === "success" ? "#edf8f2" : type === "error" ? "#fff1ef" : "#ffffff"; element.style.borderColor = type === "success" ? "#cce9d8" : type === "error" ? "#f1c7c2" : "#dfe7e2"; clearTimeout( showMessage.timer ); showMessage.timer = setTimeout( () => { element.style.display = "none"; }, 5000 ); } /* ========================================================= COUNT ========================================================= */ function updateCount( id, count ) { const element = document.getElementById(id); if (!element) return; element.textContent = String(count); } /* ========================================================= ERROR ========================================================= */ function getReadableSupabaseError( error ) { const 
+    loading.innerHTML = `
+      <div style="
+        max-width:600px;
+        padding:30px;
+        text-align:center;
+        font-family:Arial,Helvetica,sans-serif;
+      ">
 
-message = String( error?.message || error?.error_description || error || "Unknown error." ); if ( message .toLowerCase() .includes( "row-level security" ) ) { return "Supabase blocked this action because of Row Level Security (RLS) policies."; } if ( message .toLowerCase() .includes( "duplicate key" ) ) { return "This record already exists. Please use a different slug or value."; } if ( message .toLowerCase() .includes( "foreign key" ) ) { return "This record is linked to another record and cannot be changed or deleted yet."; } return message; } function showFatalError( error ) { document.body.innerHTML = ` <div style=" min-height:100vh; display:flex; align-items:center; justify-content:center; padding:25px; background:#f4f7f5; font-family:Arial,Helvetica,sans-serif; " > <div style=" width:min(600px,100%); background:#ffffff; border:1px solid #e1e7e3; border-radius:16px; 
+        <h2 style="
+          margin-bottom:15px;
+          color:#b42318;
+        ">
+          Admin Panel Error
+        </h2>
 
-padding:30px; box-shadow:0 15px 50px rgba(16,37,29,.08); " > <h2 style=" margin-top:0; color:#10251d; " > Admin Dashboard Error </h2> <p style=" color:#69736e; line-height:1.6; " > The dashboard could not be loaded. </p> <pre style=" white-space:pre-wrap; word-break:break-word; background:#f4f7f5; padding:15px; border-radius:10px; color:#b72e24; font-size:13px; " >${escapeHTML( getReadableSupabaseError(error) )}</pre> <button type="button" onclick="location.reload()" style=" border:0; border-radius:8px; padding:11px 16px; background:#176b4d; color:#ffffff; cursor:pointer; font-weight:600; " > Reload Dashboard </button> </div> </div> `; } /* ========================================================= LOGOUT ========================================================= */ async function logout() { const confirmed = 
+        <p style="
+          line-height:1.7;
+          color:#555;
+        ">
+          ${escapeHTML(message)}
+        </p>
 
-window.confirm( "Are you sure you want to logout?" ); if (!confirmed) { return; } try { const { error } = await supabase .auth .signOut(); if (error) { throw error; } window.location.replace( "admin.html" ); } catch (error) { console.error( "Logout error:", error ); showMessage( getReadableSupabaseError(error), "error" ); } } 
+        <button
+          onclick="location.reload()"
+          style="
+            margin-top:20px;
+            padding:12px 20px;
+            border:0;
+            border-radius:8px;
+            background:#176b4d;
+            color:#fff;
+            cursor:pointer;
+          "
+        >
+          Reload
+        </button>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  document.body.innerHTML = `
+    <div style="
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:30px;
+      font-family:Arial,Helvetica,sans-serif;
+      background:#f4f7f5;
+    ">
+
+      <div style="
+        max-width:600px;
+        background:#fff;
+        padding:35px;
+        border-radius:14px;
+        text-align:center;
+      ">
+
+        <h2 style="color:#b42318;">
+          Admin Panel Error
+        </h2>
+
+        <p style="color:#555;">
+          ${escapeHTML(message)}
+        </p>
+
+        <button
+          onclick="location.reload()"
+          style="
+            padding:12px 20px;
+            border:0;
+            border-radius:8px;
+            background:#176b4d;
+            color:#fff;
+            cursor:pointer;
+          "
+        >
+          Reload
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+}
+
+
+/* =========================================================
+   DASHBOARD UI
+========================================================= */
+
+function createDashboard() {
+
+  const loading =
+    document.getElementById("loading");
+
+
+  if (!loading) {
+    return;
+  }
+
+
+  loading.outerHTML = `
+
+    <div
+      id="adminApp"
+      style="
+        min-height:100vh;
+        background:#f4f7f5;
+        font-family:Arial,Helvetica,sans-serif;
+        color:#17221d;
+      "
+    >
+
+      <!-- HEADER -->
+
+      <header
+        style="
+          background:#10251d;
+          color:#fff;
+          padding:18px 24px;
+          position:sticky;
+          top:0;
+          z-index:1000;
+          box-shadow:0 5px 20px rgba(0,0,0,.12);
+        "
+      >
+
+        <div
+          style="
+            max-width:1400px;
+            margin:auto;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:20px;
+          "
+        >
+
+          <div>
+
+            <div
+              style="
+                font-size:13px;
+                letter-spacing:2px;
+                opacity:.8;
+              "
+            >
+              TRAVEL WITH
+            </div>
+
+            <div
+              style="
+                font-size:22px;
+                font-weight:700;
+              "
+            >
+              SRI LANKA
+              <span
+                style="
+                  color:#c9a85b;
+                "
+              >
+                ADMIN
+              </span>
+            </div>
+
+          </div>
+
+
+          <div
+            style="
+              display:flex;
+              align-items:center;
+              gap:10px;
+            "
+          >
+
+            <span
+              id="adminEmailDisplay"
+              style="
+                font-size:13px;
+                opacity:.8;
+              "
+            ></span>
+
+            <button
+              id="logoutBtn"
+              type="button"
+              style="
+                border:1px solid rgba(255,255,255,.25);
+                background:transparent;
+                color:#fff;
+                padding:9px 14px;
+                border-radius:7px;
+                cursor:pointer;
+              "
+            >
+              Logout
+            </button>
+
+          </div>
+
+        </div>
+
+      </header>
+
+
+      <!-- BODY -->
+
+      <div
+        style="
+          max-width:1400px;
+          margin:auto;
+          padding:24px;
+          display:grid;
+          grid-template-columns:220px minmax(0,1fr);
+          gap:24px;
+        "
+      >
+
+        <!-- SIDEBAR -->
+
+        <aside
+          style="
+            background:#fff;
+            border:1px solid #e4e3db;
+            border-radius:12px;
+            padding:14px;
+            height:max-content;
+          "
+        >
+
+          <button
+            class="admin-nav-btn"
+            data-section="dashboard"
+            type="button"
+          >
+            Dashboard
+          </button>
+
+          <button
+            class="admin-nav-btn"
+            data-section="destinations"
+            type="button"
+          >
+            Destinations
+          </button>
+
+          <button
+            class="admin-nav-btn"
+            data-section="tours"
+            type="button"
+          >
+            Tours
+          </button>
+
+          <button
+            class="admin-nav-btn"
+            data-section="locations"
+            type="button"
+          >
+            Destination Locations
+          </button>
+
+          <button
+            class="admin-nav-btn"
+            data-section="reviews"
+            type="button"
+          >
+            Reviews
+          </button>
+
+        </aside>
+
+
+        <!-- CONTENT -->
+
+        <main>
+
+          <div
+            id="adminMessage"
+            style="
+              display:none;
+              margin-bottom:18px;
+              padding:13px 16px;
+              border-radius:8px;
+              font-size:14px;
+            "
+          ></div>
+
+
+          <!-- DASHBOARD -->
+
+          <section
+            id="section-dashboard"
+            class="admin-section"
+          >
+
+            <div
+              style="
+                background:#fff;
+                border:1px solid #e4e3db;
+                border-radius:12px;
+                padding:25px;
+              "
+            >
+
+              <h1
+                style="
+                  margin:0 0 8px;
+                  font-size:28px;
+                "
+              >
+                Dashboard
+              </h1>
+
+              <p
+                style="
+                  margin:0;
+                  color:#69736e;
+                "
+              >
+                Manage Travel With Sri Lanka website content.
+              </p>
+
+            </div>
+
+
+            <div
+              id="statsGrid"
+              style="
+                display:grid;
+                grid-template-columns:
+                  repeat(4,minmax(0,1fr));
+                gap:16px;
+                margin-top:20px;
+              "
+            ></div>
+
+          </section>
+
+
+          <!-- DESTINATIONS -->
+
+          <section
+            id="section-destinations"
+            class="admin-section"
+            style="display:none;"
+          >
+
+            <div class="admin-section-header">
+
+              <div>
+
+                <h2>
+                  Destinations
+                </h2>
+
+                <p>
+                  Manage destination pages.
+                </p>
+
+              </div>
+
+              <button
+                id="addDestinationBtn"
+                class="admin-primary-btn"
+                type="button"
+              >
+                + Add Destination
+              </button>
+
+            </div>
+
+
+            <div
+              id="destinationsList"
+              class="admin-card-list"
+            ></div>
+
+          </section>
+
+
+          <!-- TOURS -->
+
+          <section
+            id="section-tours"
+            class="admin-section"
+            style="display:none;"
+          >
+
+            <div class="admin-section-header">
+
+              <div>
+
+                <h2>
+                  Tours
+                </h2>
+
+                <p>
+                  Manage tour packages.
+                </p>
+
+              </div>
+
+              <button
+                id="addTourBtn"
+                class="admin-primary-btn"
+                type="button"
+              >
+                + Add Tour
+              </button>
+
+            </div>
+
+
+            <div
+              id="toursList"
+              class="admin-card-list"
+            ></div>
+
+          </section>
+
+
+          <!-- LOCATIONS -->
+
+          <section
+            id="section-locations"
+            class="admin-section"
+            style="display:none;"
+          >
+
+            <div class="admin-section-header">
+
+              <div>
+
+                <h2>
+                  Destination Locations
+                </h2>
+
+                <p>
+                  Manage places displayed inside destinations.
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <div
+              id="locationDestinationSelector"
+              style="margin-bottom:20px;"
+            ></div>
+
+
+            <div
+              id="locationsList"
+              class="admin-card-list"
+            ></div>
+
+          </section>
+
+
+          <!-- REVIEWS -->
+
+          <section
+            id="section-reviews"
+            class="admin-section"
+            style="display:none;"
+          >
+
+            <div class="admin-section-header">
+
+              <div>
+
+                <h2>
+                  Reviews
+                </h2>
+
+                <p>
+                  View and manage customer reviews.
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <div
+              id="reviewsList"
+              class="admin-card-list"
+            ></div>
+
+          </section>
+
+        </main>
+
+      </div>
+
+    </div>
+
+
+    <!-- CONTENT MODAL -->
+
+    <div
+      id="contentModal"
+      class="admin-modal"
+      style="display:none;"
+    >
+
+      <div class="admin-modal-box">
+
+        <div class="admin-modal-header">
+
+          <h3 id="contentModalTitle">
+            Add Destination
+          </h3>
+
+          <button
+            type="button"
+            class="admin-close-btn"
+            data-close-modal="contentModal"
+          >
+            ×
+          </button>
+
+        </div>
+
+
+        <form id="contentForm">
+
+          <input
+            type="hidden"
+            id="contentType"
+          >
+
+          <label>
+            Name / Title
+            <input
+              id="contentName"
+              required
+            >
+          </label>
+
+
+          <label>
+            Slug
+            <input
+              id="contentSlug"
+              required
+            >
+          </label>
+
+
+          <label>
+            Description
+            <textarea
+              id="contentDescription"
+              rows="5"
+            ></textarea>
+          </label>
+
+
+          <label>
+            Image URL
+            <input
+              id="contentImageUrl"
+              type="url"
+              placeholder="https://..."
+            >
+          </label>
+
+
+          <label>
+            Page URL
+            <input
+              id="contentPageUrl"
+              type="text"
+              placeholder="ella.html"
+            >
+          </label>
+
+
+          <label>
+            Sort Order
+            <input
+              id="contentSortOrder"
+              type="number"
+              value="0"
+            >
+          </label>
+
+
+          <div
+            id="contentCurrentImage"
+            style="
+              margin-top:10px;
+            "
+          ></div>
+
+
+          <div class="admin-modal-actions">
+
+            <button
+              type="button"
+              class="admin-secondary-btn"
+              data-close-modal="contentModal"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              class="admin-primary-btn"
+              id="contentSaveBtn"
+            >
+              Save
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+
+    <!-- LOCATION MODAL -->
+
+    <div
+      id="locationModal"
+      class="admin-modal"
+      style="display:none;"
+    >
+
+      <div class="admin-modal-box">
+
+        <div class="admin-modal-header">
+
+          <h3 id="locationModalTitle">
+            Add Location
+          </h3>
+
+          <button
+            type="button"
+            class="admin-close-btn"
+            data-close-modal="locationModal"
+          >
+            ×
+          </button>
+
+        </div>
+
+
+        <form id="locationForm">
+
+          <input
+            type="hidden"
+            id="locationId"
+          >
+
+
+          <label>
+            Location Name
+            <input
+              id="locationName"
+              required
+            >
+          </label>
+
+
+          <label>
+            Description
+            <textarea
+              id="locationDescription"
+              rows="5"
+            ></textarea>
+          </label>
+
+
+          <label>
+            Location Number
+            <input
+              id="locationNumber"
+              type="number"
+              min="1"
+              value="1"
+            >
+          </label>
+
+
+          <label>
+            Image URL
+            <input
+              id="locationImageUrl"
+              type="url"
+              placeholder="https://..."
+            >
+          </label>
+
+
+          <label>
+            Image Path
+            <input
+              id="locationImagePath"
+              type="text"
+              placeholder="images/destinations/ella/..."
+            >
+          </label>
+
+
+          <label>
+            Sort Order
+            <input
+              id="locationSortOrder"
+              type="number"
+              value="0"
+            >
+          </label>
+
+
+          <div
+            id="locationCurrentImage"
+          ></div>
+
+
+          <div class="admin-modal-actions">
+
+            <button
+              type="button"
+              class="admin-secondary-btn"
+              data-close-modal="locationModal"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              class="admin-primary-btn"
+            >
+              Save
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+
+    <style>
+
+      .admin-nav-btn {
+        display:block;
+        width:100%;
+        text-align:left;
+        padding:12px 13px;
+        margin-bottom:5px;
+        border:0;
+        background:transparent;
+        border-radius:7px;
+        cursor:pointer;
+        color:#17221d;
+      }
+
+      .admin-nav-btn:hover,
+      .admin-nav-btn.active {
+        background:#edf4ef;
+        color:#176b4d;
+        font-weight:700;
+      }
+
+      .admin-section-header {
+        background:#fff;
+        border:1px solid #e4e3db;
+        border-radius:12px;
+        padding:20px;
+        margin-bottom:18px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:20px;
+      }
+
+      .admin-section-header h2 {
+        margin:0 0 5px;
+      }
+
+      .admin-section-header p {
+        margin:0;
+        color:#69736e;
+      }
+
+      .admin-primary-btn,
+      .admin-secondary-btn,
+      .admin-danger-btn {
+        border:0;
+        border-radius:7px;
+        padding:10px 15px;
+        cursor:pointer;
+        font-weight:600;
+      }
+
+      .admin-primary-btn {
+        background:#176b4d;
+        color:#fff;
+      }
+
+      .admin-primary-btn:hover {
+        background:#12583f;
+      }
+
+      .admin-secondary-btn {
+        background:#eef2ef;
+        color:#17221d;
+      }
+
+      .admin-danger-btn {
+        background:#b42318;
+        color:#fff;
+      }
+
+      .admin-card-list {
+        display:grid;
+        gap:15px;
+      }
+
+      .admin-item-card {
+        background:#fff;
+        border:1px solid #e4e3db;
+        border-radius:12px;
+        padding:18px;
+        display:flex;
+        gap:18px;
+        align-items:flex-start;
+      }
+
+      .admin-item-image {
+        width:150px;
+        height:100px;
+        object-fit:cover;
+        border-radius:8px;
+        background:#eef2ef;
+        flex:none;
+      }
+
+      .admin-item-content {
+        flex:1;
+        min-width:0;
+      }
+
+      .admin-item-content h3 {
+        margin:0 0 7px;
+      }
+
+      .admin-item-content p {
+        margin:0 0 10px;
+        color:#69736e;
+        line-height:1.6;
+      }
+
+      .admin-item-meta {
+        font-size:13px;
+        color:#69736e;
+      }
+
+      .admin-item-actions {
+        display:flex;
+        gap:7px;
+        flex-wrap:wrap;
+      }
+
+      .admin-modal {
+        position:fixed;
+        inset:0;
+        z-index:2000;
+        background:rgba(0,0,0,.55);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:20px;
+        overflow:auto;
+      }
+
+      .admin-modal-box {
+        width:min(650px,100%);
+        max-height:90vh;
+        overflow:auto;
+        background:#fff;
+        border-radius:12px;
+        padding:22px;
+      }
+
+      .admin-modal-header {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:20px;
+        margin-bottom:20px;
+      }
+
+      .admin-modal-header h3 {
+        margin:0;
+      }
+
+      .admin-close-btn {
+        border:0;
+        background:transparent;
+        font-size:28px;
+        cursor:pointer;
+        color:#69736e;
+      }
+
+      .admin-modal-box label {
+        display:block;
+        margin-bottom:15px;
+        font-size:14px;
+        font-weight:600;
+      }
+
+      .admin-modal-box input,
+      .admin-modal-box textarea,
+      .admin-modal-box select {
+        display:block;
+        width:100%;
+        box-sizing:border-box;
+        margin-top:7px;
+        padding:11px 12px;
+        border:1px solid #d9ddd9;
+        border-radius:7px;
+        font:inherit;
+        background:#fff;
+      }
+
+      .admin-modal-box textarea {
+        resize:vertical;
+      }
+
+      .admin-modal-actions {
+        display:flex;
+        justify-content:flex-end;
+        gap:8px;
+        margin-top:20px;
+      }
+
+      .admin-stats-card {
+        background:#fff;
+        border:1px solid #e4e3db;
+        border-radius:12px;
+        padding:20px;
+      }
+
+      .admin-stats-number {
+        font-size:32px;
+        font-weight:700;
+        color:#176b4d;
+        margin-bottom:5px;
+      }
+
+      .admin-stats-label {
+        color:#69736e;
+        font-size:14px;
+      }
+
+      .admin-stars {
+        color:#c9a85b;
+        letter-spacing:2px;
+      }
+
+      .admin-review-photo {
+        width:90px;
+        height:90px;
+        object-fit:cover;
+        border-radius:8px;
+      }
+
+      @media(max-width:900px) {
+
+        .adminApp > div {
+          grid-template-columns:1fr !important;
+        }
+
+        .admin-nav-btn {
+          display:inline-block;
+          width:auto;
+          margin-right:5px;
+        }
+
+      }
+
+      @media(max-width:600px) {
+
+        .admin-item-card {
+          flex-direction:column;
+        }
+
+        .admin-item-image {
+          width:100%;
+          height:180px;
+        }
+
+        #statsGrid {
+          grid-template-columns:
+            repeat(2,minmax(0,1fr)) !important;
+        }
+
+        .admin-section-header {
+          flex-direction:column;
+          align-items:flex-start;
+        }
+
+      }
+
+    </style>
+  `;
+
+
+  setupDashboardEvents();
+
+}
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+function setupDashboardEvents() {
+
+  document
+    .querySelectorAll(".admin-nav-btn")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          showSection(
+            button.dataset.section
+          );
+
+        }
+      );
+
+    });
+
+
+  document
+    .getElementById("logoutBtn")
+    ?.addEventListener(
+      "click",
+      logout
+    );
+
+
+  document
+    .getElementById("addDestinationBtn")
+    ?.addEventListener(
+      "click",
+      () => openContentModal("destination")
+    );
+
+
+  document
+    .getElementById("addTourBtn")
+    ?.addEventListener(
+      "click",
+      () => openContentModal("tour")
+    );
+
+
+  document
+    .getElementById("contentForm")
+    ?.addEventListener(
+      "submit",
+      saveContent
+    );
+
+
+  document
+    .getElementById("locationForm")
+    ?.addEventListener(
+      "submit",
+      saveLocation
+    );
+
+
+  document
+    .querySelectorAll("[data-close-modal]")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          closeModal(
+            button.dataset.closeModal
+          );
+
+        }
+      );
+
+    });
+
+}
+
+
+/* =========================================================
+   SHOW SECTION
+========================================================= */
+
+async function showSection(section) {
+
+  currentSection = section;
+
+
+  document
+    .querySelectorAll(".admin-section")
+    .forEach(element => {
+
+      element.style.display =
+        "none";
+
+    });
+
+
+  const target =
+    document.getElementById(
+      `section-${section}`
+    );
+
+
+  if (target) {
+    target.style.display = "block";
+  }
+
+
+  document
+    .querySelectorAll(".admin-nav-btn")
+    .forEach(button => {
+
+      button.classList.toggle(
+        "active",
+        button.dataset.section === section
+      );
+
+    });
+
+
+  if (section === "dashboard") {
+    await loadDashboard();
+  }
+
+  if (section === "destinations") {
+    await loadDestinations();
+  }
+
+  if (section === "tours") {
+    await loadTours();
+  }
+
+  if (section === "locations") {
+    await loadLocationSection();
+  }
+
+  if (section === "reviews") {
+    await loadReviews();
+  }
+
+}
+
+
+/* =========================================================
+   LOAD DASHBOARD
+========================================================= */
+
+async function loadDashboard() {
+
+  try {
+
+    const [
+      destinations,
+      tours,
+      locations,
+      reviews
+    ] = await Promise.all([
+
+      countRows("destinations"),
+
+      countRows("tours"),
+
+      countRows("destination_locations"),
+
+      countRows("reviews")
+
+    ]);
+
+
+    const container =
+      document.getElementById(
+        "statsGrid"
+      );
+
+
+    if (!container) {
+      return;
+    }
+
+
+    container.innerHTML = `
+
+      ${createStatCard(
+        destinations,
+        "Destinations"
+      )}
+
+      ${createStatCard(
+        tours,
+        "Tours"
+      )}
+
+      ${createStatCard(
+        locations,
+        "Locations"
+      )}
+
+      ${createStatCard(
+        reviews,
+        "Reviews"
+      )}
+
+    `;
+
+
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
+
+
+    const emailDisplay =
+      document.getElementById(
+        "adminEmailDisplay"
+      );
+
+
+    if (emailDisplay) {
+      emailDisplay.textContent =
+        user?.email || "";
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "Dashboard loading error:",
+      error
+    );
+
+    showMessage(
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+async function countRows(table) {
+
+  const {
+    count,
+    error
+  } = await supabase
+    .from(table)
+    .select("*", {
+      count: "exact",
+      head: true
+    });
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  return count || 0;
+
+}
+
+
+function createStatCard(number, label) {
+
+  return `
+
+    <div class="admin-stats-card">
+
+      <div class="admin-stats-number">
+        ${escapeHTML(number)}
+      </div>
+
+      <div class="admin-stats-label">
+        ${escapeHTML(label)}
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   DESTINATIONS
+========================================================= */
+
+async function loadDestinations() {
+
+  const container =
+    document.getElementById(
+      "destinationsList"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    loadingHTML();
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("destinations")
+      .select(
+        "id,slug,name,description,image_url,page_url,sort_order,created_at,updated_at"
+      )
+      .order(
+        "sort_order",
+        {
+          ascending: true,
+          nullsFirst: false
+        }
+      )
+      .order(
+        "name",
+        {
+          ascending: true
+        }
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      container.innerHTML =
+        emptyHTML(
+          "No destinations found."
+        );
+
+      return;
+    }
+
+
+    container.innerHTML =
+      data
+        .map(createDestinationCard)
+        .join("");
+
+
+    bindDestinationActions();
+
+  } catch (error) {
+
+    console.error(
+      "Destination loading error:",
+      error
+    );
+
+
+    container.innerHTML =
+      errorHTML(error.message);
+
+  }
+
+}
+
+
+function createDestinationCard(destination) {
+
+  const image =
+    safeImageUrl(
+      destination.image_url
+    );
+
+
+  return `
+
+    <article class="admin-item-card">
+
+      <img
+        class="admin-item-image"
+        src="${escapeAttribute(image)}"
+        alt="${escapeAttribute(destination.name)}"
+        loading="lazy"
+        onerror="this.onerror=null;this.src='https://via.placeholder.com/800x500?text=No+Image';"
+      >
+
+
+      <div class="admin-item-content">
+
+        <h3>
+          ${escapeHTML(destination.name)}
+        </h3>
+
+        <p>
+          ${escapeHTML(
+            destination.description ||
+            "No description."
+          )}
+        </p>
+
+        <div class="admin-item-meta">
+
+          Slug:
+          <strong>
+            ${escapeHTML(destination.slug)}
+          </strong>
+
+          ${destination.page_url
+            ? ` · Page:
+              ${escapeHTML(destination.page_url)}`
+            : ""
+          }
+
+        </div>
+
+        <div
+          class="admin-item-actions"
+          style="margin-top:12px;"
+        >
+
+          <button
+            class="admin-secondary-btn"
+            type="button"
+            data-edit-destination="${escapeAttribute(destination.id)}"
+          >
+            Edit
+          </button>
+
+          <button
+            class="admin-secondary-btn"
+            type="button"
+            data-location-destination="${escapeAttribute(destination.id)}"
+          >
+            Locations
+          </button>
+
+          <button
+            class="admin-danger-btn"
+            type="button"
+            data-delete-destination="${escapeAttribute(destination.id)}"
+          >
+            Delete
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+function bindDestinationActions() {
+
+  document
+    .querySelectorAll(
+      "[data-edit-destination]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          openContentModal(
+            "destination",
+            Number(
+              button.dataset.editDestination
+            )
+          );
+
+        }
+      );
+
+    });
+
+
+  document
+    .querySelectorAll(
+      "[data-delete-destination]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          deleteDestination(
+            Number(
+              button.dataset.deleteDestination
+            )
+          );
+
+        }
+      );
+
+    });
+
+
+  document
+    .querySelectorAll(
+      "[data-location-destination]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        async () => {
+
+          currentLocationDestinationId =
+            Number(
+              button.dataset.locationDestination
+            );
+
+          await showSection(
+            "locations"
+          );
+
+          await selectLocationDestination(
+            currentLocationDestinationId
+          );
+
+        }
+      );
+
+    });
+
+}
+
+
+/* =========================================================
+   TOURS
+========================================================= */
+
+async function loadTours() {
+
+  const container =
+    document.getElementById(
+      "toursList"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    loadingHTML();
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("tours")
+      .select(
+        "id,slug,title,description,image_url,page_url,sort_order,created_at,updated_at"
+      )
+      .order(
+        "sort_order",
+        {
+          ascending: true,
+          nullsFirst: false
+        }
+      )
+      .order(
+        "title",
+        {
+          ascending: true
+        }
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      container.innerHTML =
+        emptyHTML(
+          "No tours found."
+        );
+
+      return;
+    }
+
+
+    container.innerHTML =
+      data
+        .map(createTourCard)
+        .join("");
+
+
+    bindTourActions();
+
+  } catch (error) {
+
+    console.error(
+      "Tour loading error:",
+      error
+    );
+
+
+    container.innerHTML =
+      errorHTML(error.message);
+
+  }
+
+}
+
+
+function createTourCard(tour) {
+
+  const image =
+    safeImageUrl(
+      tour.image_url
+    );
+
+
+  return `
+
+    <article class="admin-item-card">
+
+      <img
+        class="admin-item-image"
+        src="${escapeAttribute(image)}"
+        alt="${escapeAttribute(tour.title)}"
+        loading="lazy"
+        onerror="this.onerror=null;this.src='https://via.placeholder.com/800x500?text=No+Image';"
+      >
+
+
+      <div class="admin-item-content">
+
+        <h3>
+          ${escapeHTML(tour.title)}
+        </h3>
+
+        <p>
+          ${escapeHTML(
+            tour.description ||
+            "No description."
+          )}
+        </p>
+
+        <div class="admin-item-meta">
+
+          Slug:
+          <strong>
+            ${escapeHTML(tour.slug)}
+          </strong>
+
+          ${tour.page_url
+            ? ` · Page:
+              ${escapeHTML(tour.page_url)}`
+            : ""
+          }
+
+        </div>
+
+        <div
+          class="admin-item-actions"
+          style="margin-top:12px;"
+        >
+
+          <button
+            class="admin-secondary-btn"
+            type="button"
+            data-edit-tour="${escapeAttribute(tour.id)}"
+          >
+            Edit
+          </button>
+
+          <button
+            class="admin-danger-btn"
+            type="button"
+            data-delete-tour="${escapeAttribute(tour.id)}"
+          >
+            Delete
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+function bindTourActions() {
+
+  document
+    .querySelectorAll(
+      "[data-edit-tour]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          openContentModal(
+            "tour",
+            Number(
+              button.dataset.editTour
+            )
+          );
+
+        }
+      );
+
+    });
+
+
+  document
+    .querySelectorAll(
+      "[data-delete-tour]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          deleteTour(
+            Number(
+              button.dataset.deleteTour
+            )
+          );
+
+        }
+      );
+
+    });
+
+}
+
+
+/* =========================================================
+   CONTENT MODAL
+========================================================= */
+
+async function openContentModal(
+  type,
+  id = null
+) {
+
+  const modal =
+    document.getElementById(
+      "contentModal"
+    );
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  editingDestinationId =
+    null;
+
+  editingTourId =
+    null;
+
+
+  document
+    .getElementById("contentType")
+    .value = type;
+
+
+  const title =
+    document.getElementById(
+      "contentModalTitle"
+    );
+
+
+  const name =
+    document.getElementById(
+      "contentName"
+    );
+
+  const slug =
+    document.getElementById(
+      "contentSlug"
+    );
+
+  const description =
+    document.getElementById(
+      "contentDescription"
+    );
+
+  const imageUrl =
+    document.getElementById(
+      "contentImageUrl"
+    );
+
+  const pageUrl =
+    document.getElementById(
+      "contentPageUrl"
+    );
+
+  const sortOrder =
+    document.getElementById(
+      "contentSortOrder"
+    );
+
+  const currentImage =
+    document.getElementById(
+      "contentCurrentImage"
+    );
+
+
+  name.value = "";
+  slug.value = "";
+  description.value = "";
+  imageUrl.value = "";
+  pageUrl.value = "";
+  sortOrder.value = "0";
+  currentImage.innerHTML = "";
+
+
+  if (type === "destination") {
+
+    title.textContent =
+      id
+        ? "Edit Destination"
+        : "Add Destination";
+
+  } else {
+
+    title.textContent =
+      id
+        ? "Edit Tour"
+        : "Add Tour";
+
+  }
+
+
+  if (id) {
+
+    try {
+
+      const table =
+        type === "destination"
+          ? "destinations"
+          : "tours";
+
+
+      const {
+        data,
+        error
+      } = await supabase
+        .from(table)
+        .select("*")
+        .eq("id", id)
+        .single();
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      if (type === "destination") {
+        editingDestinationId = id;
+      } else {
+        editingTourId = id;
+      }
+
+
+      name.value =
+        type === "destination"
+          ? data.name || ""
+          : data.title || "";
+
+
+      slug.value =
+        data.slug || "";
+
+
+      description.value =
+        data.description || "";
+
+
+      imageUrl.value =
+        data.image_url || "";
+
+
+      pageUrl.value =
+        data.page_url || "";
+
+
+      sortOrder.value =
+        data.sort_order ?? 0;
+
+
+      if (data.image_url) {
+
+        currentImage.innerHTML = `
+
+          <img
+            src="${escapeAttribute(
+              safeImageUrl(data.image_url)
+            )}"
+            alt="Current image"
+            style="
+              width:150px;
+              height:100px;
+              object-fit:cover;
+              border-radius:8px;
+            "
+          >
+
+        `;
+
+      }
+
+    } catch (error) {
+
+      showMessage(
+        error.message,
+        "error"
+      );
+
+      return;
+
+    }
+
+  }
+
+
+  modal.style.display =
+    "flex";
+
+}
+
+
+/* =========================================================
+   SAVE DESTINATION / TOUR
+========================================================= */
+
+async function saveContent(event) {
+
+  event.preventDefault();
+
+
+  const type =
+    document.getElementById(
+      "contentType"
+    ).value;
+
+
+  const name =
+    document.getElementById(
+      "contentName"
+    ).value.trim();
+
+
+  const slug =
+    document.getElementById(
+      "contentSlug"
+    ).value.trim();
+
+
+  const description =
+    document.getElementById(
+      "contentDescription"
+    ).value.trim();
+
+
+  const imageUrl =
+    document.getElementById(
+      "contentImageUrl"
+    ).value.trim();
+
+
+  const pageUrl =
+    document.getElementById(
+      "contentPageUrl"
+    ).value.trim();
+
+
+  const sortOrder =
+    Number(
+      document.getElementById(
+        "contentSortOrder"
+      ).value
+    ) || 0;
+
+
+  if (!name || !slug) {
+
+    showMessage(
+      "Name and slug are required.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const button =
+    document.getElementById(
+      "contentSaveBtn"
+    );
+
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Saving...";
+  }
+
+
+  try {
+
+    const table =
+      type === "destination"
+        ? "destinations"
+        : "tours";
+
+
+    let payload;
+
+
+    if (type === "destination") {
+
+      payload = {
+        name,
+        slug,
+        description: description || null,
+        image_url: imageUrl || null,
+        page_url: pageUrl || null,
+        sort_order: sortOrder
+      };
+
+    } else {
+
+      payload = {
+        title: name,
+        slug,
+        description: description || null,
+        image_url: imageUrl || null,
+        page_url: pageUrl || null,
+        sort_order: sortOrder
+      };
+
+    }
+
+
+    const editingId =
+      type === "destination"
+        ? editingDestinationId
+        : editingTourId;
+
+
+    let result;
+
+
+    if (editingId) {
+
+      result =
+        await supabase
+          .from(table)
+          .update(payload)
+          .eq("id", editingId);
+
+    } else {
+
+      result =
+        await supabase
+          .from(table)
+          .insert(payload);
+
+    }
+
+
+    if (result.error) {
+      throw result.error;
+    }
+
+
+    closeModal(
+      "contentModal"
+    );
+
+
+    showMessage(
+      type === "destination"
+        ? "Destination saved successfully."
+        : "Tour saved successfully.",
+      "success"
+    );
+
+
+    if (type === "destination") {
+      await loadDestinations();
+    } else {
+      await loadTours();
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "Save content error:",
+      error
+    );
+
+
+    showMessage(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Save";
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   DELETE DESTINATION
+========================================================= */
+
+async function deleteDestination(id) {
+
+  if (!confirm(
+    "Delete this destination? Related locations may also need to be removed."
+  )) {
+    return;
+  }
+
+
+  try {
+
+    const {
+      error: locationError
+    } = await supabase
+      .from("destination_locations")
+      .delete()
+      .eq("destination_id", id);
+
+
+    if (locationError) {
+      throw locationError;
+    }
+
+
+    const {
+      error
+    } = await supabase
+      .from("destinations")
+      .delete()
+      .eq("id", id);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    showMessage(
+      "Destination deleted successfully.",
+      "success"
+    );
+
+
+    await loadDestinations();
+
+
+  } catch (error) {
+
+    console.error(
+      "Delete destination error:",
+      error
+    );
+
+
+    showMessage(
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   DELETE TOUR
+========================================================= */
+
+async function deleteTour(id) {
+
+  if (!confirm(
+    "Delete this tour?"
+  )) {
+    return;
+  }
+
+
+  try {
+
+    const {
+      error
+    } = await supabase
+      .from("tours")
+      .delete()
+      .eq("id", id);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    showMessage(
+      "Tour deleted successfully.",
+      "success"
+    );
+
+
+    await loadTours();
+
+
+  } catch (error) {
+
+    console.error(
+      "Delete tour error:",
+      error
+    );
+
+
+    showMessage(
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   LOCATION SECTION
+========================================================= */
+
+async function loadLocationSection() {
+
+  const selector =
+    document.getElementById(
+      "locationDestinationSelector"
+    );
+
+
+  if (!selector) {
+    return;
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("destinations")
+      .select(
+        "id,name,slug"
+      )
+      .order(
+        "sort_order",
+        {
+          ascending: true,
+          nullsFirst: false
+        }
+      )
+      .order(
+        "name",
+        {
+          ascending: true
+        }
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    selector.innerHTML = `
+
+      <div
+        style="
+          background:#fff;
+          border:1px solid #e4e3db;
+          border-radius:12px;
+          padding:18px;
+        "
+      >
+
+        <label
+          style="
+            display:block;
+            font-weight:600;
+            font-size:14px;
+          "
+        >
+
+          Select Destination
+
+          <select
+            id="locationDestinationSelect"
+            style="
+              display:block;
+              width:100%;
+              max-width:500px;
+              margin-top:8px;
+              padding:11px;
+              border:1px solid #d9ddd9;
+              border-radius:7px;
+              background:#fff;
+            "
+          >
+
+            <option value="">
+              Select a destination
+            </option>
+
+            ${(data || [])
+              .map(
+                destination => `
+                  <option
+                    value="${escapeAttribute(destination.id)}"
+                  >
+                    ${escapeHTML(
+                      destination.name
+                    )}
+                  </option>
+                `
+              )
+              .join("")}
+
+          </select>
+
+        </label>
+
+
+        <button
+          id="addLocationBtn"
+          class="admin-primary-btn"
+          type="button"
+          style="margin-top:12px;"
+        >
+          + Add Location
+        </button>
+
+      </div>
+
+    `;
+
+
+    const select =
+      document.getElementById(
+        "locationDestinationSelect"
+      );
+
+
+    if (currentLocationDestinationId) {
+
+      select.value =
+        String(
+          currentLocationDestinationId
+        );
+
+      await selectLocationDestination(
+        currentLocationDestinationId
+      );
+
+    }
+
+
+    select.addEventListener(
+      "change",
+      async () => {
+
+        const id =
+          Number(
+            select.value
+          );
+
+
+        currentLocationDestinationId =
+          id || null;
+
+
+        await selectLocationDestination(
+          id
+        );
+
+      }
+    );
+
+
+    document
+      .getElementById(
+        "addLocationBtn"
+      )
+      ?.addEventListener(
+        "click",
+        () => {
+
+          if (!currentLocationDestinationId) {
+
+            showMessage(
+              "Select a destination first.",
+              "error"
+            );
+
+            return;
+          }
+
+
+          openLocationModal(
+            currentLocationDestinationId
+          );
+
+        }
+      );
+
+
+  } catch (error) {
+
+    selector.innerHTML =
+      errorHTML(
+        error.message
+      );
+
+  }
+
+}
+
+
+/* =========================================================
+   SELECT LOCATION DESTINATION
+========================================================= */
+
+async function selectLocationDestination(
+  destinationId
+) {
+
+  const container =
+    document.getElementById(
+      "locationsList"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  if (!destinationId) {
+
+    container.innerHTML =
+      emptyHTML(
+        "Select a destination to view its locations."
+      );
+
+    return;
+  }
+
+
+  container.innerHTML =
+    loadingHTML();
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("destination_locations")
+      .select(
+        "id,destination_id,location_number,name,description,image_path,image_url,sort_order,created_at,updated_at"
+      )
+      .eq(
+        "destination_id",
+        destinationId
+      )
+      .order(
+        "location_number",
+        {
+          ascending: true,
+          nullsFirst: false
+        }
+      )
+      .order(
+        "sort_order",
+        {
+          ascending: true,
+          nullsFirst: false
+        }
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      container.innerHTML =
+        emptyHTML(
+          "No locations found for this destination."
+        );
+
+      return;
+    }
+
+
+    container.innerHTML =
+      data
+        .map(createLocationCard)
+        .join("");
+
+
+    bindLocationActions();
+
+  } catch (error) {
+
+    container.innerHTML =
+      errorHTML(
+        error.message
+      );
+
+  }
+
+}
+
+
+/* =========================================================
+   LOCATION CARD
+========================================================= */
+
+function createLocationCard(location) {
+
+  const image =
+    safeImageUrl(
+      location.image_url ||
+      location.image_path
+    );
+
+
+  return `
+
+    <article class="admin-item-card">
+
+      <img
+        class="admin-item-image"
+        src="${escapeAttribute(image)}"
+        alt="${escapeAttribute(location.name)}"
+        loading="lazy"
+        onerror="this.onerror=null;this.src='https://via.placeholder.com/800x500?text=No+Image';"
+      >
+
+
+      <div class="admin-item-content">
+
+        <h3>
+          ${escapeHTML(location.name)}
+        </h3>
+
+        <p>
+          ${escapeHTML(
+            location.description ||
+            "No description."
+          )}
+        </p>
+
+        <div class="admin-item-meta">
+
+          Location number:
+          <strong>
+            ${escapeHTML(
+              location.location_number ?? ""
+            )}
+          </strong>
+
+          ${
+            location.image_path
+              ? ` · Image path:
+                ${escapeHTML(
+                  location.image_path
+                )}`
+              : ""
+          }
+
+        </div>
+
+
+        <div
+          class="admin-item-actions"
+          style="margin-top:12px;"
+        >
+
+          <button
+            class="admin-secondary-btn"
+            type="button"
+            data-edit-location="${escapeAttribute(location.id)}"
+          >
+            Edit
+          </button>
+
+          <button
+            class="admin-danger-btn"
+            type="button"
+            data-delete-location="${escapeAttribute(location.id)}"
+          >
+            Delete
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+function bindLocationActions() {
+
+  document
+    .querySelectorAll(
+      "[data-edit-location]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          openLocationModal(
+            currentLocationDestinationId,
+            Number(
+              button.dataset.editLocation
+            )
+          );
+
+        }
+      );
+
+    });
+
+
+  document
+    .querySelectorAll(
+      "[data-delete-location]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          deleteLocation(
+            Number(
+              button.dataset.deleteLocation
+            )
+          );
+
+        }
+      );
+
+    });
+
+}
+
+
+/* =========================================================
+   LOCATION MODAL
+========================================================= */
+
+async function openLocationModal(
+  destinationId,
+  locationId = null
+) {
+
+  const modal =
+    document.getElementById(
+      "locationModal"
+    );
+
+
+  if (!modal) {
+    return;
+  }
+
+
+  editingLocationId =
+    locationId;
+
+
+  currentLocationDestinationId =
+    destinationId;
+
+
+  document
+    .getElementById("locationModalTitle")
+    .textContent =
+      locationId
+        ? "Edit Location"
+        : "Add Location";
+
+
+  document
+    .getElementById("locationId")
+    .value =
+      locationId || "";
+
+
+  document
+    .getElementById("locationName")
+    .value = "";
+
+
+  document
+    .getElementById("locationDescription")
+    .value = "";
+
+
+  document
+    .getElementById("locationNumber")
+    .value = "1";
+
+
+  document
+    .getElementById("locationImageUrl")
+    .value = "";
+
+
+  document
+    .getElementById("locationImagePath")
+    .value = "";
+
+
+  document
+    .getElementById("locationSortOrder")
+    .value = "0";
+
+
+  document
+    .getElementById("locationCurrentImage")
+    .innerHTML = "";
+
+
+  if (locationId) {
+
+    try {
+
+      const {
+        data,
+        error
+      } = await supabase
+        .from("destination_locations")
+        .select("*")
+        .eq("id", locationId)
+        .single();
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      document
+        .getElementById("locationName")
+        .value =
+          data.name || "";
+
+
+      document
+        .getElementById("locationDescription")
+        .value =
+          data.description || "";
+
+
+      document
+        .getElementById("locationNumber")
+        .value =
+          data.location_number ?? 1;
+
+
+      document
+        .getElementById("locationImageUrl")
+        .value =
+          data.image_url || "";
+
+
+      document
+        .getElementById("locationImagePath")
+        .value =
+          data.image_path || "";
+
+
+      document
+        .getElementById("locationSortOrder")
+        .value =
+          data.sort_order ?? 0;
+
+
+      const image =
+        data.image_url ||
+        data.image_path;
+
+
+      if (image) {
+
+        document
+          .getElementById(
+            "locationCurrentImage"
+          )
+          .innerHTML = `
+
+            <img
+              src="${escapeAttribute(
+                safeImageUrl(image)
+              )}"
+              alt="Current location image"
+              style="
+                width:150px;
+                height:100px;
+                object-fit:cover;
+                border-radius:8px;
+              "
+            >
+
+          `;
+
+      }
+
+    } catch (error) {
+
+      showMessage(
+        error.message,
+        "error"
+      );
+
+      return;
+
+    }
+
+  }
+
+
+  modal.style.display =
+    "flex";
+
+}
+
+
+/* =========================================================
+   SAVE LOCATION
+========================================================= */
+
+async function saveLocation(event) {
+
+  event.preventDefault();
+
+
+  if (!currentLocationDestinationId) {
+
+    showMessage(
+      "Please select a destination.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const name =
+    document
+      .getElementById(
+        "locationName"
+      )
+      .value
+      .trim();
+
+
+  const description =
+    document
+      .getElementById(
+        "locationDescription"
+      )
+      .value
+      .trim();
+
+
+  const locationNumber =
+    Number(
+      document
+        .getElementById(
+          "locationNumber"
+        )
+        .value
+    ) || 1;
+
+
+  const imageUrl =
+    document
+      .getElementById(
+        "locationImageUrl"
+      )
+      .value
+      .trim();
+
+
+  const imagePath =
+    document
+      .getElementById(
+        "locationImagePath"
+      )
+      .value
+      .trim();
+
+
+  const sortOrder =
+    Number(
+      document
+        .getElementById(
+          "locationSortOrder"
+        )
+        .value
+    ) || 0;
+
+
+  if (!name) {
+
+    showMessage(
+      "Location name is required.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  try {
+
+    const payload = {
+
+      destination_id:
+        currentLocationDestinationId,
+
+      location_number:
+        locationNumber,
+
+      name,
+
+      description:
+        description || null,
+
+      image_path:
+        imagePath || null,
+
+      image_url:
+        imageUrl || null,
+
+      sort_order:
+        sortOrder
+
+    };
+
+
+    let result;
+
+
+    if (editingLocationId) {
+
+      result =
+        await supabase
+          .from("destination_locations")
+          .update(payload)
+          .eq(
+            "id",
+            editingLocationId
+          );
+
+    } else {
+
+      result =
+        await supabase
+          .from("destination_locations")
+          .insert(payload);
+
+    }
+
+
+    if (result.error) {
+      throw result.error;
+    }
+
+
+    closeModal(
+      "locationModal"
+    );
+
+
+    showMessage(
+      "Location saved successfully.",
+      "success"
+    );
+
+
+    await selectLocationDestination(
+      currentLocationDestinationId
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Save location error:",
+      error
+    );
+
+
+    showMessage(
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   DELETE LOCATION
+========================================================= */
+
+async function deleteLocation(id) {
+
+  if (!confirm(
+    "Delete this location?"
+  )) {
+    return;
+  }
+
+
+  try {
+
+    const {
+      error
+    } = await supabase
+      .from("destination_locations")
+      .delete()
+      .eq("id", id);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    showMessage(
+      "Location deleted successfully.",
+      "success"
+    );
+
+
+    await selectLocationDestination(
+      currentLocationDestinationId
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Delete location error:",
+      error
+    );
+
+
+    showMessage(
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   REVIEWS
+========================================================= */
+
+async function loadReviews() {
+
+  const container =
+    document.getElementById(
+      "reviewsList"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.innerHTML =
+    loadingHTML();
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("reviews")
+      .select(
+        "id,name,country,rating,review,photo_url,photo_path,created_at"
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      container.innerHTML =
+        emptyHTML(
+          "No reviews found."
+        );
+
+      return;
+    }
+
+
+    container.innerHTML =
+      data
+        .map(createReviewCard)
+        .join("");
+
+
+    bindReviewActions();
+
+  } catch (error) {
+
+    console.error(
+      "Review loading error:",
+      error
+    );
+
+
+    container.innerHTML =
+      errorHTML(
+        error.message
+      );
+
+  }
+
+}
+
+
+/* =========================================================
+   REVIEW CARD
+========================================================= */
+
+function createReviewCard(review) {
+
+  const stars =
+    "★".repeat(
+      Math.max(
+        0,
+        Math.min(
+          5,
+          Number(review.rating) || 0
+        )
+      )
+    );
+
+
+  const date =
+    review.created_at
+      ? new Date(
+          review.created_at
+        ).toLocaleString()
+      : "";
+
+
+  return `
+
+    <article class="admin-item-card">
+
+      ${
+        review.photo_url
+          ? `
+            <img
+              class="admin-review-photo"
+              src="${escapeAttribute(
+                safeImageUrl(
+                  review.photo_url
+                )
+              )}"
+              alt="${escapeAttribute(
+                review.name
+              )}"
+              loading="lazy"
+            >
+          `
+          : ""
+      }
+
+
+      <div class="admin-item-content">
+
+        <h3>
+          ${escapeHTML(
+            review.name ||
+            "Anonymous"
+          )}
+        </h3>
+
+
+        <div
+          style="
+            margin-bottom:8px;
+          "
+        >
+
+          <span class="admin-stars">
+            ${escapeHTML(stars)}
+          </span>
+
+          <span
+            style="
+              color:#69736e;
+              font-size:13px;
+            "
+          >
+            ${escapeHTML(
+              review.rating ?? ""
+            )}/5
+          </span>
+
+        </div>
+
+
+        <div
+          style="
+            color:#69736e;
+            font-size:13px;
+            margin-bottom:10px;
+          "
+        >
+          ${escapeHTML(
+            review.country || ""
+          )}
+
+          ${
+            date
+              ? ` · ${escapeHTML(date)}`
+              : ""
+          }
+        </div>
+
+
+        <p>
+          ${escapeHTML(
+            review.review
+          )}
+        </p>
+
+
+        <div class="admin-item-actions">
+
+          <button
+            class="admin-danger-btn"
+            type="button"
+            data-delete-review="${escapeAttribute(review.id)}"
+          >
+            Delete Review
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+function bindReviewActions() {
+
+  document
+    .querySelectorAll(
+      "[data-delete-review]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          deleteReview(
+            button.dataset.deleteReview
+          );
+
+        }
+      );
+
+    });
+
+}
+
+
+/* =========================================================
+   DELETE REVIEW
+========================================================= */
+
+async function deleteReview(id) {
+
+  if (!confirm(
+    "Delete this review?"
+  )) {
+    return;
+  }
+
+
+  try {
+
+    /*
+     * Get photo path before deleting
+     * the database row.
+     */
+
+    const {
+      data: review,
+      error: fetchError
+    } = await supabase
+      .from("reviews")
+      .select(
+        "photo_path"
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+
+    /*
+     * Delete database record.
+     */
+
+    const {
+      error
+    } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("id", id);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    /*
+     * Try deleting storage file if
+     * a photo path exists.
+     *
+     * If storage deletion is blocked by
+     * policy, the review itself is still
+     * deleted.
+     */
+
+    if (review?.photo_path) {
+
+      const {
+        error: storageError
+      } = await supabase
+        .storage
+        .from("review-photos")
+        .remove([
+          review.photo_path
+        ]);
+
+
+      if (storageError) {
+
+        console.warn(
+          "Storage photo deletion failed:",
+          storageError
+        );
+
+      }
+
+    }
+
+
+    showMessage(
+      "Review deleted successfully.",
+      "success"
+    );
+
+
+    await loadReviews();
+
+
+  } catch (error) {
+
+    console.error(
+      "Delete review error:",
+      error
+    );
+
+
+    showMessage(
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+async function logout() {
+
+  try {
+
+    const {
+      error
+    } = await supabase.auth.signOut();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    window.location.href =
+      "admin.html";
+
+
+  } catch (error) {
+
+    showMessage(
+      error.message,
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+function closeModal(id) {
+
+  const modal =
+    document.getElementById(id);
+
+
+  if (modal) {
+
+    modal.style.display =
+      "none";
+
+  }
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+function showMessage(
+  message,
+  type = "success"
+) {
+
+  const element =
+    document.getElementById(
+      "adminMessage"
+    );
+
+
+  if (!element) {
+    return;
+  }
+
+
+  element.style.display =
+    "block";
+
+
+  element.textContent =
+    message;
+
+
+  if (type === "error") {
+
+    element.style.background =
+      "#fdecec";
+
+    element.style.color =
+      "#b42318";
+
+    element.style.border =
+      "1px solid #f5c2c0";
+
+  } else {
+
+    element.style.background =
+      "#edf7f0";
+
+    element.style.color =
+      "#176b4d";
+
+    element.style.border =
+      "1px solid #c9e4d2";
+
+  }
+
+
+  clearTimeout(
+    showMessage.timer
+  );
+
+
+  showMessage.timer =
+    setTimeout(
+      () => {
+
+        element.style.display =
+          "none";
+
+      },
+      5000
+    );
+
+}
+
+
+/* =========================================================
+   UI HELPERS
+========================================================= */
+
+function loadingHTML() {
+
+  return `
+
+    <div
+      style="
+        background:#fff;
+        border:1px solid #e4e3db;
+        border-radius:12px;
+        padding:35px;
+        text-align:center;
+        color:#69736e;
+      "
+    >
+      Loading...
+    </div>
+
+  `;
+
+}
+
+
+function emptyHTML(message) {
+
+  return `
+
+    <div
+      style="
+        background:#fff;
+        border:1px solid #e4e3db;
+        border-radius:12px;
+        padding:35px;
+        text-align:center;
+        color:#69736e;
+      "
+    >
+      ${escapeHTML(message)}
+    </div>
+
+  `;
+
+}
+
+
+function errorHTML(message) {
+
+  return `
+
+    <div
+      style="
+        background:#fff;
+        border:1px solid #f0c7c5;
+        border-radius:12px;
+        padding:25px;
+        color:#b42318;
+      "
+    >
+
+      <strong>
+        Error
+      </strong>
+
+      <p>
+        ${escapeHTML(message)}
+      </p>
+
+    </div>
+
+  `;
+
+}
