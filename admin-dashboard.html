@@ -19,57 +19,2165 @@
     Admin Dashboard | Travel With Sri Lanka
   </title>
 
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+      background: #f5f7fb;
+      color: #111827;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+
+    /* =====================================================
+       LOADING
+    ===================================================== */
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: rgba(255,255,255,.96);
+
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+
+    /* =====================================================
+       LOGIN
+    ===================================================== */
+
+    #loginScreen {
+      min-height: 100vh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 20px;
+      background:
+        linear-gradient(
+          135deg,
+          #f8fafc,
+          #e2e8f0
+        );
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 430px;
+
+      background: #fff;
+
+      padding: 35px;
+
+      border-radius: 22px;
+
+      box-shadow:
+        0 20px 60px rgba(15,23,42,.12);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .login-logo h1 {
+      margin: 0 0 8px;
+
+      font-size: 28px;
+    }
+
+    .login-logo p {
+      margin: 0;
+
+      color: #64748b;
+    }
+
+
+    /* =====================================================
+       FORMS
+    ===================================================== */
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      font-size: 14px;
+      font-weight: 700;
+
+      color: #334155;
+    }
+
+    input,
+    textarea,
+    select {
+
+      width: 100%;
+
+      border: 1px solid #dbe1ea;
+
+      background: #fff;
+
+      color: #111827;
+
+      border-radius: 10px;
+
+      padding: 12px 14px;
+
+      font-size: 15px;
+
+      outline: none;
+
+      transition:
+        border-color .2s,
+        box-shadow .2s;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+
+      border-color: #2563eb;
+
+      box-shadow:
+        0 0 0 3px
+        rgba(37,99,235,.10);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    input[type="file"] {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .form-help {
+      display: block;
+
+      margin-top: 7px;
+
+      color: #64748b;
+
+      font-size: 12px;
+
+      line-height: 1.5;
+    }
+
+
+    /* =====================================================
+       BUTTONS
+    ===================================================== */
+
+    button {
+      font-family: inherit;
+    }
+
+    .btn {
+
+      border: 0;
+
+      border-radius: 10px;
+
+      padding:
+        11px 17px;
+
+      cursor: pointer;
+
+      font-size: 14px;
+
+      font-weight: 700;
+
+      transition:
+        transform .15s,
+        opacity .15s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: #111827;
+      color: #fff;
+    }
+
+    .btn-blue {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .btn-light {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .btn-login {
+      width: 100%;
+
+      margin-top: 5px;
+
+      padding: 13px;
+    }
+
+
+    /* =====================================================
+       DASHBOARD LAYOUT
+    ===================================================== */
+
+    #dashboardScreen {
+      display: none;
+
+      min-height: 100vh;
+    }
+
+    .admin-layout {
+
+      min-height: 100vh;
+
+      display: flex;
+    }
+
+
+    /* =====================================================
+       SIDEBAR
+    ===================================================== */
+
+    .sidebar {
+
+      width: 250px;
+
+      flex-shrink: 0;
+
+      background: #111827;
+
+      color: #fff;
+
+      min-height: 100vh;
+
+      padding: 22px 15px;
+
+      position: sticky;
+
+      top: 0;
+    }
+
+    .brand {
+
+      padding:
+        8px 10px 25px;
+
+      border-bottom:
+        1px solid
+        rgba(255,255,255,.10);
+
+      margin-bottom: 18px;
+    }
+
+    .brand h2 {
+
+      margin: 0;
+
+      font-size: 20px;
+
+      line-height: 1.3;
+    }
+
+    .brand span {
+
+      display: block;
+
+      margin-top: 5px;
+
+      color: #94a3b8;
+
+      font-size: 12px;
+    }
+
+    .nav {
+
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 6px;
+    }
+
+    .nav button,
+    .nav a {
+
+      width: 100%;
+
+      border: 0;
+
+      background: transparent;
+
+      color: #cbd5e1;
+
+      padding:
+        12px 13px;
+
+      border-radius: 10px;
+
+      text-align: left;
+
+      cursor: pointer;
+
+      font-size: 14px;
+
+      font-weight: 600;
+
+      text-decoration: none;
+    }
+
+    .nav button:hover,
+    .nav a:hover,
+    .nav button.active,
+    .nav a.active {
+
+      background:
+        rgba(255,255,255,.10);
+
+      color: #fff;
+    }
+
+    .logout-area {
+
+      margin-top: 30px;
+
+      padding-top: 20px;
+
+      border-top:
+        1px solid
+        rgba(255,255,255,.10);
+    }
+
+    .logout-btn {
+
+      width: 100%;
+
+      border: 0;
+
+      background: #dc2626;
+
+      color: #fff;
+
+      border-radius: 10px;
+
+      padding: 12px;
+
+      cursor: pointer;
+
+      font-weight: 700;
+    }
+
+
+    /* =====================================================
+       MAIN
+    ===================================================== */
+
+    .main-content {
+
+      flex: 1;
+
+      min-width: 0;
+
+      padding: 25px;
+    }
+
+    .topbar {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items: center;
+
+      gap: 15px;
+
+      margin-bottom: 25px;
+    }
+
+    .topbar h1 {
+
+      margin: 0;
+
+      font-size: 28px;
+    }
+
+    .topbar p {
+
+      margin:
+        5px 0 0;
+
+      color: #64748b;
+    }
+
+
+    /* =====================================================
+       SECTIONS
+    ===================================================== */
+
+    .admin-section {
+      display: none;
+    }
+
+    #dashboardSection {
+      display: block;
+    }
+
+
+    /* =====================================================
+       STAT CARDS
+    ===================================================== */
+
+    .stats-grid {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          3,
+          minmax(0,1fr)
+        );
+
+      gap: 18px;
+
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+
+      background: #fff;
+
+      border-radius: 16px;
+
+      padding: 22px;
+
+      box-shadow:
+        0 5px 25px
+        rgba(15,23,42,.06);
+    }
+
+    .stat-card span {
+
+      display: block;
+
+      color: #64748b;
+
+      font-size: 13px;
+
+      font-weight: 600;
+
+      margin-bottom: 8px;
+    }
+
+    .stat-card strong {
+
+      font-size: 32px;
+    }
+
+
+    /* =====================================================
+       SECTION HEADER
+    ===================================================== */
+
+    .section-header {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items: center;
+
+      gap: 15px;
+
+      margin-bottom: 20px;
+
+      flex-wrap: wrap;
+    }
+
+    .section-header h2 {
+
+      margin: 0;
+
+      font-size: 22px;
+    }
+
+
+    /* =====================================================
+       CARD GRID
+    ===================================================== */
+
+    .admin-grid {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          auto-fill,
+          minmax(
+            280px,
+            1fr
+          )
+        );
+
+      gap: 20px;
+    }
+
+    .admin-card {
+
+      overflow: hidden;
+
+      background: #fff;
+
+      border-radius: 16px;
+
+      box-shadow:
+        0 5px 25px
+        rgba(15,23,42,.07);
+    }
+
+    .admin-card-image {
+
+      width: 100%;
+
+      height: 210px;
+
+      display: block;
+
+      object-fit: cover;
+
+      background: #e5e7eb;
+    }
+
+    .admin-card-content {
+
+      padding: 18px;
+    }
+
+    .admin-card-content h3 {
+
+      margin:
+        0 0 8px;
+
+      font-size: 19px;
+    }
+
+    .admin-card-content p {
+
+      margin:
+        0;
+
+      color: #64748b;
+
+      line-height: 1.6;
+
+      font-size: 14px;
+    }
+
+    .admin-card-actions {
+
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+
+      margin-top: 16px;
+    }
+
+
+    /* =====================================================
+       EMPTY / ERROR
+    ===================================================== */
+
+    .admin-loading,
+    .admin-empty,
+    .admin-error {
+
+      background: #fff;
+
+      border-radius: 15px;
+
+      padding: 35px;
+
+      text-align: center;
+
+      box-shadow:
+        0 5px 25px
+        rgba(15,23,42,.05);
+    }
+
+    .admin-error {
+      color: #dc2626;
+    }
+
+
+    /* =====================================================
+       MODAL
+    ===================================================== */
+
+    .modal {
+
+      display: none;
+
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 9000;
+
+      padding: 20px;
+
+      overflow-y: auto;
+
+      background:
+        rgba(15,23,42,.60);
+
+      align-items: center;
+
+      justify-content: center;
+    }
+
+    .modal-content {
+
+      width: 100%;
+
+      max-width: 650px;
+
+      max-height:
+        calc(100vh - 40px);
+
+      overflow-y: auto;
+
+      background: #fff;
+
+      border-radius: 20px;
+
+      box-shadow:
+        0 25px 80px
+        rgba(0,0,0,.25);
+    }
+
+    .modal-header {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items: center;
+
+      gap: 15px;
+
+      padding: 20px 22px;
+
+      border-bottom:
+        1px solid #e5e7eb;
+
+      position: sticky;
+
+      top: 0;
+
+      background: #fff;
+
+      z-index: 2;
+    }
+
+    .modal-header h2 {
+
+      margin: 0;
+
+      font-size: 21px;
+    }
+
+    .modal-close {
+
+      width: 38px;
+
+      height: 38px;
+
+      border: 0;
+
+      border-radius: 50%;
+
+      background: #f1f5f9;
+
+      color: #111827;
+
+      font-size: 20px;
+
+      cursor: pointer;
+    }
+
+    .modal-body {
+
+      padding: 22px;
+    }
+
+    .modal-footer {
+
+      display: flex;
+
+      justify-content: flex-end;
+
+      gap: 10px;
+
+      padding:
+        18px 22px;
+
+      border-top:
+        1px solid #e5e7eb;
+
+      position: sticky;
+
+      bottom: 0;
+
+      background: #fff;
+
+      z-index: 2;
+    }
+
+
+    /* =====================================================
+       IMAGE PREVIEW
+    ===================================================== */
+
+    .current-image-preview {
+
+      width: 100%;
+
+      max-width: 450px;
+
+      height: 240px;
+
+      object-fit: cover;
+
+      border-radius: 13px;
+
+      margin-top: 12px;
+
+      display: none;
+
+      background: #e5e7eb;
+    }
+
+
+    /* =====================================================
+       LOCATION SELECT
+    ===================================================== */
+
+    .location-toolbar {
+
+      display: grid;
+
+      grid-template-columns:
+        minmax(200px, 350px)
+        auto;
+
+      gap: 10px;
+
+      align-items: end;
+
+      margin-bottom: 20px;
+    }
+
+
+    /* =====================================================
+       REVIEW
+    ===================================================== */
+
+    .admin-review-card {
+
+      background: #fff;
+
+      padding: 20px;
+
+      border-radius: 16px;
+
+      margin-bottom: 15px;
+
+      box-shadow:
+        0 5px 25px
+        rgba(15,23,42,.06);
+    }
+
+    .review-admin-header {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items: center;
+
+      gap: 15px;
+
+      margin-bottom: 10px;
+    }
+
+    .review-stars {
+
+      letter-spacing: 2px;
+
+      font-size: 18px;
+    }
+
+
+    /* =====================================================
+       GALLERY
+    ===================================================== */
+
+    .gallery-upload-box {
+
+      background: #f8fafc;
+
+      border:
+        1px dashed #cbd5e1;
+
+      border-radius: 14px;
+
+      padding: 18px;
+
+      margin-bottom: 20px;
+    }
+
+    .gallery-grid {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          auto-fill,
+          minmax(
+            200px,
+            1fr
+          )
+        );
+
+      gap: 15px;
+    }
+
+    .gallery-admin-item {
+
+      position: relative;
+
+      overflow: hidden;
+
+      border-radius: 14px;
+
+      background: #e5e7eb;
+    }
+
+    .gallery-admin-item img {
+
+      width: 100%;
+
+      height: 210px;
+
+      display: block;
+
+      object-fit: cover;
+    }
+
+    .gallery-delete-btn {
+
+      position: absolute;
+
+      right: 10px;
+
+      bottom: 10px;
+
+      border: 0;
+
+      border-radius: 8px;
+
+      padding: 8px 11px;
+
+      background: #dc2626;
+
+      color: #fff;
+
+      cursor: pointer;
+
+      font-size: 12px;
+
+      font-weight: 700;
+    }
+
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
+
+    #adminToast {
+
+      position: fixed;
+
+      right: 20px;
+
+      bottom: 20px;
+
+      z-index: 999999;
+
+      display: none;
+
+      max-width: 380px;
+
+      padding:
+        14px 18px;
+
+      border-radius: 12px;
+
+      color: #fff;
+
+      font-weight: 700;
+
+      box-shadow:
+        0 10px 30px
+        rgba(0,0,0,.20);
+    }
+
+
+    /* =====================================================
+       MOBILE
+    ===================================================== */
+
+    @media (max-width: 900px) {
+
+      .sidebar {
+        width: 210px;
+      }
+
+      .main-content {
+        padding: 18px;
+      }
+
+      .stats-grid {
+        grid-template-columns:
+          1fr;
+      }
+
+    }
+
+
+    @media (max-width: 700px) {
+
+      .admin-layout {
+        display: block;
+      }
+
+      .sidebar {
+
+        width: 100%;
+
+        min-height: auto;
+
+        position: relative;
+
+        padding: 15px;
+      }
+
+      .brand {
+        padding-bottom: 15px;
+      }
+
+      .nav {
+
+        display: grid;
+
+        grid-template-columns:
+          repeat(
+            2,
+            minmax(0,1fr)
+          );
+      }
+
+      .logout-area {
+        margin-top: 15px;
+      }
+
+      .main-content {
+        padding: 15px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .location-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+    }
+
+
+    @media (max-width: 480px) {
+
+      .login-box {
+        padding: 25px 20px;
+      }
+
+      .nav {
+        grid-template-columns: 1fr;
+      }
+
+      .modal {
+        padding: 10px;
+      }
+
+      .modal-content {
+        max-height:
+          calc(100vh - 20px);
+      }
+
+      .modal-body {
+        padding: 17px;
+      }
+
+      .modal-footer {
+        padding: 15px 17px;
+      }
+
+    }
+
+  </style>
+
 </head>
 
 
 <body>
 
-  <div
-    id="loading"
-    style="
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:15px;
-      padding:20px;
-      font-family:Arial,Helvetica,sans-serif;
-      background:#f4f7f5;
-      color:#176b4d;
-      text-align:center;
-    "
-  >
 
-    <div style="
-      width:38px;
-      height:38px;
-      border:4px solid #dbe9e1;
-      border-top-color:#176b4d;
-      border-radius:50%;
-      animation:spin .8s linear infinite;
-    "></div>
+  <!-- =====================================================
+       LOADING
+  ====================================================== -->
 
-    <strong>
-      Admin panel loading...
-    </strong>
+  <div id="loading">
+    Loading Admin Dashboard...
+  </div>
+
+
+  <!-- =====================================================
+       LOGIN
+  ====================================================== -->
+
+  <div id="loginScreen">
+
+    <div class="login-box">
+
+      <div class="login-logo">
+
+        <h1>
+          Travel With Sri Lanka
+        </h1>
+
+        <p>
+          Admin Dashboard
+        </p>
+
+      </div>
+
+
+      <form id="loginForm">
+
+        <div class="form-group">
+
+          <label for="loginEmail">
+            Email
+          </label>
+
+          <input
+            id="loginEmail"
+            type="email"
+            placeholder="Admin email"
+            autocomplete="username"
+            required
+          >
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="loginPassword">
+            Password
+          </label>
+
+          <input
+            id="loginPassword"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            required
+          >
+
+        </div>
+
+
+        <button
+          type="submit"
+          class="btn btn-primary btn-login"
+        >
+          Login
+        </button>
+
+      </form>
+
+    </div>
 
   </div>
 
 
-  <style>
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-  </style>
+  <!-- =====================================================
+       DASHBOARD
+  ====================================================== -->
 
+  <div id="dashboardScreen">
+
+    <div class="admin-layout">
+
+
+      <!-- =================================================
+           SIDEBAR
+      ================================================== -->
+
+      <aside class="sidebar">
+
+        <div class="brand">
+
+          <h2>
+            Travel With Sri Lanka
+          </h2>
+
+          <span>
+            Admin Dashboard
+          </span>
+
+        </div>
+
+
+        <nav class="nav">
+
+          <button
+            type="button"
+            data-section="dashboard"
+            class="active"
+          >
+            📊 Dashboard
+          </button>
+
+          <button
+            type="button"
+            data-section="destinations"
+          >
+            📍 Destinations
+          </button>
+
+          <button
+            type="button"
+            data-section="tours"
+          >
+            🚌 Tours
+          </button>
+
+          <button
+            type="button"
+            data-section="locations"
+          >
+            🗺️ Locations
+          </button>
+
+          <button
+            type="button"
+            data-section="reviews"
+          >
+            ⭐ Reviews
+          </button>
+
+        </nav>
+
+
+        <div class="logout-area">
+
+          <button
+            type="button"
+            id="logoutButton"
+            class="logout-btn"
+          >
+            Logout
+          </button>
+
+        </div>
+
+      </aside>
+
+
+      <!-- =================================================
+           MAIN CONTENT
+      ================================================== -->
+
+      <main class="main-content">
+
+
+        <!-- =================================================
+             TOP BAR
+        ================================================== -->
+
+        <div class="topbar">
+
+          <div>
+
+            <h1>
+              Admin Dashboard
+            </h1>
+
+            <p>
+              Manage your Travel With Sri Lanka website.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+             DASHBOARD SECTION
+        ================================================== -->
+
+        <section
+          id="dashboardSection"
+          class="admin-section"
+        >
+
+          <div class="stats-grid">
+
+            <div class="stat-card">
+
+              <span>
+                Destinations
+              </span>
+
+              <strong id="destinationCount">
+                0
+              </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+              <span>
+                Tours
+              </span>
+
+              <strong id="tourCount">
+                0
+              </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+              <span>
+                Reviews
+              </span>
+
+              <strong id="reviewCount">
+                0
+              </strong>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- =================================================
+             DESTINATIONS
+        ================================================== -->
+
+        <section
+          id="destinationsSection"
+          class="admin-section"
+        >
+
+          <div class="section-header">
+
+            <div>
+
+              <h2>
+                Destinations
+              </h2>
+
+            </div>
+
+            <button
+              type="button"
+              id="addDestinationBtn"
+              class="btn btn-primary"
+            >
+              + Add Destination
+            </button>
+
+          </div>
+
+
+          <div
+            id="destinationsList"
+            class="admin-grid"
+          ></div>
+
+        </section>
+
+
+        <!-- =================================================
+             TOURS
+        ================================================== -->
+
+        <section
+          id="toursSection"
+          class="admin-section"
+        >
+
+          <div class="section-header">
+
+            <div>
+
+              <h2>
+                Tours
+              </h2>
+
+            </div>
+
+            <button
+              type="button"
+              id="addTourBtn"
+              class="btn btn-primary"
+            >
+              + Add Tour
+            </button>
+
+          </div>
+
+
+          <div
+            id="toursList"
+            class="admin-grid"
+          ></div>
+
+        </section>
+
+
+        <!-- =================================================
+             LOCATIONS
+        ================================================== -->
+
+        <section
+          id="locationsSection"
+          class="admin-section"
+        >
+
+          <div class="section-header">
+
+            <div>
+
+              <h2>
+                Destination Locations
+              </h2>
+
+            </div>
+
+            <button
+              type="button"
+              id="addLocationBtn"
+              class="btn btn-primary"
+            >
+              + Add Location
+            </button>
+
+          </div>
+
+
+          <div class="location-toolbar">
+
+            <div class="form-group">
+
+              <label
+                for="locationDestinationSelect"
+              >
+                Destination
+              </label>
+
+              <select
+                id="locationDestinationSelect"
+              >
+
+                <option value="">
+                  Select destination
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <button
+              type="button"
+              class="btn btn-blue"
+              onclick="
+                loadLocations(
+                  document.getElementById(
+                    'locationDestinationSelect'
+                  ).value
+                )
+              "
+            >
+              Load Locations
+            </button>
+
+          </div>
+
+
+          <div
+            id="locationsList"
+            class="admin-grid"
+          ></div>
+
+        </section>
+
+
+        <!-- =================================================
+             REVIEWS
+        ================================================== -->
+
+        <section
+          id="reviewsSection"
+          class="admin-section"
+        >
+
+          <div class="section-header">
+
+            <div>
+
+              <h2>
+                Reviews
+              </h2>
+
+            </div>
+
+          </div>
+
+
+          <div
+            id="reviewsList"
+          ></div>
+
+        </section>
+
+
+      </main>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       DESTINATION MODAL
+  ====================================================== -->
+
+  <div
+    id="destinationModal"
+    class="modal"
+  >
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+
+        <h2>
+          Destination
+        </h2>
+
+        <button
+          type="button"
+          class="modal-close"
+          onclick="closeDestinationModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="destinationForm">
+
+        <div class="modal-body">
+
+
+          <div class="form-group">
+
+            <label for="destinationName">
+              Destination Name
+            </label>
+
+            <input
+              id="destinationName"
+              type="text"
+              placeholder="Ella"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="destinationDescription">
+              Description
+            </label>
+
+            <textarea
+              id="destinationDescription"
+              placeholder="Destination description..."
+            ></textarea>
+
+          </div>
+
+
+          <!-- =============================================
+               IMAGE UPLOAD
+          ============================================== -->
+
+          <div class="form-group">
+
+            <label for="destinationImageFile">
+              Destination Image
+            </label>
+
+            <input
+              id="destinationImageFile"
+              type="file"
+              accept="
+                image/jpeg,
+                image/png,
+                image/webp,
+                image/gif
+              "
+            >
+
+            <small class="form-help">
+              JPG, PNG, WEBP or GIF • Maximum 5 MB
+            </small>
+
+
+            <img
+              id="destinationCurrentImage"
+              class="current-image-preview"
+              alt="Current destination image"
+            >
+
+          </div>
+
+
+          <!-- =============================================
+               PAGE URL
+               This is NOT image URL.
+          ============================================== -->
+
+          <div class="form-group">
+
+            <label for="destinationPageUrl">
+              Destination Page URL
+            </label>
+
+            <input
+              id="destinationPageUrl"
+              type="url"
+              placeholder="https://..."
+            >
+
+            <small class="form-help">
+              Optional. This is the destination page link,
+              not the image URL.
+            </small>
+
+          </div>
+
+
+        </div>
+
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-light"
+            onclick="closeDestinationModal()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-success"
+          >
+            Save Destination
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       TOUR MODAL
+  ====================================================== -->
+
+  <div
+    id="tourModal"
+    class="modal"
+  >
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+
+        <h2>
+          Tour
+        </h2>
+
+        <button
+          type="button"
+          class="modal-close"
+          onclick="closeTourModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="tourForm">
+
+        <div class="modal-body">
+
+
+          <div class="form-group">
+
+            <label for="tourTitle">
+              Tour Title
+            </label>
+
+            <input
+              id="tourTitle"
+              type="text"
+              placeholder="Sri Lanka Highlights Tour"
+            >
+
+          </div>
+
+
+          <!--
+            Kept for compatibility if your DB/admin JS
+            uses "name".
+          -->
+
+          <div
+            class="form-group"
+            style="display:none;"
+          >
+
+            <label for="tourName">
+              Tour Name
+            </label>
+
+            <input
+              id="tourName"
+              type="text"
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="tourDescription">
+              Description
+            </label>
+
+            <textarea
+              id="tourDescription"
+              placeholder="Tour description..."
+            ></textarea>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="tourPrice">
+              Price
+            </label>
+
+            <input
+              id="tourPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="1500"
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="tourDuration">
+              Duration
+            </label>
+
+            <input
+              id="tourDuration"
+              type="text"
+              placeholder="5 Days / 4 Nights"
+            >
+
+          </div>
+
+
+          <!-- =============================================
+               MAIN TOUR IMAGE UPLOAD
+          ============================================== -->
+
+          <div class="form-group">
+
+            <label for="tourImageFile">
+              Main Tour Image
+            </label>
+
+            <input
+              id="tourImageFile"
+              type="file"
+              accept="
+                image/jpeg,
+                image/png,
+                image/webp,
+                image/gif
+              "
+            >
+
+            <small class="form-help">
+              JPG, PNG, WEBP or GIF • Maximum 5 MB
+            </small>
+
+
+            <img
+              id="tourCurrentImage"
+              class="current-image-preview"
+              alt="Current tour image"
+            >
+
+          </div>
+
+
+          <!-- =============================================
+               TOUR PAGE URL
+          ============================================== -->
+
+          <div class="form-group">
+
+            <label for="tourPageUrl">
+              Tour Page URL
+            </label>
+
+            <input
+              id="tourPageUrl"
+              type="url"
+              placeholder="https://..."
+            >
+
+            <small class="form-help">
+              Optional. This is the tour page link,
+              not the image URL.
+            </small>
+
+          </div>
+
+
+        </div>
+
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-light"
+            onclick="closeTourModal()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-success"
+          >
+            Save Tour
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       LOCATION MODAL
+  ====================================================== -->
+
+  <div
+    id="locationModal"
+    class="modal"
+  >
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+
+        <h2>
+          Destination Location
+        </h2>
+
+        <button
+          type="button"
+          class="modal-close"
+          onclick="closeLocationModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="locationForm">
+
+        <div class="modal-body">
+
+
+          <div class="form-group">
+
+            <label for="locationDestinationSelect">
+              Destination
+            </label>
+
+            <select
+              id="locationDestinationSelect"
+              required
+            >
+
+              <option value="">
+                Select destination
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="locationName">
+              Location Name
+            </label>
+
+            <input
+              id="locationName"
+              type="text"
+              placeholder="Nine Arch Bridge"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="locationDescription">
+              Description
+            </label>
+
+            <textarea
+              id="locationDescription"
+              placeholder="Location description..."
+            ></textarea>
+
+          </div>
+
+
+          <!-- =============================================
+               LOCATION IMAGE UPLOAD
+          ============================================== -->
+
+          <div class="form-group">
+
+            <label for="locationImageFile">
+              Location Image
+            </label>
+
+            <input
+              id="locationImageFile"
+              type="file"
+              accept="
+                image/jpeg,
+                image/png,
+                image/webp,
+                image/gif
+              "
+            >
+
+            <small class="form-help">
+              JPG, PNG, WEBP or GIF • Maximum 5 MB
+            </small>
+
+
+            <img
+              id="locationCurrentImage"
+              class="current-image-preview"
+              alt="Current location image"
+            >
+
+          </div>
+
+
+        </div>
+
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-light"
+            onclick="closeLocationModal()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-success"
+          >
+            Save Location
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       TOUR GALLERY MODAL
+  ====================================================== -->
+
+  <div
+    id="tourGalleryModal"
+    class="modal"
+  >
+
+    <div
+      class="modal-content"
+      style="max-width:900px;"
+    >
+
+      <div class="modal-header">
+
+        <h2 id="tourGalleryTitle">
+          Tour Gallery
+        </h2>
+
+        <button
+          type="button"
+          class="modal-close"
+          onclick="closeTourGallery()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+
+        <!-- =============================================
+             GALLERY UPLOAD
+        ============================================== -->
+
+        <div class="gallery-upload-box">
+
+          <form id="tourGalleryForm">
+
+            <div class="form-group">
+
+              <label for="tourGalleryFile">
+                Add Gallery Image
+              </label>
+
+              <input
+                id="tourGalleryFile"
+                type="file"
+                accept="
+                  image/jpeg,
+                  image/png,
+                  image/webp,
+                  image/gif
+                "
+                required
+              >
+
+              <small class="form-help">
+                JPG, PNG, WEBP or GIF • Maximum 5 MB
+              </small>
+
+            </div>
+
+
+            <button
+              type="submit"
+              class="btn btn-success"
+            >
+              Upload Gallery Image
+            </button>
+
+          </form>
+
+        </div>
+
+
+        <!-- =============================================
+             LOADING
+        ============================================== -->
+
+        <div
+          id="tourGalleryLoading"
+          class="admin-loading"
+        >
+          Loading gallery...
+        </div>
+
+
+        <!-- =============================================
+             EMPTY
+        ============================================== -->
+
+        <div
+          id="tourGalleryEmpty"
+          class="admin-empty"
+          style="display:none;"
+        >
+          No gallery images yet.
+        </div>
+
+
+        <!-- =============================================
+             GALLERY GRID
+        ============================================== -->
+
+        <div
+          id="tourGalleryGrid"
+          class="gallery-grid"
+        ></div>
+
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn btn-light"
+          onclick="closeTourGallery()"
+        >
+          Close
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       JAVASCRIPT
+  ====================================================== -->
 
   <script
     type="module"
-    src="./admin-dashboard.js?v=20260906-final"
+    src="./admin-dashboard.js?v=20260908-upload"
   ></script>
 
+
 </body>
+
 </html>
